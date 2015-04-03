@@ -22,7 +22,6 @@
 #include <omp.h>
 #include <iterator>
 #include <vector>
-#include <seqUtils.h>
 
 template <class T, class I>
 T omp_par::reduce(T* A, I cnt){

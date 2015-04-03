@@ -8,22 +8,6 @@
 
 #include <mpi.h>
 #include <accfft.h>
-#include <iostream>
-#include <cstdlib>
-
-#include <cmath>
-#include <math.h>
-#include <cstring>
-#include <sstream>
-#include <fstream>
-#include <iomanip>
-#include <bitset>
-#define NTH 10
-#define VERBOSE 0
-#define TIME_BACKWARD 0
-
-int threads_ok;
-typedef double Complex[2];
 
 void initialize(double *a,int*n, MPI_Comm c_comm);
 void check_err(double* a,int*n,MPI_Comm c_comm);
@@ -32,10 +16,9 @@ inline double testcase(double X,double Y,double Z){
 
   double sigma= 4;
   double pi=4*atan(1.0);
-  double analytic=0;
+  double analytic;
   analytic= (std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) +(Z-pi)*(Z-pi)  )));
-  if(analytic!=analytic) analytic=0;
-  //return sin(X);
+  if(analytic!=analytic) analytic=0; /* Do you think the condition will be false always? */
   return analytic;
 }
 
@@ -49,25 +32,19 @@ void step1(int *n, int nthreads) {
   MPI_Comm c_comm;
   accfft_create_comm(MPI_COMM_WORLD,c_dims,&c_comm);
 
-  double f_time=0*MPI_Wtime(),i_time=0, setup_time=0;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  int alloc_max=0;
-
   double *data,*data_hat;
+  double f_time=0*MPI_Wtime(),i_time=0, setup_time=0;
+  int alloc_max=0;
 
   int isize[3],osize[3],istart[3],ostart[3];
   /* Get the local pencil size and the allocation size */
   alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
+  PCOUT<<"isize[0]="<<isize[0]<<" isize[1]="<<isize[1]<<" isize[2]="<<isize[2]<<std::endl;
+  PCOUT<<"osize[0]="<<osize[0]<<" osize[1]="<<osize[1]<<" osize[2]="<<osize[2]<<std::endl;
+  PCOUT<<"alloc_max= "<<alloc_max<<std::endl;
 
-  data=(double*)accfft_alloc(alloc_max*sizeof(double));
-  data_hat=(double*)accfft_alloc(alloc_max*sizeof(double));
-
-
-
-  int coords[2],np[2],periods[2];
-  MPI_Cart_get(c_comm,2,np,periods,coords);
+  data=(double*)accfft_alloc(alloc_max);
+  data_hat=(double*)accfft_alloc(alloc_max);
 
   accfft_init(nthreads);
   setup_time=-MPI_Wtime();
@@ -75,8 +52,6 @@ void step1(int *n, int nthreads) {
   accfft_plan * plan=accfft_plan_dft_3d_r2c(n,data,data_hat,c_comm,NULL);
   setup_time+=MPI_Wtime();
 
-
-  MPI_Barrier(c_comm);
   /*  Initialize data */
   initialize(data,n,c_comm);
   MPI_Barrier(c_comm);

@@ -31,7 +31,6 @@
 #include <mpi.h>
 #include <omp.h>
 #include "dtypes.h"
-#include "seqUtils.h"
 #include "ompUtils.h"
 
 #include <cassert>
