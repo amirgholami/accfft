@@ -40,7 +40,6 @@ build/libaccfft.a:	src/transpose.o src/accfft.o src/accfft_common.o
 	mkdir -p lib
 	ar crf lib/libaccfft.a src/transpose.o src/accfft.o src/accfft_common.o  
 	echo "export AccFFT_DIR=$(shell pwd)" >> ~/.bashrc
-	source ~/.bashrc
 
 clean:
 	-rm src/*.o src/*~ lib/*

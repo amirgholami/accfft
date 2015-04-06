@@ -10,8 +10,6 @@
 #include <accfft.h>
 
 void initialize(double *a,int*n, MPI_Comm c_comm);
-void check_err(double* a,int*n,MPI_Comm c_comm);
-void step1(int *n, int nthreads);
 inline double testcase(double X,double Y,double Z){
 
   double sigma= 4;
@@ -21,6 +19,8 @@ inline double testcase(double X,double Y,double Z){
   if(analytic!=analytic) analytic=0; /* Do you think the condition will be false always? */
   return analytic;
 }
+void check_err(double* a,int*n,MPI_Comm c_comm);
+void step1(int *n, int nthreads);
 
 void step1(int *n, int nthreads) {
   int nprocs, procid;
@@ -32,24 +32,22 @@ void step1(int *n, int nthreads) {
   MPI_Comm c_comm;
   accfft_create_comm(MPI_COMM_WORLD,c_dims,&c_comm);
 
-  double *data,*data_hat;
+  double *data;
+  Complex *data_hat;
   double f_time=0*MPI_Wtime(),i_time=0, setup_time=0;
   int alloc_max=0;
 
   int isize[3],osize[3],istart[3],ostart[3];
   /* Get the local pencil size and the allocation size */
   alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
-  PCOUT<<"isize[0]="<<isize[0]<<" isize[1]="<<isize[1]<<" isize[2]="<<isize[2]<<std::endl;
-  PCOUT<<"osize[0]="<<osize[0]<<" osize[1]="<<osize[1]<<" osize[2]="<<osize[2]<<std::endl;
-  PCOUT<<"alloc_max= "<<alloc_max<<std::endl;
 
-  data=(double*)accfft_alloc(alloc_max);
-  data_hat=(double*)accfft_alloc(alloc_max);
+  data=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
+  data_hat=(Complex*)accfft_alloc(alloc_max);
 
   accfft_init(nthreads);
   setup_time=-MPI_Wtime();
   /* Create FFT plan */
-  accfft_plan * plan=accfft_plan_dft_3d_r2c(n,data,data_hat,c_comm,NULL);
+  accfft_plan * plan=accfft_plan_dft_3d_r2c(n,data,(double*)data_hat,c_comm,ACCFFT_MEASURE);
   setup_time+=MPI_Wtime();
 
   /*  Initialize data */
@@ -58,19 +56,31 @@ void step1(int *n, int nthreads) {
 
   /* Perform forward FFT */
   f_time-=MPI_Wtime();
-  accfft_execute(plan,-1,data,data_hat);
+  accfft_execute_r2c(plan,data,data_hat);
   f_time+=MPI_Wtime();
 
   MPI_Barrier(c_comm);
 
 
+  double * data2=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   /* Perform backward FFT */
   i_time-=MPI_Wtime();
-  accfft_execute(plan,1,data_hat,data);
+  accfft_execute_c2r(plan,data_hat,data2);
   i_time+=MPI_Wtime();
 
   /* Check Error */
-  check_err(data,n,c_comm);
+  double err=0,g_err=0;
+  double norm=0,g_norm=0;
+  for (int i=0;i<isize[0]*isize[1]*isize[2];++i){
+    err+=data2[i]/n[0]/n[1]/n[2]-data[i];
+    norm+=data2[i]/n[0]/n[1]/n[2];
+  }
+  MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
+
+  PCOUT<<"\n Error is "<<g_err<<std::endl;
+  PCOUT<<"Relative Error is "<<g_err<<std::endl;
+
 
   /* Compute some timings statistics */
   double g_f_time, g_i_time, g_setup_time;
@@ -85,6 +95,7 @@ void step1(int *n, int nthreads) {
 
   accfft_free(data);
   accfft_free(data_hat);
+  accfft_free(data2);
   accfft_destroy_plan(plan);
   accfft_cleanup();
   MPI_Comm_free(&c_comm);

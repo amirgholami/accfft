@@ -49,7 +49,7 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
   reorder=1;
 
   MPI_Cart_create(MPI_COMM_WORLD, 2, c_dims, period, reorder, c_comm);
-  PCOUT<<"dim[0]= "<<c_dims[0]<<" dim[1]= "<<c_dims[1]<<std::endl;
+  //PCOUT<<"dim[0]= "<<c_dims[0]<<" dim[1]= "<<c_dims[1]<<std::endl;
 
   //MPI_Cart_coords(c_comm, procid, 2, coord);
 

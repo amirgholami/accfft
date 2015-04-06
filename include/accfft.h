@@ -33,6 +33,13 @@
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
 
+#define ACCFFT_FORWARD -1
+#define ACCFFT_BACKWARD +1
+#define ACCFFT_INVERSE +1
+#define ACCFFT_ESTIMATE 1
+#define ACCFFT_MEASURE 2
+#define ACCFFT_PATIENT 4
+
 
 struct accfft_plan{
   int N[3];
@@ -69,6 +76,8 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
 int accfft_local_size_dft_c2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
 accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out, MPI_Comm c_comm,unsigned flags);
 
+void accfft_execute_r2c(accfft_plan* plan, double * data=NULL,Complex * data_out=NULL, double * timer=NULL);
+void accfft_execute_c2r(accfft_plan* plan, Complex * data=NULL,double * data_out=NULL, double * timer=NULL);
 void accfft_execute(accfft_plan* plan, int direction, double * data=NULL,double * data_out=NULL,double * timer=NULL);
 void accfft_execute_c2c(accfft_plan* plan, int direction, Complex * data=NULL, Complex * data_out=NULL,double * timer=NULL);
 void accfft_destroy_plan(accfft_plan * plan);

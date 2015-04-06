@@ -71,6 +71,7 @@ int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Co
   int alloc_local=isize[0]*isize[1]*isize[2]*sizeof(double);
 
 
+
   return alloc_local;
 }
 int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm, bool inplace){
@@ -177,9 +178,9 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     if(plan->fplan_1==NULL) std::cout<<"!!! Forward Plan not Created !!!"<<std::endl;
 
     plan->iplan_0=fftw_plan_many_dft_c2r(2, &n[1],plan->T_plan_1->local_n0,	//int rank, const int *n, int howmany,
-        (fftw_complex*)data, NULL,		//fftw_complex *in, const int *inembed,
+        (fftw_complex*)data_out, NULL,		//fftw_complex *in, const int *inembed,
         1, N1*n_tuples_o/2,					//int istride, int idist,
-        data_out, NULL,						//double *out, const int *onembed,
+        data, NULL,						//double *out, const int *onembed,
         1, N1*n_tuples_i,				//int ostride, int odist,
         fftw_flags);
     if(plan->iplan_0==NULL) std::cout<<"!!! Inverse Plan not Created !!!"<<std::endl;
@@ -195,7 +196,7 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     static int method_static=0;
     static int kway_static_2=0;
     if(method_static==0){
-      plan->T_plan_1->which_fast_method(plan->T_plan_1,data);
+      plan->T_plan_1->which_fast_method(plan->T_plan_1,data_out);
       method_static=plan->T_plan_1->method;
       kway_static_2=plan->T_plan_1->kway;
     }
@@ -346,7 +347,7 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     static int kway_static_2=0;
     if(method_static_2==0){
       if(coord[0]==0){
-        plan->T_plan_1->which_fast_method(plan->T_plan_1,data);
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,data_out);
         method_static_2=plan->T_plan_1->method;
         kway_static_2=plan->T_plan_1->kway;
       }
@@ -488,7 +489,7 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
     if(plan->iplan_1==NULL) std::cout<<"!!! Forward Plan not Created !!!"<<std::endl;
 
 
-    plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data);
+    plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out);
     plan->T_plan_1i->method=plan->T_plan_1->method;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
 
@@ -619,7 +620,7 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
     static int kway_static_2=0;
     if(method_static_2==0){
       if(coord[0]==0){
-        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data);
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out);
         method_static_2=plan->T_plan_1->method;
         kway_static_2=plan->T_plan_1->kway;
       }
@@ -638,6 +639,17 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
   }
   return plan;
 
+}
+
+void accfft_execute_r2c(accfft_plan* plan, double * data,Complex * data_out, double * timer){
+  accfft_execute(plan,-1,data,(double*)data_out,timer);
+
+  return;
+}
+void accfft_execute_c2r(accfft_plan* plan, Complex * data,double * data_out, double * timer){
+  accfft_execute(plan,1,(double*)data,data_out,timer);
+
+  return;
 }
 
 void accfft_execute(accfft_plan* plan, int direction,double * data,double * data_out, double * timer){
