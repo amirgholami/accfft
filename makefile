@@ -5,9 +5,9 @@ OUT_DIR= bin
 
 CXXFLAGS= -O3 -xhost -Wall 
 
-LDFLAGS=  -L$(FFTW_LIB) -lfftw3 -lfftw3_threads -fopenmp 
+LDFLAGS=  -L$(FFTW_LIB) -lfftw3 -lfftw3_threads -fopenmp
 
-INCDIR= -I$(FFTW_INC) -I./alltoallkway -I./ -I./include
+INCDIR= -I$(FFTW_INC) -I./ -I/work/02187/gholami/maverick/accfft/include/
 
 
 N_FLAGS=-c  -O3 -gencode arch=compute_35,code=sm_35  -Xcompiler -fopenmp -DENABLE_GPU
@@ -40,6 +40,19 @@ build/libaccfft.a:	src/transpose.o src/accfft.o src/accfft_common.o
 	mkdir -p lib
 	ar crf lib/libaccfft.a src/transpose.o src/accfft.o src/accfft_common.o  
 	echo "export AccFFT_DIR=$(shell pwd)" >> ~/.bashrc
+
+src/accfft_gpu.o: src/accfft_gpu.cpp
+	$(CXX) $(CXXFLAGS) -c src/accfft_gpu.cpp -o $@  $(INCDIR) $(LDFLAGS) $(MPI_INC) $(MPI_LIB) $(N_CXXFLAGS) $(N_CXXLIB) $(N_CXXINC) -DENABLE_GPU
+
+src/transpose_gpu.o: src/transpose_gpu.cpp
+	$(CXX) $(CXXFLAGS) -c src/transpose_gpu.cpp -o $@  $(INCDIR) $(LDFLAGS) $(MPI_INC) $(MPI_LIB) $(N_CXXFLAGS) $(N_CXXLIB) $(N_CXXINC) -DENABLE_GPU
+src/transpose_cuda.o: src/transpose_cuda.cu
+	nvcc src/transpose_cuda.cu -o $@ $(MPI_INC) $(MPI_DIR) $(N_INC) $(N_LIB) $(N_FLAGS) -DENABLE_GPU
+build/libaccfft_gpu.a:	src/transpose_gpu.o src/transpose_cuda.o src/accfft_gpu.o src/accfft_common.o
+	mkdir -p lib
+	ar crf lib/libaccfft_gpu.a src/transpose_gpu.o src/transpose_cuda.o src/accfft_gpu.o src/accfft_common.o  
+	echo "export AccFFT_DIR=$(shell pwd)" >> ~/.bashrc
+
 
 clean:
 	-rm src/*.o src/*~ lib/*

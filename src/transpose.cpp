@@ -29,12 +29,6 @@
 #include <fftw3.h>
 #include <vector>
 #include <bitset>
-#ifdef ENABLE_GPU
-#include <cuda.h>
-#include <cuda_runtime_api.h>
-#include "transpose_cuda.h"
-#include <driver_types.h>
-#endif
 #include "transpose.h"
 #include "parUtils.h"
 
@@ -93,55 +87,17 @@ Mem_Mgr::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int spec
     PINNED=1;
   else
     PINNED=0;
-#ifdef ENABLE_GPU
- // PCOUT<<"ENABLE GPU"<<std::endl;
-  if(PINNED==1){
-    cudaError_t cuda_err1, cuda_err2;
-    double pinned_time=-MPI_Wtime();
-    cuda_err1=cudaMallocHost((void**)&buffer,alloc_local);
-    cuda_err2=cudaMallocHost((void**)&buffer_2,alloc_local);
-    if(cuda_err1!=cudaSuccess || cuda_err2!=cudaSuccess){
-      std::cout<<"!!!!!!!!!! Failed to cudaMallocHost in MemMgr"<<std::endl;
-    }
-    pinned_time+=MPI_Wtime();
-   // PCOUT<<"PINNED Alloc time= "<<pinned_time<<std::endl;
-  }
-  else{
-    posix_memalign((void **)&buffer_2,64, alloc_local);
-    posix_memalign((void **)&buffer,64, alloc_local);
-  }
-  cudaMalloc((void **)&buffer_d, alloc_local);
-#else
+
   posix_memalign((void **)&buffer,64, alloc_local);
   posix_memalign((void **)&buffer_2,64, alloc_local);
-#endif
   memset( buffer,0, alloc_local );
   memset( buffer_2,0, alloc_local );
 
 }
 Mem_Mgr::~Mem_Mgr(){
 
-#ifdef ENABLE_GPU
-    cudaError_t cuda_err1, cuda_err2,cuda_err3;
-  if(PINNED==1){
-    cuda_err1=cudaFreeHost(buffer);
-    cuda_err2=cudaFreeHost(buffer_2);
-    if(cuda_err1!=cudaSuccess || cuda_err2!=cudaSuccess){
-      std::cout<<"!!!!!!!!!! Failed to cudaFreeHost in MemMgr; err1= "<<cuda_err1<<" err2= "<<cuda_err2<<std::endl;
-    }
-  }
-  else{
-    free(buffer);
-    free(buffer_2);
-  }
-  cuda_err3=cudaFree(buffer_d);
-    if(cuda_err3!=cudaSuccess){
-      std::cout<<"!!!!!!!!!! Failed to cudaFree in MemMgr; err3= "<<cuda_err3<<std::endl;
-    }
-#else
   free(buffer);
   free(buffer_2);
-#endif
 }
 
 T_Plan::T_Plan(int N0, int N1,int tuples, Mem_Mgr * Mem_mgr, MPI_Comm Comm, int howmany){

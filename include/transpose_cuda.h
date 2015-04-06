@@ -22,6 +22,8 @@
 #define _TRANSPOSE_CUDA_
 
 //#include "transpose.h"
+#include <cuda.h>
+
 class Mem_Mgr_gpu{
 	public:
 		Mem_Mgr_gpu(int N0, int N1, int n_tuples, MPI_Comm Comm, int howmany=1, int specified_alloc_local=0);
@@ -134,4 +136,21 @@ void transpose_cuda_v5_3(T_Plan_gpu* T_plan, double * inout, double *timings, un
 void transpose_cuda_v6(T_Plan_gpu* T_plan, double * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0  ); // INPLACE local transpose + mpialltoallv+local transpose
 void transpose_cuda_v7(T_Plan_gpu* T_plan, double * inout, double *timings, int kway , unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + paralltoallv+local transpose
 void transpose_cuda_v7_2(T_Plan_gpu* T_plan, double * inout, double *timings, int kway , unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + paralltoallv+local transpose
+
+// outplace local transpose
+void local_transpose_cuda(int r, int c, int n_tuples, double * in, double *out);
+
+// outplace local transpose multiple n_tuples
+void local_transpose_cuda(int r, int c, int n_tuples, int n_tuples2, double * in, double *out);
+
+// in place local transpose
+void local_transpose_cuda(int r, int c, int n_tuples, double* A);
+
+// outplace local transpose multiple n_tuples for the last col
+void local_transpose_col_cuda(int r, int c, int n_tuples, int n_tuples2,double * in, double *out );
+void memcpy_v1_h1(int nprocs_1,int howmany, int local_n0, int n_tuples,ptrdiff_t* local_n1_proc,double* send_recv_d,double* data,int idist,int N1,ptrdiff_t* local_1_start_proc);
+void memcpy_v1_h2( int nprocs_0,int howmany,ptrdiff_t* local_0_start_proc,ptrdiff_t* local_n0_proc,double* data,int odist,int local_n1,int n_tuples,    double* send_recv_cpu);
+
+
+
 #endif
