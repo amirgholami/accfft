@@ -129,7 +129,7 @@ int main(int argc, char **argv)
   int nthreads=1;
   step1(N,nthreads);
 
-  
+  step1_gpu(N);
 
   MPI_Finalize();
   return 0;

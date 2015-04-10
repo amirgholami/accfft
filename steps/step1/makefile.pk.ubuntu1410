@@ -11,6 +11,7 @@ CUDA_INC ?= $(CUDA_ROOT)/include
 FFTW_LIB=/usr/lib
 FFTW_INC=/usr/include
 LDFLAGS= -L../../lib -laccfft -L$(FFTW_LIB)  -lfftw3 -lfftw3_threads -fopenmp
+LDFLAGS_GPU= -L../../lib -laccfft_gpu -lcufft
 
 INCDIR= -I$(FFTW_INC)  -I../../include/
 
@@ -43,13 +44,13 @@ all: step1
 
 
 step1.o:	step1.cpp
-	$(CXX) $(CXXFLAGS) -c $^ -o $@  $(INCDIR) $(LDFLAGS) $(MPI_INC) $(MPI_LIB)
+	$(CXX) $(CXXFLAGS) -c $^ -o $@  $(INCDIR) $(MPI_INC) $(MPI_LIB)
 
 step1_gpu.o: step1_gpu.cu
 	nvcc $^	-o $@ $(N_FLAGS)   
 
 step1:	step1.o step1_gpu.o
-	$(CXX) $(CXXFLAGS) $^  $(LDFLAGS)  -o $@ $(INCDIR) -lcuda -L$(CUDA_LIB) -lcudart
+	$(CXX) $(CXXFLAGS) $^  -o $@ $(LDFLAGS) $(LDFLAGS_GPU) -lcuda -L$(CUDA_LIB) -lcudart
 
 
 clean:
