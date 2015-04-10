@@ -55,4 +55,4 @@ build/libaccfft_gpu.a:	src/transpose_gpu.o src/transpose_cuda.o src/accfft_gpu.o
 
 
 clean:
-	-rm src/*.o src/*~ lib/*
+	-rm -f src/*.o src/*~ lib/*
