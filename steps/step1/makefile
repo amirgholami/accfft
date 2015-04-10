@@ -15,8 +15,8 @@ N_INC= -I$(TACC_CUDA_INC) -I./ -I$(FFTW_INC)
 N_LIB= -L$(TACC_CUDA_LIB) -L$(FFTW_LIB)
 
 N_CXXFLAGS= -O3 -lcudart -lcufft -fopenmp -lfftw3 -lfftw3_threads
-N_CXXLIB= -I$(TACC_CUDA_INC) -I$(FFTW_INC)
-N_CXXINC= -L$(TACC_CUDA_LIB) -L$(FFTW_LIB)
+N_CXXINC= -I$(TACC_CUDA_INC) -I$(FFTW_INC)
+N_CXXLIB= -L$(TACC_CUDA_LIB) -L$(FFTW_LIB)
 
 MPI_INC = -I/opt/apps/intel14/mvapich2/2.0b/include   -DMPICH_IGNORE_CXX_SEEK -DMPICH_SKIP_MPICXX
 MPI_LIB = -L/opt/apps/intel14/mvapich2/2.0b/lib
@@ -29,4 +29,4 @@ step1.o:	step1.cpp
 step1:	step1.o
 	$(CXX) $(CXXFLAGS)  step1.o  $(LDFLAGS)  -o $@ $(INCDIR) 
 clean:
-	-rm *~ *.o step1
+	-rm -f *~ *.o step1

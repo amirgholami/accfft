@@ -12,6 +12,7 @@
 #include <accfft.h>
 
 void initialize(double *a,int*n, MPI_Comm c_comm);
+
 inline double testcase(double X,double Y,double Z){
 
   double sigma= 4;
@@ -23,6 +24,7 @@ inline double testcase(double X,double Y,double Z){
 }
 void check_err(double* a,int*n,MPI_Comm c_comm);
 void step1(int *n, int nthreads);
+void step1_gpu(int *n);
 
 void step1(int *n, int nthreads) {
   int nprocs, procid;
@@ -102,7 +104,8 @@ void step1(int *n, int nthreads) {
   accfft_cleanup();
   MPI_Comm_free(&c_comm);
   return ;
-}
+
+} // end step1
 
 
 int main(int argc, char **argv)
@@ -126,14 +129,17 @@ int main(int argc, char **argv)
   int nthreads=1;
   step1(N,nthreads);
 
+  
+
   MPI_Finalize();
   return 0;
-}
+} // end main
 
 
 
-void initialize(double *a,int*n, MPI_Comm c_comm) {
-  double pi=4*atan(1.0);
+void initialize(double *a, int *n, MPI_Comm c_comm) 
+{
+  double pi=M_PI;
   int n_tuples=n[2];
   int istart[3], isize[3], osize[3],ostart[3];
   accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
@@ -157,7 +163,8 @@ void initialize(double *a,int*n, MPI_Comm c_comm) {
     }
   }
   return;
-}
+} // end initialize
+
 void check_err(double* a,int*n,MPI_Comm c_comm){
   int nprocs, procid;
   MPI_Comm_rank(c_comm, &procid);
@@ -203,4 +210,4 @@ void check_err(double* a,int*n,MPI_Comm c_comm){
     PCOUT<<"\033[1;36m FFT computed correctly!\033[0m"<<std::endl;
   }
 
-}
+} // end check_err

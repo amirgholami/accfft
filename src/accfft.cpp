@@ -39,6 +39,7 @@ int accfft_init(int nthreads){
   if (threads_ok) fftw_plan_with_nthreads(nthreads);
   return (!threads_ok);
 }
+
 int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm ){
   int nprocs, procid;
   MPI_Comm_rank(c_comm, &procid);
@@ -69,7 +70,6 @@ int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Co
     MPI_Barrier(c_comm);
   }
   int alloc_local=isize[0]*isize[1]*isize[2]*sizeof(double);
-
 
 
   return alloc_local;
@@ -112,8 +112,6 @@ int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, i
   ostart[0]=ostart_2[0];
   ostart[1]=ostart_2[1];
   ostart[2]=ostart_2[2];
-
-
 
   return alloc_max;
 

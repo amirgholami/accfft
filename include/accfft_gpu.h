@@ -76,7 +76,6 @@ struct accfft_plan_gpu{
 
   double * data;
   double * data_out;
-
   Complex * data_c;
   Complex * data_out_c;
   int procid;

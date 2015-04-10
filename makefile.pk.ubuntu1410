@@ -1,3 +1,4 @@
+# -*-Makefile-*-
 CXX=mpicxx
 BINDIR = bin
 MKDIR_P = mkdir -p
@@ -5,8 +6,8 @@ OUT_DIR= bin
 
 CXXFLAGS= -O3 -Wall 
 
-TACC_CUDA_LIB=$CUDA_ROOT/lib64
-TACC_CUDA_INC=$CUDA_ROOT/include
+TACC_CUDA_LIB=$(CUDA_ROOT)/lib64
+TACC_CUDA_INC=$(CUDA_ROOT)/include
 FFTW_LIB=/usr/lib
 FFTW_INC=/usr/include
 
@@ -28,7 +29,7 @@ N_CXXINC= -L$(TACC_CUDA_LIB) -L$(FFTW_LIB)
 MPI_LIB = $(shell mpicxx --showme:link)
 MPI_INC = $(shell mpicxx --showme:compile)
 
-all: build/libaccfft.a
+all: lib/libaccfft.a
 
 
 transpose_gpu.o: transpose.cpp
@@ -43,7 +44,7 @@ src/accfft.o: src/accfft.cpp
 src/accfft_common.o: src/accfft_common.cpp
 	$(CXX) $(CXXFLAGS) -c src/accfft_common.cpp -o $@  $(INCDIR) $(LDFLAGS) $(MPI_INC) $(MPI_LIB)
 
-build/libaccfft.a:	src/transpose.o src/accfft.o src/accfft_common.o
+lib/libaccfft.a:	src/transpose.o src/accfft.o src/accfft_common.o
 	mkdir -p lib
 	ar crf lib/libaccfft.a src/transpose.o src/accfft.o src/accfft_common.o  
 	#echo "export AccFFT_DIR=$(shell pwd)" >> ~/.bashrc
@@ -55,9 +56,10 @@ src/transpose_gpu.o: src/transpose_gpu.cpp
 	$(CXX) $(CXXFLAGS) -c src/transpose_gpu.cpp -o $@  $(INCDIR) $(LDFLAGS) $(MPI_INC) $(MPI_LIB) $(N_CXXFLAGS) $(N_CXXLIB) $(N_CXXINC) -DENABLE_GPU
 src/transpose_cuda.o: src/transpose_cuda.cu
 	nvcc src/transpose_cuda.cu -o $@ $(MPI_INC) $(MPI_DIR) $(N_INC) $(N_LIB) $(N_FLAGS) -DENABLE_GPU
-build/libaccfft_gpu.a:	src/transpose_gpu.o src/transpose_cuda.o src/accfft_gpu.o src/accfft_common.o
+
+lib/libaccfft_gpu.a:	src/transpose_gpu.o src/transpose_cuda.o src/accfft_gpu.o src/accfft_common.o
 	mkdir -p lib
-	ar crf lib/libaccfft_gpu.a src/transpose_gpu.o src/transpose_cuda.o src/accfft_gpu.o src/accfft_common.o  
+	ar crf lib/libaccfft_gpu.a $^  
 	#echo "export AccFFT_DIR=$(shell pwd)" >> ~/.bashrc
 
 

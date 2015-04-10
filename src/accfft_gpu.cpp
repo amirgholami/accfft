@@ -69,6 +69,7 @@ int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,MP
 
   return alloc_local;
 }
+
 int accfft_local_size_dft_r2c_gpu( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm, bool inplace){
 
   //1D & 2D Decomp
@@ -233,7 +234,9 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
     plan->T_plan_2i=NULL;
     plan->fplan_2=NULL;
     plan->iplan_2=NULL;
+
   }
+
   // 2D Decomposition
   if (plan->np[1]!=1){
 
