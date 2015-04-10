@@ -6,6 +6,7 @@
  * Copyright (c) 2014-2015
  */
 
+#include <stdlib.h>
 #include <mpi.h>
 #include <accfft.h>
 
@@ -110,7 +111,7 @@ int main(int argc, char **argv)
   MPI_Init (&argc, &argv);
   int nprocs, procid;
   MPI_Comm_rank(MPI_COMM_WORLD, &procid);
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
   /* Parsing Inputs  */
   if(argc==1){
