@@ -7,6 +7,7 @@
  */
 
 #include <stdlib.h>
+#include <math.h> // M_PI
 #include <mpi.h>
 #include <accfft.h>
 
@@ -14,9 +15,9 @@ void initialize(double *a,int*n, MPI_Comm c_comm);
 inline double testcase(double X,double Y,double Z){
 
   double sigma= 4;
-  double pi=4*atan(1.0);
+  double pi=M_PI;
   double analytic;
-  analytic= (std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) +(Z-pi)*(Z-pi)  )));
+  analytic= std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
   if(analytic!=analytic) analytic=0; /* Do you think the condition will be false always? */
   return analytic;
 }
@@ -26,7 +27,7 @@ void step1(int *n, int nthreads);
 void step1(int *n, int nthreads) {
   int nprocs, procid;
   MPI_Comm_rank(MPI_COMM_WORLD, &procid);
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
   /* Create Cartesian Communicator */
   int c_dims[2];

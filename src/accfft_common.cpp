@@ -32,7 +32,7 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
 
   int nprocs, procid;
   MPI_Comm_rank(in_comm, &procid);
-  MPI_Comm_size(in_comm,&nprocs);
+  MPI_Comm_size(in_comm, &nprocs);
 
   if(c_dims[0]*c_dims[1]!=nprocs){
     PCOUT<<"ERROR c_dims!=nprocs --> "<<c_dims[0]<<"*"<<c_dims[1]<<" !="<<nprocs<<std::endl;
