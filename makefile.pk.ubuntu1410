@@ -1,15 +1,18 @@
 # -*-Makefile-*-
-CXX=mpicxx
+CXX = mpicxx
 BINDIR = bin
 MKDIR_P = mkdir -p
-OUT_DIR= bin
+OUT_DIR = bin
 
 CXXFLAGS= -O3 -Wall 
 
+CUDA_ROOT ?= /usr/local/cuda-6.5
 CUDA_LIB ?= $(CUDA_ROOT)/lib64
 CUDA_INC ?= $(CUDA_ROOT)/include
-FFTW_LIB=/usr/lib
-FFTW_INC=/usr/include
+CUDA_SM ?= 20
+
+FFTW_LIB = /usr/lib
+FFTW_INC = /usr/include
 
 LDFLAGS=  -L$(FFTW_LIB) -lfftw3 -lfftw3_threads -fopenmp
 
@@ -21,7 +24,7 @@ MPI_INC = $(shell mpicxx --showme:compile)
 
 N_INC= -I$(CUDA_INC) -I./ -I./alltoallkway -I$(FFTW_INC) 
 N_LIB= -L$(CUDA_LIB) -L$(FFTW_LIB)
-N_FLAGS=-c  -O3 -gencode arch=compute_20,code=sm_20  -Xcompiler -fopenmp -DENABLE_GPU
+N_FLAGS=-c  -O3 -gencode arch=compute_$(CUDA_SM),code=sm_$(CUDA_SM)  -Xcompiler -fopenmp -DENABLE_GPU
 N_FLAGS += $(addprefix -Xcompiler , $(N_INC))
 N_FLAGS += $(addprefix -Xcompiler , $(MPI_INC))
 
