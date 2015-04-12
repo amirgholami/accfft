@@ -3,3 +3,4 @@
 *.o
 */*.o
 lib
+build

@@ -28,7 +28,7 @@
 #include "transpose_cuda.h"
 #include <cuda_runtime_api.h>
 #include <string.h>
-#include "cuda.h"
+#include <cuda.h>
 #include <cufft.h>
 #include "accfft_common.h"
 #define VERBOSE 0

@@ -73,8 +73,6 @@ void step1_gpu(int *n) {
   MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
   MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
 
-  PCOUT<<"\nComputing FFT/IFFT on GPU"<<std::endl;
-  PCOUT<<"\n Error is "<<g_err<<std::endl;
   PCOUT<<"Relative Error is "<<g_err<<std::endl;
 
 

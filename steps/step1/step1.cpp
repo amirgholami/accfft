@@ -24,7 +24,10 @@ inline double testcase(double X,double Y,double Z){
 }
 void check_err(double* a,int*n,MPI_Comm c_comm);
 void step1(int *n, int nthreads);
+
+#ifdef ENABLE_GPU
 void step1_gpu(int *n);
+#endif //  ENABLE_GPU
 
 void step1(int *n, int nthreads) {
   int nprocs, procid;
@@ -82,7 +85,6 @@ void step1(int *n, int nthreads) {
   MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
   MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
 
-  PCOUT<<"\n Error is "<<g_err<<std::endl;
   PCOUT<<"Relative Error is "<<g_err<<std::endl;
 
 
@@ -126,10 +128,17 @@ int main(int argc, char **argv)
   }
   int N[3]={NX,NY,NZ};
 
+  PCOUT<<"\n################### "<<std::endl;
+  PCOUT<<"  Compute FFT on CPU  "<<std::endl;
   int nthreads=1;
   step1(N,nthreads);
 
+#ifdef ENABLE_GPU
+  PCOUT<<"\n################### "<<std::endl;
+  PCOUT<<"  Compute FFT on GPU  "<<std::endl;
   step1_gpu(N);
+#endif // ENABLE_GPU
+
 
   MPI_Finalize();
   return 0;
