@@ -25,11 +25,10 @@ INCLUDE_DIRECTORIES (
   ${accfft_BINARY_DIR}/include
 )
 
-# Add OpenMP cxx flags to all targets
-#add_definitions(${OpenMP_CXX_FLAGS})
-set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}" )
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}" )
-
+# Add OpenMP and FFTW cxx flags to all targets
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -I${FFTW_INCLUDES}" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -I${FFTW_INCLUDES}" )
+ 
 # some default behavior
 set(BUILD_SHARED_LIBS ON)
 
