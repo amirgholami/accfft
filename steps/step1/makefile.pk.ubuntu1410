@@ -11,16 +11,19 @@ CUDA_LIB ?= $(CUDA_ROOT)/lib64
 CUDA_INC ?= $(CUDA_ROOT)/include
 CUDA_SM ?= 20
 
-FFTW_LIB=/usr/lib
-FFTW_INC=/usr/include
+FFTW_LIB ?= /usr/lib
+FFTW_INC ?= /usr/include
 LDFLAGS= -L../../lib -laccfft -L$(FFTW_LIB)  -lfftw3 -lfftw3_threads -fopenmp
 LDFLAGS_GPU= -L../../lib -laccfft_gpu -lcufft
 
 INCDIR= -I$(FFTW_INC)  -I../../include/
 
-
-MPI_LIB = $(shell mpicxx --showme:link)
-MPI_INC = $(shell mpicxx --showme:compile)
+# OpenMPI
+MPI_LIB ?= $(shell mpicxx --showme:link)
+MPI_INC ?= $(shell mpicxx --showme:compile)
+# MVAPICH
+#MPI_LIB ?= $(shell mpicxx -compile-info)
+#MPI_INC ?= $(shell mpicxx -link-info)
 
 
 N_INC= -I$(CUDA_INC) -I./ -I$(FFTW_INC) 

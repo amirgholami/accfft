@@ -1,5 +1,5 @@
 # -*-Makefile-*-
-CXX = mpicxx
+CXX ?= mpicxx
 BINDIR = bin
 MKDIR_P = mkdir -p
 OUT_DIR = bin
@@ -11,15 +11,19 @@ CUDA_LIB ?= $(CUDA_ROOT)/lib64
 CUDA_INC ?= $(CUDA_ROOT)/include
 CUDA_SM ?= 20
 
-FFTW_LIB = /usr/lib
-FFTW_INC = /usr/include
+FFTW_LIB ?= /usr/lib
+FFTW_INC ?= /usr/include
 
 LDFLAGS=  -L$(FFTW_LIB) -lfftw3 -lfftw3_threads -fopenmp
 
-INCDIR= -I$(FFTW_INC) -I./ -I/home/pkestene/install/fft/accfft/github_pk/accfft/include
+INCDIR= -I$(FFTW_INC) -I./ -I$(shell pwd)/include
 
-MPI_LIB = $(shell mpicxx --showme:link)
-MPI_INC = $(shell mpicxx --showme:compile)
+# OpenMPI
+MPI_LIB ?= $(shell mpicxx --showme:link)
+MPI_INC ?= $(shell mpicxx --showme:compile)
+# MVAPICH
+#MPI_LIB ?= $(shell mpicxx -compile-info)
+#MPI_INC ?= $(shell mpicxx -link-info)
 
 
 N_INC= -I$(CUDA_INC) -I./ -I./alltoallkway -I$(FFTW_INC) 
