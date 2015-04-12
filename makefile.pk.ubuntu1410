@@ -37,10 +37,10 @@ N_CXXLIB= -L$(CUDA_LIB) -L$(FFTW_LIB)
 all: lib/libaccfft.a
 
 
-transpose_gpu.o: transpose.cpp
-	nvcc $^ -o $@ $(N_LIB) $(N_FLAGS)
-transpose_cuda.o: transpose_cuda.cu
-	nvcc $^ -o $@ $(N_LIB) $(N_FLAGS)
+# transpose_gpu.o: transpose.cpp
+# 	nvcc $^ -o $@ $(N_LIB) $(N_FLAGS)
+# transpose_cuda.o: transpose_cuda.cu
+# 	nvcc $^ -o $@ $(N_LIB) $(N_FLAGS)
 
 src/transpose.o: src/transpose.cpp
 	$(CXX) $(CXXFLAGS) -c src/transpose.cpp -o $@  $(INCDIR) $(LDFLAGS) $(MPI_INC) $(MPI_LIB)
@@ -51,7 +51,7 @@ src/accfft_common.o: src/accfft_common.cpp
 
 lib/libaccfft.a:	src/transpose.o src/accfft.o src/accfft_common.o
 	mkdir -p lib
-	ar crf lib/libaccfft.a src/transpose.o src/accfft.o src/accfft_common.o  
+	ar crf lib/libaccfft.a $^  
 	#echo "export AccFFT_DIR=$(shell pwd)" >> ~/.bashrc
 
 src/accfft_gpu.o: src/accfft_gpu.cpp

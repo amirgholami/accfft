@@ -4,7 +4,7 @@ BINDIR = bin
 MKDIR_P = mkdir -p
 OUT_DIR = bin
 
-CXXFLAGS= -O3 -Wall 
+CXXFLAGS= -O3 -Wall -DENABLE_GPU
 
 CUDA_ROOT ?= /usr/local/cuda-6.5
 CUDA_LIB ?= $(CUDA_ROOT)/lib64
