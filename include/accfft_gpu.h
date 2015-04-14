@@ -21,7 +21,6 @@
 #ifndef ACCFFT_GPU_H
 #define ACCFFT_GPU_H
 #include <mpi.h>
-#include <fftw3.h>
 #include <omp.h>
 #include <iostream>
 #include <cmath>

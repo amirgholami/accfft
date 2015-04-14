@@ -415,12 +415,12 @@ void T_Plan::which_fast_method(T_Plan* T_plan,double* data){
   for (int i=0;i<2*(int)log2(nprocs)+3;i++)
     time[i]=1000;
 
-  transpose_v5(T_plan,(double*)data,dummy,2);  // Warmup
+  fast_transpose_v1(T_plan,(double*)data,dummy,2);  // Warmup
   time[0]=-MPI_Wtime();
   fast_transpose_v1(T_plan,(double*)data,dummy,2);
   time[0]+=MPI_Wtime();
 
-  transpose_v6(T_plan,(double*)data,dummy,2);  // Warmup
+  fast_transpose_v2(T_plan,(double*)data,dummy,2);  // Warmup
   time[1]=-MPI_Wtime();
   fast_transpose_v2(T_plan,(double*)data,dummy,2);
   time[1]+=MPI_Wtime();
@@ -440,9 +440,9 @@ void T_Plan::which_fast_method(T_Plan* T_plan,double* data){
     for (int i=0;i<6;i++){
       kway=nprocs/std::pow(2,i);
       MPI_Barrier(T_plan->comm);
-      transpose_v7(T_plan,(double*)data,dummy,kway);  // Warmup
+      fast_transpose_v3(T_plan,(double*)data,dummy,kway);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
-      transpose_v7(T_plan,(double*)data,dummy,kway);
+      fast_transpose_v3(T_plan,(double*)data,dummy,kway);
       time[2+(int)log2(nprocs)+i]+=MPI_Wtime();
     }
   }
