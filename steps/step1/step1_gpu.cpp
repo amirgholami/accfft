@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <math.h> // M_PI
 #include <mpi.h>
+#include <cuda_runtime_api.h>
 #include <accfft.h>
 #include <accfft_gpu.h>
 
@@ -27,7 +28,7 @@ void step1_gpu(int *n) {
   /* Get the local pencil size and the allocation size */
   alloc_max=accfft_local_size_dft_r2c_gpu(n,isize,istart,osize,ostart,c_comm);
 
-  data_cpu=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
+  data_cpu=(double*)malloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   //data_hat=(Complex*)accfft_alloc(alloc_max);
   cudaMalloc((void**) &data, isize[0]*isize[1]*isize[2]*sizeof(double));
   cudaMalloc((void**) &data_hat, alloc_max);
@@ -52,7 +53,7 @@ void step1_gpu(int *n) {
 
   double *data2_cpu, *data2;
   cudaMalloc((void**) &data2, isize[0]*isize[1]*isize[2]*sizeof(double));
-  data2_cpu=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
+  data2_cpu=(double*) malloc(isize[0]*isize[1]*isize[2]*sizeof(double));
 
   /* Perform backward FFT */
   i_time-=MPI_Wtime();
@@ -87,8 +88,8 @@ void step1_gpu(int *n) {
   PCOUT<<"FFT \t"<<g_f_time<<std::endl;
   PCOUT<<"IFFT \t"<<g_i_time<<std::endl;
 
-  accfft_free(data_cpu);
-  accfft_free(data2_cpu);
+  free(data_cpu);
+  free(data2_cpu);
   cudaFree(data);
   cudaFree(data_hat);
   cudaFree(data2);
