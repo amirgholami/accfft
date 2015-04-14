@@ -39,6 +39,18 @@ int accfft_init(int nthreads){
   if (threads_ok) fftw_plan_with_nthreads(nthreads);
   return (!threads_ok);
 }
+void* accfft_alloc(ptrdiff_t size){
+  void * ptr=fftw_malloc(size);
+  return ptr;
+}
+void accfft_free(void * ptr){
+  fftw_free(ptr);
+  return;
+}
+void accfft_cleanup(){
+  fftw_cleanup_threads();
+  fftw_cleanup();
+}
 int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm ){
   int nprocs, procid;
   MPI_Comm_rank(c_comm, &procid);

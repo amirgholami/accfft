@@ -18,7 +18,6 @@
  *
 */
 #include <mpi.h>
-#include <fftw3.h>
 #include <omp.h>
 #include <iostream>
 #include <cmath>
@@ -58,19 +57,6 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
 }
 int accfft_init(){
   return 0;
-}
-void* accfft_alloc(ptrdiff_t size){
-  void * ptr=fftw_malloc(size);
-  return ptr;
-}
-void accfft_free(void * ptr){
-  fftw_free(ptr);
-  return;
-}
-void accfft_cleanup()
-{
-  fftw_cleanup_threads();
-  fftw_cleanup();
 }
 void accfft_cleanup_gpu()
 {
