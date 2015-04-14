@@ -18,8 +18,6 @@
  *
 */
 
-#include <mpi.h>
-
 /*
  * The following people have contributed to this file:
  * @author Rahul S. Sampath, rahul.sampath@gmail.com
@@ -33,7 +31,7 @@
 #ifndef __PAR_UTILS_H_
 #define __PAR_UTILS_H_
 
-#include "mpi.h"
+#include <mpi.h>
 #include <vector>
 
 #ifndef KWAY

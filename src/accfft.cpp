@@ -83,7 +83,6 @@ int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Co
   int alloc_local=isize[0]*isize[1]*isize[2]*sizeof(double);
 
 
-
   return alloc_local;
 }
 int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm, bool inplace){
@@ -124,8 +123,6 @@ int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, i
   ostart[0]=ostart_2[0];
   ostart[1]=ostart_2[1];
   ostart[2]=ostart_2[2];
-
-
 
   return alloc_max;
 

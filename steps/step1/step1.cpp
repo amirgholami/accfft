@@ -6,26 +6,33 @@
  * Copyright (c) 2014-2015
  */
 
+#include <stdlib.h>
+#include <math.h> // M_PI
 #include <mpi.h>
 #include <accfft.h>
 
 void initialize(double *a,int*n, MPI_Comm c_comm);
+
 inline double testcase(double X,double Y,double Z){
 
   double sigma= 4;
-  double pi=4*atan(1.0);
+  double pi=M_PI;
   double analytic;
-  analytic= (std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) +(Z-pi)*(Z-pi)  )));
+  analytic= std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
   if(analytic!=analytic) analytic=0; /* Do you think the condition will be false always? */
   return analytic;
 }
 void check_err(double* a,int*n,MPI_Comm c_comm);
 void step1(int *n, int nthreads);
 
+#ifdef ENABLE_GPU
+void step1_gpu(int *n);
+#endif //  ENABLE_GPU
+
 void step1(int *n, int nthreads) {
   int nprocs, procid;
   MPI_Comm_rank(MPI_COMM_WORLD, &procid);
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
   /* Create Cartesian Communicator */
   int c_dims[2];
@@ -81,7 +88,6 @@ void step1(int *n, int nthreads) {
   PCOUT<<"\n Error is "<<g_err<<std::endl;
   PCOUT<<"Relative Error is "<<g_err/g_norm<<std::endl;
 
-
   /* Compute some timings statistics */
   double g_f_time, g_i_time, g_setup_time;
   MPI_Reduce(&f_time,&g_f_time,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
@@ -100,7 +106,8 @@ void step1(int *n, int nthreads) {
   accfft_cleanup();
   MPI_Comm_free(&c_comm);
   return ;
-}
+
+} // end step1
 
 
 int main(int argc, char **argv)
@@ -110,7 +117,7 @@ int main(int argc, char **argv)
   MPI_Init (&argc, &argv);
   int nprocs, procid;
   MPI_Comm_rank(MPI_COMM_WORLD, &procid);
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
   /* Parsing Inputs  */
   if(argc==1){
@@ -121,17 +128,27 @@ int main(int argc, char **argv)
   }
   int N[3]={NX,NY,NZ};
 
+  PCOUT<<"\n################### "<<std::endl;
+  PCOUT<<"  Compute FFT on CPU  "<<std::endl;
   int nthreads=1;
   step1(N,nthreads);
 
+#ifdef ENABLE_GPU
+  PCOUT<<"\n################### "<<std::endl;
+  PCOUT<<"  Compute FFT on GPU  "<<std::endl;
+  step1_gpu(N);
+#endif // ENABLE_GPU
+
+
   MPI_Finalize();
   return 0;
-}
+} // end main
 
 
 
-void initialize(double *a,int*n, MPI_Comm c_comm) {
-  double pi=4*atan(1.0);
+void initialize(double *a, int *n, MPI_Comm c_comm) 
+{
+  double pi=M_PI;
   int n_tuples=n[2];
   int istart[3], isize[3], osize[3],ostart[3];
   accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
@@ -155,7 +172,8 @@ void initialize(double *a,int*n, MPI_Comm c_comm) {
     }
   }
   return;
-}
+} // end initialize
+
 void check_err(double* a,int*n,MPI_Comm c_comm){
   int nprocs, procid;
   MPI_Comm_rank(c_comm, &procid);
@@ -201,4 +219,4 @@ void check_err(double* a,int*n,MPI_Comm c_comm){
     PCOUT<<"\033[1;36m FFT computed correctly!\033[0m"<<std::endl;
   }
 
-}
+} // end check_err
