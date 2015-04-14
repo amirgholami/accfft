@@ -79,7 +79,7 @@ void step1(int *n, int nthreads) {
   MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
 
   PCOUT<<"\n Error is "<<g_err<<std::endl;
-  PCOUT<<"Relative Error is "<<g_err<<std::endl;
+  PCOUT<<"Relative Error is "<<g_err/g_norm<<std::endl;
 
 
   /* Compute some timings statistics */
