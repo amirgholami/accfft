@@ -12,7 +12,7 @@ A detailed step by step documentation on how to use the library
 can be found at http://accfft.org/documentation/.
 
 Original research paper introducing AccFFT library:
-http://users.ices.utexas.edu/~gholaminejad/Papers/accfft.pdf
+http://arxiv.org/abs/??
 
 ## License
 AccFFT is distributed under GNU GENERAL PUBLIC LICENSE Version 2.

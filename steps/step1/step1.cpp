@@ -25,10 +25,6 @@ inline double testcase(double X,double Y,double Z){
 void check_err(double* a,int*n,MPI_Comm c_comm);
 void step1(int *n, int nthreads);
 
-#ifdef ENABLE_GPU
-void step1_gpu(int *n);
-#endif //  ENABLE_GPU
-
 void step1(int *n, int nthreads) {
   int nprocs, procid;
   MPI_Comm_rank(MPI_COMM_WORLD, &procid);
@@ -128,17 +124,8 @@ int main(int argc, char **argv)
   }
   int N[3]={NX,NY,NZ};
 
-  PCOUT<<"\n################### "<<std::endl;
-  PCOUT<<"  Compute FFT on CPU  "<<std::endl;
   int nthreads=1;
   step1(N,nthreads);
-
-#ifdef ENABLE_GPU
-  PCOUT<<"\n################### "<<std::endl;
-  PCOUT<<"  Compute FFT on GPU  "<<std::endl;
-  step1_gpu(N);
-#endif // ENABLE_GPU
-
 
   MPI_Finalize();
   return 0;
@@ -146,7 +133,7 @@ int main(int argc, char **argv)
 
 
 
-void initialize(double *a, int *n, MPI_Comm c_comm) 
+void initialize(double *a, int *n, MPI_Comm c_comm)
 {
   double pi=M_PI;
   int n_tuples=n[2];

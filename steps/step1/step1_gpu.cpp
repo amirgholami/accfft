@@ -2,7 +2,7 @@
 #include <math.h> // M_PI
 #include <mpi.h>
 #include <cuda_runtime_api.h>
-#include <accfft.h>
+//#include <accfft.h>
 #include <accfft_gpu.h>
 
 void initialize(double *a,int*n, MPI_Comm c_comm);
@@ -61,7 +61,7 @@ void step1_gpu(int *n) {
   i_time+=MPI_Wtime();
 
   /* copy back results on CPU */
-  cudaMemcpy(data2_cpu, data2, isize[0]*isize[1]*isize[2]*sizeof(double), cudaMemcpyDeviceToHost);  
+  cudaMemcpy(data2_cpu, data2, isize[0]*isize[1]*isize[2]*sizeof(double), cudaMemcpyDeviceToHost);
 
 
   /* Check Error */

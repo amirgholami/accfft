@@ -1,32 +1,56 @@
-CXX=mpicxx
+# -*-Makefile-*-
+MPICXX ?= mpicxx
 BINDIR = bin
 MKDIR_P = mkdir -p
-OUT_DIR= bin
+OUT_DIR = bin
 
-CXXFLAGS= -O3 -xhost -Wall 
+CXXFLAGS= -O3 -Wall -DENABLE_GPU -fopenmp
+CXXFLAGS += -xhost # For TACC Systems
 
-LDFLAGS= -L$(AccFFT_DIR)/lib -laccfft -L$(FFTW_LIB)  -lfftw3 -lfftw3_threads -fopenmp
+CUDA_ROOT ?= /usr/local/cuda-6.5
+CUDA_LIB ?= $(CUDA_ROOT)/lib64
+CUDA_INC ?= $(CUDA_ROOT)/include
+CUDA_SM ?= 20
 
-INCDIR= -I$(FFTW_INC)  -I$(AccFFT_DIR)/include/
+FFTW_LIB ?= /usr/lib
+FFTW_INC ?= /usr/include
+LDFLAGS=-L$(AccFFT_DIR)/lib -laccfft -L$(FFTW_LIB)  -lfftw3 -lfftw3_threads
+LDFLAGS_GPU=-L$(AccFFT_DIR)/lib -laccfft_gpu -lcufft
+
+INCDIR= -I$(FFTW_INC) -I$(AccFFT_DIR)/include/
+
+# OpenMPI
+#MPI_LIB ?= $(shell mpicxx --showme:link)
+#MPI_INC ?= $(shell mpicxx --showme:compile)
+# MVAPICH
+#MPI_LIB ?= $(shell mpicxx -compile-info)
+#MPI_INC ?= $(shell mpicxx -link-info)
 
 
-N_FLAGS=-c  -O3 -gencode arch=compute_35,code=sm_35  -Xcompiler -fopenmp -DENABLE_GPU
-N_INC= -I$(TACC_CUDA_INC) -I./ -I$(FFTW_INC) 
-N_LIB= -L$(TACC_CUDA_LIB) -L$(FFTW_LIB)
+N_INC= -I$(CUDA_INC) -I./ -I$(FFTW_INC) 
+N_LIB= -L$(CUDA_LIB) -L$(FFTW_LIB)
 
-N_CXXFLAGS= -O3 -lcudart -lcufft -fopenmp -lfftw3 -lfftw3_threads
-N_CXXINC= -I$(TACC_CUDA_INC) -I$(FFTW_INC)
-N_CXXLIB= -L$(TACC_CUDA_LIB) -L$(FFTW_LIB)
+N_CXXFLAGS= -O3 -lcudart -lcufft -fopenmp -lfftw3 -lfftw3_threads -DENABLE_GPU
+N_CXXINC= -I$(CUDA_INC) -I$(FFTW_INC)
+N_CXXLIB= -L$(CUDA_LIB) -L$(FFTW_LIB)
 
-MPI_INC = -I/opt/apps/intel14/mvapich2/2.0b/include   -DMPICH_IGNORE_CXX_SEEK -DMPICH_SKIP_MPICXX
-MPI_LIB = -L/opt/apps/intel14/mvapich2/2.0b/lib
+N_FLAGS = -c -O3 -gencode arch=compute_$(CUDA_SM),code=sm_$(CUDA_SM) -Xcompiler -fopenmp -DENABLE_GPU 
+N_FLAGS += -Xcompiler -I../../include
+N_FLAGS += $(addprefix -Xcompiler ,$(MPI_INC))
+N_FLAGS += $(addprefix -Xcompiler ,$(N_INC))
+N_FLAGS += $(addprefix -Xcompiler ,$(N_CXXINC))
+
 
 all: step1
 
-
 step1.o:	step1.cpp
-	$(CXX) $(CXXFLAGS) -c step1.cpp -o $@  $(INCDIR) $(LDFLAGS) $(MPI_INC) $(MPI_LIB)
+	$(MPICXX) $(CXXFLAGS) -c $^ -o $@  $(INCDIR)
+
+step1_gpu.o: step1_gpu.cpp
+	$(MPICXX) $(CXXFLAGS) -c $^ -o $@  $(INCDIR) $(N_CXXFLAGS) $(N_CXXLIB) $(N_CXXINC)
+
 step1:	step1.o
-	$(CXX) $(CXXFLAGS)  step1.o  $(LDFLAGS)  -o $@ $(INCDIR) 
+	$(MPICXX) $(CXXFLAGS) $^  -o $@ $(LDFLAGS)
+
 clean:
 	-rm -f *~ *.o step1
