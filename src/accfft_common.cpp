@@ -58,6 +58,3 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
 int accfft_init(){
   return 0;
 }
-void accfft_cleanup_gpu()
-{
-}

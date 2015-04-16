@@ -34,6 +34,10 @@
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
 
+void accfft_cleanup_gpu(){
+  // empty for now
+}
+
 int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm ){
   int  procid;
   MPI_Comm_rank(c_comm, &procid);
@@ -1074,6 +1078,9 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
 
 
 void accfft_destroy_plan(accfft_plan_gpu * plan){
+  return (accfft_destroy_plan_gpu(plan));
+}
+void accfft_destroy_plan_gpu(accfft_plan_gpu * plan){
 
   if(plan->T_plan_1!=NULL)delete(plan->T_plan_1);
   if(plan->T_plan_1i!=NULL)delete(plan->T_plan_1i);
@@ -1091,4 +1098,5 @@ void accfft_destroy_plan(accfft_plan_gpu * plan){
 
   MPI_Comm_free(&plan->row_comm);
   MPI_Comm_free(&plan->col_comm);
+  return;
 }
