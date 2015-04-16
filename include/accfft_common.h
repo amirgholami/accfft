@@ -30,6 +30,14 @@
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
 
+#define ACCFFT_FORWARD -1
+#define ACCFFT_BACKWARD +1
+#define ACCFFT_INVERSE +1
+#define ACCFFT_ESTIMATE 1
+#define ACCFFT_MEASURE 2
+#define ACCFFT_PATIENT 4
+
+
 void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm);
 int accfft_init();
 void* accfft_alloc(ptrdiff_t size);

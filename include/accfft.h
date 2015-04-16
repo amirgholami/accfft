@@ -29,17 +29,6 @@
 #include "transpose.h"
 #include <string.h>
 #include "accfft_common.h"
-#define VERBOSE 0
-#define PCOUT if(procid==0) std::cout
-typedef double Complex[2];
-
-#define ACCFFT_FORWARD -1
-#define ACCFFT_BACKWARD +1
-#define ACCFFT_INVERSE +1
-#define ACCFFT_ESTIMATE 1
-#define ACCFFT_MEASURE 2
-#define ACCFFT_PATIENT 4
-
 
 struct accfft_plan{
   int N[3];
