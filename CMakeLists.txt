@@ -116,4 +116,6 @@ endif(BUILD_GPU)
 ####################
 # EXAMPLES / TESTS #
 ####################
+if(BUILD_STEPS)
 add_subdirectory(steps/step1)
+endif(BUILD_STEPS)
