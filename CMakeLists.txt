@@ -39,7 +39,11 @@ set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -I${FFTW_INCLUDES}" )
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -I${FFTW_INCLUDES}" )
 
 # some default behavior
-set(BUILD_SHARED_LIBS OFF)
+if(BUILD_SHARED)
+  set(BUILD_SHARED_LIBS ON)
+else()
+  set(BUILD_SHARED_LIBS OFF)
+endif(BUILD_SHARED)
 
 # ###########
 # HOST BUILD 
