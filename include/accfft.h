@@ -70,4 +70,5 @@ void accfft_execute_c2r(accfft_plan* plan, Complex * data=NULL,double * data_out
 void accfft_execute(accfft_plan* plan, int direction, double * data=NULL,double * data_out=NULL,double * timer=NULL);
 void accfft_execute_c2c(accfft_plan* plan, int direction, Complex * data=NULL, Complex * data_out=NULL,double * timer=NULL);
 void accfft_destroy_plan(accfft_plan * plan);
+void accfft_cleanup();
 #endif

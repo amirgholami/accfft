@@ -23,10 +23,15 @@
 #include <cmath>
 #include <math.h>
 #include "accfft_common.h"
-#define VERBOSE 0
-#define PCOUT if(procid==0) std::cout
-typedef double Complex[2];
 
+void* accfft_alloc(ptrdiff_t size){
+  void * ptr=fftw_malloc(size);
+  return ptr;
+}
+void accfft_free(void * ptr){
+  fftw_free(ptr);
+  return;
+}
 void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
 
   int nprocs, procid;

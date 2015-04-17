@@ -42,6 +42,4 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm);
 int accfft_init();
 void* accfft_alloc(ptrdiff_t size);
 void accfft_free(void * ptr);
-void accfft_cleanup();
-void accfft_cleanup_gpu();
 #endif

@@ -94,4 +94,5 @@ void accfft_destroy_plan(accfft_plan_gpu * plan);
 void accfft_destroy_plan_gpu(accfft_plan_gpu * plan);
 void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data=NULL,Complex * data_out=NULL, double * timer=NULL);
 void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data=NULL,double * data_out=NULL, double * timer=NULL);
+void accfft_cleanup_gpu();
 #endif

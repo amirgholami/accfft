@@ -71,6 +71,7 @@ install(TARGETS accfft DESTINATION lib)
 #install(DIRECTORY accfft DESTINATION include FILES_MATCHING PATTERN "include/*.h include/*.txx")
 install (DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.txx")
 install (DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.h"
+  PATTERN "**~" EXCLUDE
   PATTERN "*_gpu*" EXCLUDE
   PATTERN "*_cuda*" EXCLUDE
   )

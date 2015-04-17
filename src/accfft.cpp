@@ -40,14 +40,6 @@ int accfft_init(int nthreads){
   return (!threads_ok);
 }
 
-void* accfft_alloc(ptrdiff_t size){
-  void * ptr=fftw_malloc(size);
-  return ptr;
-}
-void accfft_free(void * ptr){
-  fftw_free(ptr);
-  return;
-}
 void accfft_cleanup(){
   fftw_cleanup_threads();
   fftw_cleanup();
