@@ -1,32 +1,53 @@
-CXX=mpicxx
+# -*-Makefile-*-
+MPICXX ?= mpicxx
 BINDIR = bin
 MKDIR_P = mkdir -p
-OUT_DIR= bin
+OUT_DIR = bin
 
-CXXFLAGS= -O3 -xhost -Wall 
+CXXFLAGS= -O3 -Wall -DENABLE_GPU -fopenmp
+CXXFLAGS += -xhost # For TACC Systems
 
-LDFLAGS= -L$(AccFFT_DIR)/lib -laccfft -L$(FFTW_LIB)  -lfftw3 -lfftw3_threads -fopenmp
+CUDA_ROOT ?= /usr/local/cuda-6.5
+CUDA_LIB ?= $(CUDA_ROOT)/lib64
+CUDA_INC ?= $(CUDA_ROOT)/include
+CUDA_SM ?= 35
 
-INCDIR= -I$(FFTW_INC)  -I$(AccFFT_DIR)/include/
+FFTW_LIB ?= /usr/lib
+FFTW_INC ?= /usr/include
+LDFLAGS=-L$(ACCFFT_DIR)/lib -laccfft -L$(FFTW_LIB)  -lfftw3 -lfftw3_threads
+
+INCDIR= -I$(FFTW_INC) -I$(ACCFFT_DIR)/include/
 
 
-N_FLAGS=-c  -O3 -gencode arch=compute_35,code=sm_35  -Xcompiler -fopenmp -DENABLE_GPU
-N_INC= -I$(TACC_CUDA_INC) -I./ -I$(FFTW_INC) 
-N_LIB= -L$(TACC_CUDA_LIB) -L$(FFTW_LIB)
-
-N_CXXFLAGS= -O3 -lcudart -lcufft -fopenmp -lfftw3 -lfftw3_threads
-N_CXXLIB= -I$(TACC_CUDA_INC) -I$(FFTW_INC)
-N_CXXINC= -L$(TACC_CUDA_LIB) -L$(FFTW_LIB)
-
-MPI_INC = -I/opt/apps/intel14/mvapich2/2.0b/include   -DMPICH_IGNORE_CXX_SEEK -DMPICH_SKIP_MPICXX
-MPI_LIB = -L/opt/apps/intel14/mvapich2/2.0b/lib
 
 all: step2
 
-
 step2.o:	step2.cpp
-	$(CXX) $(CXXFLAGS) -c step2.cpp -o $@  $(INCDIR) $(LDFLAGS) $(MPI_INC) $(MPI_LIB)
+	$(MPICXX) $(CXXFLAGS) -c $^ -o $@  $(INCDIR)
+
 step2:	step2.o
-	$(CXX) $(CXXFLAGS)  step2.o  $(LDFLAGS)  -o $@ $(INCDIR) 
+	$(MPICXX) $(CXXFLAGS) $^  -o $@ $(LDFLAGS)
+
+
+# To be used for compiling *.cu files
+N_INC= -I$(CUDA_INC) 
+N_LIB= -L$(CUDA_LIB) -L$(FFTW_LIB) 
+N_FLAGS = -c -O3 -gencode arch=compute_$(CUDA_SM),code=sm_$(CUDA_SM) -Xcompiler -fopenmp -DENABLE_GPU 
+N_FLAGS += -I../../include
+
+# To be used for compiling gpu *.cpp files
+N_CXXFLAGS= -O3 -lcudart -lcufft -fopenmp -lfftw3 -lfftw3_threads -DENABLE_GPU
+N_CXXINC= -I$(CUDA_INC) -I$(FFTW_INC) -I$(ACCFFT_DIR)/include
+N_CXXLIB= -L$(CUDA_LIB) -L$(FFTW_LIB) -L$(ACCFFT_DIR)/lib -laccfft_gpu
+
+step2_gpu.o: step2_gpu.cpp
+	$(MPICXX) $(N_CXXFLAGS) -c $^ $(N_CXXINC) -o $@  
+
+step2_gpu:	step2_gpu.o kernels.o
+	$(MPICXX) $(N_CXXFLAGS) $^ $(N_CXXLIB) -o $@ 
+
+kernels.o:	kernels.cu
+	nvcc $^ -o $@ $(N_LIB) $(N_FLAGS)
+
 clean:
-	-rm *~ *.o step2
+	-rm -f *~ *.o step2 step2_gpu

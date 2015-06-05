@@ -1,9 +1,8 @@
 /*
  * File: step1.cpp
+ * License: Please see LICENSE file.
  * Project: AccFFT
  * Created by Amir Gholami on 12/23/2014
- * Contact: contact@accfft.org
- * Copyright (c) 2014-2015
  */
 
 #include <stdlib.h>
@@ -21,7 +20,7 @@ inline double testcase(double X,double Y,double Z){
   analytic= std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
   if(analytic!=analytic) analytic=0; /* Do you think the condition will be false always? */
   return analytic;
-}
+} // end testcase
 void check_err(double* a,int*n,MPI_Comm c_comm);
 void step1(int *n, int nthreads);
 
@@ -81,8 +80,12 @@ void step1(int *n, int nthreads) {
   MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
   MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
 
-  PCOUT<<"\n Error is "<<g_err<<std::endl;
+  PCOUT<<"\nError is "<<g_err<<std::endl;
   PCOUT<<"Relative Error is "<<g_err/g_norm<<std::endl;
+  if (g_err/g_norm< 1e-10)
+    PCOUT<<"\nResults are CORRECT!\n\n";
+  else
+    PCOUT<<"\nResults are NOT CORRECT!\n\n";
 
   /* Compute some timings statistics */
   double g_f_time, g_i_time, g_setup_time;
@@ -136,7 +139,6 @@ int main(int argc, char **argv)
 void initialize(double *a, int *n, MPI_Comm c_comm)
 {
   double pi=M_PI;
-  int n_tuples=n[2];
   int istart[3], isize[3], osize[3],ostart[3];
   accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
 
@@ -151,9 +153,8 @@ void initialize(double *a, int *n, MPI_Comm c_comm)
           X=2*pi/n[0]*(i+istart[0]);
           Y=2*pi/n[1]*(j+istart[1]);
           Z=2*pi/n[2]*k;
-          ptr=i*isize[1]*n_tuples+j*n_tuples+k;
-          a[ptr]=testcase(X,Y,Z);//(istart[0]+i)*n_tuples*n[1]+(istart[1]+j)*n_tuples+k+istart[2];//(istart[0]+i)*n[1]+istart[1]+j;//testcase(X,Y,Z);
-          //std::cout<<"("<<i<<","<<j<<","<<k<<")  "<<a[k+j*NZ+i*NY*NZ]<<std::endl;
+          ptr=i*isize[1]*n[2]+j*n[2]+k;
+          a[ptr]=testcase(X,Y,Z);
         }
       }
     }
@@ -169,7 +170,6 @@ void check_err(double* a,int*n,MPI_Comm c_comm){
   size*=n[1]; size*=n[2];
   double pi=4*atan(1.0);
 
-  int n_tuples=n[2];
   int istart[3], isize[3], osize[3],ostart[3];
   accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
 
@@ -184,26 +184,23 @@ void check_err(double* a,int*n,MPI_Comm c_comm){
         X=2*pi/n[0]*(i+istart[0]);
         Y=2*pi/n[1]*(j+istart[1]);
         Z=2*pi/n[2]*k;
-        ptr=i*isize[1]*n_tuples+j*n_tuples+k;
+        ptr=i*isize[1]*n[2]+j*n[2]+k;
         numerical_r=a[ptr]/size; if(numerical_r!=numerical_r) numerical_r=0;
         err+=std::abs(numerical_r-testcase(X,Y,Z));
         norm+=std::abs(testcase(X,Y,Z));
-
-        //PCOUT<<"("<<i<<","<<j<<","<<k<<")  "<<numerical<<'\t'<<testcase(X,Y,Z)<<std::endl;
       }
     }
   }
 
-  double gerr=0,gnorm=0;
-  MPI_Reduce(&err,&gerr,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
-  MPI_Reduce(&norm,&gnorm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
-  PCOUT<<"The L1 error between iFF(a)-a is = "<<gerr<<std::endl;
-  PCOUT<<"The Rel. L1 error between iFF(a)-a is = "<<gerr/gnorm<<std::endl;
-  if(gerr/gnorm>1e-10){
-    PCOUT<<"\033[1;31m ERROR!!! FFT not computed correctly!\033[0m"<<std::endl;
-  }
-  else{
-    PCOUT<<"\033[1;36m FFT computed correctly!\033[0m"<<std::endl;
-  }
+  double g_err=0,g_norm=0;
+  MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
+  PCOUT<<"\nL1 Error of iFF(a)-a: "<<g_err<<std::endl;
+  PCOUT<<"Relative L1 Error of iFF(a)-a: "<<g_err/g_norm<<std::endl;
+  if (g_err/g_norm< 1e-10)
+    PCOUT<<"\nResults are CORRECT!\n\n";
+  else
+    PCOUT<<"\nResults are NOT CORRECT!\n\n";
 
+  return;
 } // end check_err
