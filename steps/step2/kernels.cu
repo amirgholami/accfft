@@ -42,7 +42,7 @@ __global__ void initialize_gpu_kernel(double * a, int *n, int n2_, int* isize, i
 }// end initialize_gpu_kernel
 void initialize_gpu(double *a,int*n, int * isize, int * istart) {
 
-  int n2_=n[2]; // Outplace Transform requires no padding
+  int n2_=(n[2]/2+1)*2; // Due to inplace padding
 
   // corresponding GPU sizes
   int * n_gpu, *isize_gpu, *istart_gpu;

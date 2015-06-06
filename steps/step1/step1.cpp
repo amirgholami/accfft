@@ -1,8 +1,9 @@
 /*
  * File: step1.cpp
  * License: Please see LICENSE file.
- * Project: AccFFT
+ * AccFFT: Massively Parallel FFT Library
  * Created by Amir Gholami on 12/23/2014
+ * Email: contact@accfft.org
  */
 
 #include <stdlib.h>

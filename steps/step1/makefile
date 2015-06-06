@@ -43,8 +43,11 @@ N_CXXLIB= -L$(CUDA_LIB) -L$(FFTW_LIB) -L$(ACCFFT_DIR)/lib -laccfft_gpu
 step1_gpu.o: step1_gpu.cpp
 	$(MPICXX) $(N_CXXFLAGS) -c $^ $(N_CXXINC) -o $@  
 
-step1_gpu:	step1_gpu.o
+step1_gpu:	step1_gpu.o kernels.o
 	$(MPICXX) $(N_CXXFLAGS) $^ $(N_CXXLIB) -o $@ 
+
+kernels.o:	kernels.cu
+	nvcc $^ -o $@ $(N_LIB) $(N_FLAGS)
 
 clean:
 	-rm -f *~ *.o step1 step1_gpu
