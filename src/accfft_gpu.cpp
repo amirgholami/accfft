@@ -710,6 +710,7 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
     int istride2=local_n1*(NZ);
     int ostride2=local_n1*(NZ);
     MPI_Barrier(c_comm);
+    if(local_n1*NZ!=0){
     cufft_error=cufftPlanMany(&plan->fplan_1, 1, &n[0],
         f_inembed2, istride2, idist2, // *inembed, istride, idist
         f_onembed2, ostride2, odist2, // *onembed, ostride, odist
@@ -718,7 +719,7 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
       fprintf(stderr, "CUFFT error: fplan2 creation failed %d\n",cufft_error); return NULL;
     }
     //cufftSetCompatibilityMode(fplan2,CUFFT_COMPATIBILITY_FFTW_PADDING); if (cudaGetLastError() != cudaSuccess){fprintf(stderr, "Cuda error:Failed at fplan2 cuda compatibility\n"); return;}
-
+    }
 
     plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(double*)data_out_d);
     plan->T_plan_1i->method=plan->T_plan_1->method;
@@ -949,19 +950,19 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
     if(direction==1){
       /* Now Perform the inverse transform  */
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)data_d,(cufftDoubleComplex*)data_out_d,CUFFT_INVERSE));
+      checkCuda_accfft(cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)data_d,(cufftDoubleComplex*)data_d,CUFFT_INVERSE));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
 
-      plan->T_plan_1i->execute_gpu(plan->T_plan_1i,(double*)data_out_d,timings,1);
+      plan->T_plan_1i->execute_gpu(plan->T_plan_1i,(double*)data_d,timings,1);
       /**************************************************************/
       /*******************  N0/P0 x N1 x N2 *************************/
       /**************************************************************/
 
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_out_d,(cufftDoubleComplex*)data_out_d,CUFFT_INVERSE));
+      checkCuda_accfft(cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_d,(cufftDoubleComplex*)data_out_d,CUFFT_INVERSE));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
@@ -1024,7 +1025,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
     }
     else if (direction==1){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft (cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_d, (cufftDoubleComplex*)data_out_d,CUFFT_INVERSE));
+      checkCuda_accfft (cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_d, (cufftDoubleComplex*)data_d,CUFFT_INVERSE));
       checkCuda_accfft (cudaDeviceSynchronize());
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
@@ -1033,7 +1034,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
       MPI_Barrier(plan->c_comm);
 
 
-      plan->T_plan_2i->execute_gpu(plan->T_plan_2i,(double*)data_out_d,timings,1,1,coords[1]);
+      plan->T_plan_2i->execute_gpu(plan->T_plan_2i,(double*)data_d,timings,1,1,coords[1]);
       checkCuda_accfft (cudaDeviceSynchronize());
       MPI_Barrier(plan->c_comm);
       /**************************************************************/
@@ -1041,7 +1042,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
       /**************************************************************/
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       for (int i=0;i<osize_1i[0];++i){
-        checkCuda_accfft (cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_out_d[i*NY*osize_1i[2]], (cufftDoubleComplex*)&data_out_d[i*NY*osize_1i[2]],CUFFT_INVERSE));
+        checkCuda_accfft (cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_d[i*NY*osize_1i[2]], (cufftDoubleComplex*)&data_d[i*NY*osize_1i[2]],CUFFT_INVERSE));
       }
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
@@ -1049,7 +1050,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
       fft_time+=dummy_time/1000;
       MPI_Barrier(plan->c_comm);
 
-      plan->T_plan_1i->execute_gpu(plan->T_plan_1i,(double*)data_out_d,timings,1,osize_1i[0],coords[0]);
+      plan->T_plan_1i->execute_gpu(plan->T_plan_1i,(double*)data_d,timings,1,osize_1i[0],coords[0]);
       checkCuda_accfft (cudaDeviceSynchronize());
       MPI_Barrier(plan->c_comm);
       /**************************************************************/
@@ -1058,7 +1059,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
 
       // IFFT in Z direction
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft (cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_out_d,(cufftDoubleComplex*)data_out_d,CUFFT_INVERSE));
+      checkCuda_accfft (cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_d,(cufftDoubleComplex*)data_out_d,CUFFT_INVERSE));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );

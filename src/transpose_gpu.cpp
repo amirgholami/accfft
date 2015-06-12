@@ -99,6 +99,7 @@ Mem_Mgr_gpu::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, 
   if(PINNED==1){
     cudaError_t cuda_err1, cuda_err2;
     double pinned_time=-MPI_Wtime();
+    buffer=NULL; buffer_2=NULL;
     cuda_err1=cudaMallocHost((void**)&buffer,alloc_local);
     cuda_err2=cudaMallocHost((void**)&buffer_2,alloc_local);
     if(cuda_err1!=cudaSuccess || cuda_err2!=cudaSuccess){
@@ -123,10 +124,10 @@ Mem_Mgr_gpu::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, 
 Mem_Mgr_gpu::~Mem_Mgr_gpu(){
 
 #ifdef ENABLE_GPU
-    cudaError_t cuda_err1, cuda_err2,cuda_err3;
+    cudaError_t cuda_err1=cudaSuccess, cuda_err2=cudaSuccess,cuda_err3=cudaSuccess;
   if(PINNED==1){
-    cuda_err1=cudaFreeHost(buffer);
-    cuda_err2=cudaFreeHost(buffer_2);
+    if(buffer!=NULL)  cuda_err1=cudaFreeHost(buffer);
+    if(buffer!=NULL)  cuda_err2=cudaFreeHost(buffer_2);
     if(cuda_err1!=cudaSuccess || cuda_err2!=cudaSuccess){
       std::cout<<"!!!!!!!!!! Failed to cudaFreeHost in MemMgr; err1= "<<cuda_err1<<" err2= "<<cuda_err2<<std::endl;
     }
