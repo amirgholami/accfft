@@ -42,7 +42,7 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
     PCOUT<<"ERROR c_dims!=nprocs --> "<<c_dims[0]<<"*"<<c_dims[1]<<" !="<<nprocs<<std::endl;
     c_dims[0]=0;c_dims[1]=0;
     MPI_Dims_create(nprocs,2, c_dims);
-    std::swap(c_dims[0],c_dims[1]);
+    //std::swap(c_dims[0],c_dims[1]);
     PCOUT<<"Switching to c_dims_0="<< c_dims[0]<<" , c_dims_1="<<c_dims[1]<<std::endl;
   }
 
@@ -52,7 +52,7 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
   period[0]=0; period[1]=0;
   reorder=1;
 
-  MPI_Cart_create(MPI_COMM_WORLD, 2, c_dims, period, reorder, c_comm);
+  MPI_Cart_create(in_comm, 2, c_dims, period, reorder, c_comm);
   //PCOUT<<"dim[0]= "<<c_dims[0]<<" dim[1]= "<<c_dims[1]<<std::endl;
 
   //MPI_Cart_coords(c_comm, procid, 2, coord);
