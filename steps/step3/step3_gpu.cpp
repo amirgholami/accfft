@@ -10,6 +10,7 @@
 #include <cuda_runtime_api.h>
 //#include <accfft.h>
 #include <accfft_gpu.h>
+#define INPLACE // comment this line for outplace transform
 
 void initialize(Complex *a,int*n, MPI_Comm c_comm);
 void check_err(Complex* a,int*n,MPI_Comm c_comm);
@@ -22,8 +23,7 @@ void step3_gpu(int *n) {
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
   /* Create Cartesian Communicator */
-  int c_dims[2];
-  c_dims[0]=1;c_dims[1]=5;
+  int c_dims[2]={0};
   MPI_Comm c_comm;
   accfft_create_comm(MPI_COMM_WORLD,c_dims,&c_comm);
 
@@ -36,44 +36,81 @@ void step3_gpu(int *n) {
   /* Get the local pencil size and the allocation size */
   alloc_max=accfft_local_size_dft_c2c_gpu(n,isize,istart,osize,ostart,c_comm);
 
+#ifdef INPLACE
+  data_cpu=(Complex*)malloc(alloc_max);
+  cudaMalloc((void**) &data, alloc_max);
+#else
   data_cpu=(Complex*)malloc(isize[0]*isize[1]*isize[2]*2*sizeof(double));
   cudaMalloc((void**) &data,isize[0]*isize[1]*isize[2]*2*sizeof(double));
   cudaMalloc((void**) &data_hat, alloc_max);
+#endif
 
   //accfft_init(nthreads);
   setup_time=-MPI_Wtime();
+
   /* Create FFT plan */
+#ifdef INPLACE
+  accfft_plan_gpu * plan=accfft_plan_dft_3d_c2c_gpu(n,data,data,c_comm,ACCFFT_MEASURE);
+#else
   accfft_plan_gpu * plan=accfft_plan_dft_3d_c2c_gpu(n,data,data_hat,c_comm,ACCFFT_MEASURE);
+#endif
   setup_time+=MPI_Wtime();
+
+  /* Warmup Runs */
+#ifdef INPLACE
+  accfft_execute_c2c_gpu(plan,ACCFFT_FORWARD,data,data);
+  accfft_execute_c2c_gpu(plan,ACCFFT_FORWARD,data,data);
+#else
+  accfft_execute_c2c_gpu(plan,ACCFFT_FORWARD,data,data_hat);
+  accfft_execute_c2c_gpu(plan,ACCFFT_FORWARD,data,data_hat);
+#endif
 
   /*  Initialize data */
   initialize(data_cpu,n,c_comm);
+#ifdef INPLACE
+  cudaMemcpy(data, data_cpu,alloc_max, cudaMemcpyHostToDevice);
+#else
   cudaMemcpy(data, data_cpu,isize[0]*isize[1]*isize[2]*2*sizeof(double), cudaMemcpyHostToDevice);
+#endif
 
   MPI_Barrier(c_comm);
 
+
   /* Perform forward FFT */
   f_time-=MPI_Wtime();
+#ifdef INPLACE
+  accfft_execute_c2c_gpu(plan,ACCFFT_FORWARD,data,data);
+#else
   accfft_execute_c2c_gpu(plan,ACCFFT_FORWARD,data,data_hat);
+#endif
   f_time+=MPI_Wtime();
 
   MPI_Barrier(c_comm);
 
+#ifndef INPLACE
   Complex *data2_cpu, *data2;
   cudaMalloc((void**) &data2, isize[0]*isize[1]*isize[2]*2*sizeof(double));
   data2_cpu=(Complex*) malloc(isize[0]*isize[1]*isize[2]*2*sizeof(double));
+#endif
 
   /* Perform backward FFT */
   i_time-=MPI_Wtime();
+#ifdef INPLACE
+  accfft_execute_c2c_gpu(plan,ACCFFT_BACKWARD,data,data);
+#else
   accfft_execute_c2c_gpu(plan,ACCFFT_BACKWARD,data_hat,data2);
+#endif
   i_time+=MPI_Wtime();
 
-  /* copy back results on CPU */
+  /* copy back results on CPU and check error*/
+#ifdef INPLACE
+  cudaMemcpy(data_cpu, data, alloc_max, cudaMemcpyDeviceToHost);
+  check_err(data_cpu,n,c_comm);
+#else
   cudaMemcpy(data2_cpu, data2, isize[0]*isize[1]*isize[2]*2*sizeof(double), cudaMemcpyDeviceToHost);
-
-
-  /* Check Error */
   check_err(data2_cpu,n,c_comm);
+#endif
+
 
   /* Compute some timings statistics */
   double g_f_time, g_i_time, g_setup_time;
@@ -81,7 +118,11 @@ void step3_gpu(int *n) {
   MPI_Reduce(&i_time,&g_i_time,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
   MPI_Reduce(&setup_time,&g_setup_time,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
 
-  PCOUT<<"GPU Timing for FFT of size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
+#ifdef INPLACE
+  PCOUT<<"GPU Timing for Inplace FFT of size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
+#else
+  PCOUT<<"GPU Timing for Outplace FFT of size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
+#endif
   PCOUT<<"Setup \t"<<g_setup_time<<std::endl;
   PCOUT<<"FFT \t"<<g_f_time<<std::endl;
   PCOUT<<"IFFT \t"<<g_i_time<<std::endl;
@@ -89,10 +130,12 @@ void step3_gpu(int *n) {
   MPI_Barrier(c_comm);
   cudaDeviceSynchronize();
   free(data_cpu);
-  free(data2_cpu);
   cudaFree(data);
+#ifndef INPLACE
   cudaFree(data_hat);
+  free(data2_cpu);
   cudaFree(data2);
+#endif
   accfft_destroy_plan_gpu(plan);
   accfft_cleanup_gpu();
   MPI_Comm_free(&c_comm);

@@ -10,6 +10,7 @@
 #include <math.h> // M_PI
 #include <mpi.h>
 #include <accfft.h>
+//#define INPLACE // comment this line for outplace transform
 
 void initialize(Complex *a,int*n, MPI_Comm c_comm);
 void check_err(Complex* a,int*n,MPI_Comm c_comm);
@@ -31,12 +32,16 @@ void step3(int *n, int nthreads) {
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
   /* Create Cartesian Communicator */
-  int c_dims[2];
+  int c_dims[2]={0};
   MPI_Comm c_comm;
   accfft_create_comm(MPI_COMM_WORLD,c_dims,&c_comm);
 
+#ifdef INPLACE
+  Complex *data;
+#else
   Complex *data;
   Complex *data_hat;
+#endif
   double f_time=0*MPI_Wtime(),i_time=0, setup_time=0;
   int alloc_max=0;
 
@@ -44,14 +49,22 @@ void step3(int *n, int nthreads) {
   /* Get the local pencil size and the allocation size */
   alloc_max=accfft_local_size_dft_c2c(n,isize,istart,osize,ostart,c_comm);
 
+#ifdef INPLACE
+  data=(Complex*)accfft_alloc(alloc_max);
+#else
   data=(Complex*)accfft_alloc(isize[0]*isize[1]*isize[2]*2*sizeof(double));
   data_hat=(Complex*)accfft_alloc(alloc_max);
+#endif
 
   accfft_init(nthreads);
 
   /* Create FFT plan */
   setup_time=-MPI_Wtime();
+#ifdef INPLACE
+  accfft_plan * plan=accfft_plan_dft_3d_c2c(n,data,data,c_comm,ACCFFT_MEASURE);
+#else
   accfft_plan * plan=accfft_plan_dft_3d_c2c(n,data,data_hat,c_comm,ACCFFT_MEASURE);
+#endif
   setup_time+=MPI_Wtime();
 
   /*  Initialize data */
@@ -60,20 +73,34 @@ void step3(int *n, int nthreads) {
 
   /* Perform forward FFT */
   f_time-=MPI_Wtime();
+#ifdef INPLACE
+  accfft_execute_c2c(plan,ACCFFT_FORWARD,data,data);
+#else
   accfft_execute_c2c(plan,ACCFFT_FORWARD,data,data_hat);
+#endif
   f_time+=MPI_Wtime();
 
   MPI_Barrier(c_comm);
 
 
-  Complex * data2=(Complex*)accfft_alloc(isize[0]*isize[1]*isize[2]*2*sizeof(double));
   /* Perform backward FFT */
+#ifdef INPLACE
+  i_time-=MPI_Wtime();
+  accfft_execute_c2c(plan,ACCFFT_BACKWARD,data,data);
+  i_time+=MPI_Wtime();
+#else
+  Complex * data2=(Complex*)accfft_alloc(isize[0]*isize[1]*isize[2]*2*sizeof(double));
   i_time-=MPI_Wtime();
   accfft_execute_c2c(plan,ACCFFT_BACKWARD,data_hat,data2);
   i_time+=MPI_Wtime();
+#endif
 
   /* Check Error */
+#ifdef INPLACE
+  check_err(data,n,c_comm);
+#else
   check_err(data2,n,c_comm);
+#endif
 
   /* Compute some timings statistics */
   double g_f_time, g_i_time, g_setup_time;
@@ -81,14 +108,20 @@ void step3(int *n, int nthreads) {
   MPI_Reduce(&i_time,&g_i_time,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
   MPI_Reduce(&setup_time,&g_setup_time,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
 
-  PCOUT<<"Timing for FFT of size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
+#ifdef INPLACE
+  PCOUT<<"Timing for Inplace FFT of size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
+#else
+  PCOUT<<"Timing for Outplace FFT of size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
+#endif
   PCOUT<<"Setup \t"<<g_setup_time<<std::endl;
   PCOUT<<"FFT \t"<<g_f_time<<std::endl;
   PCOUT<<"IFFT \t"<<g_i_time<<std::endl;
 
   accfft_free(data);
+#ifndef INPLACE
   accfft_free(data_hat);
   accfft_free(data2);
+#endif
   accfft_destroy_plan(plan);
   accfft_cleanup();
   MPI_Comm_free(&c_comm);
