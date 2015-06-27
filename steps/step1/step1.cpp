@@ -20,6 +20,7 @@ inline double testcase(double X,double Y,double Z){
   double analytic;
   analytic= std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
   if(analytic!=analytic) analytic=0; /* Do you think the condition will be false always? */
+  analytic=1;
   return analytic;
 } // end testcase
 void check_err(double* a,int*n,MPI_Comm c_comm);
@@ -44,14 +45,20 @@ void step1(int *n, int nthreads) {
   /* Get the local pencil size and the allocation size */
   alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
 
-  data=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
+  //data=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
+  data=(double*)accfft_alloc(alloc_max);
   data_hat=(Complex*)accfft_alloc(alloc_max);
 
   accfft_init(nthreads);
-  setup_time=-MPI_Wtime();
+
   /* Create FFT plan */
+  setup_time=-MPI_Wtime();
   accfft_plan * plan=accfft_plan_dft_3d_r2c(n,data,(double*)data_hat,c_comm,ACCFFT_MEASURE);
   setup_time+=MPI_Wtime();
+
+  /* Warm Up */
+  accfft_execute_r2c(plan,data,data_hat);
+  accfft_execute_r2c(plan,data,data_hat);
 
   /*  Initialize data */
   initialize(data,n,c_comm);
@@ -76,7 +83,7 @@ void step1(int *n, int nthreads) {
   double norm=0,g_norm=0;
   for (int i=0;i<isize[0]*isize[1]*isize[2];++i){
     err+=data2[i]/n[0]/n[1]/n[2]-data[i];
-    norm+=data2[i]/n[0]/n[1]/n[2];
+    norm+=data[i]/n[0]/n[1]/n[2];
   }
   MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
   MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
@@ -100,6 +107,16 @@ void step1(int *n, int nthreads) {
   PCOUT<<"IFFT \t"<<g_i_time<<std::endl;
 
   accfft_free(data);
+  MPI_Barrier(c_comm);
+  if(procid==4){
+    std::cout<<"alloc_max="<<alloc_max<<std::endl;
+    std::cout<<"isize[0]="<<isize[0]<<std::endl;
+    std::cout<<"isize[1]="<<isize[1]<<std::endl;
+    std::cout<<"isize[2]="<<isize[2]<<std::endl;
+    std::cout<<"osize[0]="<<osize[0]<<std::endl;
+    std::cout<<"osize[1]="<<osize[1]<<std::endl;
+    std::cout<<"osize[2]="<<osize[2]<<std::endl;
+  }
   accfft_free(data_hat);
   accfft_free(data2);
   accfft_destroy_plan(plan);

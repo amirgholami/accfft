@@ -45,10 +45,15 @@ void step1_gpu(int *n) {
   cudaMalloc((void**) &data_hat, alloc_max);
 
   //accfft_init(nthreads);
-  setup_time=-MPI_Wtime();
+
   /* Create FFT plan */
+  setup_time=-MPI_Wtime();
   accfft_plan_gpu * plan=accfft_plan_dft_3d_r2c_gpu(n,data,(double*)data_hat,c_comm,ACCFFT_MEASURE);
   setup_time+=MPI_Wtime();
+
+  /* Warm Up */
+  accfft_execute_r2c_gpu(plan,data,data_hat);
+  accfft_execute_r2c_gpu(plan,data,data_hat);
 
   /*  Initialize data */
   initialize(data_cpu,n,c_comm);

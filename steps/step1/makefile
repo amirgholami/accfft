@@ -38,7 +38,7 @@ N_FLAGS += -I../../include
 # To be used for compiling gpu *.cpp files
 N_CXXFLAGS= -O3 -lcudart -lcufft -fopenmp -lfftw3 -lfftw3_threads -DENABLE_GPU
 N_CXXINC= -I$(CUDA_INC) -I$(FFTW_INC) -I$(ACCFFT_DIR)/include
-N_CXXLIB= -L$(CUDA_LIB) -L$(FFTW_LIB) -L$(ACCFFT_DIR)/lib -laccfft_gpu
+N_CXXLIB= -L$(CUDA_LIB) -L$(FFTW_LIB) -L$(ACCFFT_DIR)/lib -laccfft_gpu -lfftw3
 
 step1_gpu.o: step1_gpu.cpp
 	$(MPICXX) $(N_CXXFLAGS) -c $^ $(N_CXXINC) -o $@  

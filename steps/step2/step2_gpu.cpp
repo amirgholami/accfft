@@ -14,6 +14,7 @@
 
 void initialize_gpu(double *a,int*n, int* isize, int * istart);
 void check_err(double* a,int*n,MPI_Comm c_comm);
+double testcase(double X,double Y,double Z);
 
 
 void step2_gpu(int *n) {
@@ -41,10 +42,15 @@ void step2_gpu(int *n) {
   cudaMalloc((void**) &data, alloc_max);
 
   //accfft_init(nthreads);
-  setup_time=-MPI_Wtime();
+
   /* Create FFT plan */
+  setup_time=-MPI_Wtime();
   accfft_plan_gpu * plan=accfft_plan_dft_3d_r2c_gpu(n,data,data,c_comm,ACCFFT_MEASURE);
   setup_time+=MPI_Wtime();
+
+  /* Warm Up */
+  accfft_execute_r2c_gpu(plan,data,(Complex*)data);
+  accfft_execute_r2c_gpu(plan,data,(Complex*)data);
 
   /* Initialize data */
   initialize_gpu(data,n,isize,istart);
@@ -54,7 +60,6 @@ void step2_gpu(int *n) {
   f_time-=MPI_Wtime();
   accfft_execute_r2c_gpu(plan,data,(Complex*)data);
   f_time+=MPI_Wtime();
-
   MPI_Barrier(c_comm);
 
   /* Perform backward FFT */
@@ -65,10 +70,8 @@ void step2_gpu(int *n) {
   /* copy back results on CPU */
   cudaMemcpy(data_cpu, data,alloc_max, cudaMemcpyDeviceToHost);
 
-
   /* Check Error */
   check_err(data_cpu,n,c_comm);
-
 
   /* Compute some timings statistics */
   double g_f_time, g_i_time, g_setup_time;
@@ -90,15 +93,6 @@ void step2_gpu(int *n) {
 
 } // end step2_gpu
 
-inline double testcase(double X,double Y,double Z){
-
-  double sigma= 4;
-  double pi=M_PI;
-  double analytic;
-  analytic= std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
-  if(analytic!=analytic) analytic=0;
-  return analytic;
-}
 
 void check_err(double* a,int*n,MPI_Comm c_comm){
   int nprocs, procid;

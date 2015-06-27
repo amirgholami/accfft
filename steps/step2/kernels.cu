@@ -7,6 +7,15 @@
  */
 #include <stdio.h>
 
+double testcase(double X,double Y,double Z){
+
+  double sigma= 4;
+  double pi=M_PI;
+  double analytic;
+  analytic=std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
+  if(analytic!=analytic) analytic=0;
+  return analytic;
+}
 __device__ inline double testcase_gpu(double X,double Y,double Z){
 
   double sigma= 4;
