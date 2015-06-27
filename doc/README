@@ -1,0 +1,10 @@
+To create Doxygen documentation perform the following:
+
+doxygen doxygen_config
+
+
+You need to have doxygen installed. 
+
+An online version can be found at:
+
+http://accfft.org/Doxygen/
