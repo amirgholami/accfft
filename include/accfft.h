@@ -60,10 +60,10 @@ int accfft_init(int nthreads);
 int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm );
 int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
 
-accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, MPI_Comm c_comm,unsigned flags);
+accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
 
 int accfft_local_size_dft_c2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
-accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out, MPI_Comm c_comm,unsigned flags);
+accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
 
 void accfft_execute_r2c(accfft_plan* plan, double * data=NULL,Complex * data_out=NULL, double * timer=NULL);
 void accfft_execute_c2r(accfft_plan* plan, Complex * data=NULL,double * data_out=NULL, double * timer=NULL);

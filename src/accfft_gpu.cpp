@@ -433,12 +433,18 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
     */
 
     if(flags==ACCFFT_MEASURE){
+      if(coord[0]==0){
         plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,data_out_d);
+      }
     }
     else{
         plan->T_plan_1->method=2;
         plan->T_plan_1->kway=2;
     }
+
+    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
+    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
+
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
     plan->T_plan_1->method =plan->T_plan_1->method;
@@ -972,6 +978,9 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
       plan->T_plan_1->method=2;
       plan->T_plan_1->kway=2;
     }
+
+    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
+    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
 

@@ -191,7 +191,7 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     n_tuples_o=(N2/2+1)*2;
 
     int isize[3],osize[3],istart[3],ostart[3];
-    int alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm,plan->inplace);
+    int alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
     plan->alloc_max=alloc_max;
 
     plan->Mem_mgr= new Mem_Mgr(N0,N1,n_tuples_o,c_comm);
@@ -284,7 +284,7 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     n_tuples_o=(n[2]/2+1)*2;
 
     int isize[3],osize[3],istart[3],ostart[3];
-    alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm,plan->inplace);
+    alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
 
     dfft_get_local_size(n[0],n[1],n_tuples_o,osize_0,ostart_0,c_comm);
     dfft_get_local_size(n[0],n_tuples_o/2,n[1],osize_1,ostart_1,c_comm);
@@ -417,6 +417,10 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
         plan->T_plan_1->kway=2;
       }
     }
+
+    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
+    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
+
     plan->T_plan_1->method =plan->T_plan_1->method;
     plan->T_plan_2->method =plan->T_plan_1->method;
     plan->T_plan_2i->method=plan->T_plan_1->method;
@@ -727,7 +731,7 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
     }
     */
 
-    if(flags=ACCFFT_MEASURE){
+    if(flags==ACCFFT_MEASURE){
       if(coord[0]==0){
         plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out);
       }
@@ -738,6 +742,9 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
         plan->T_plan_1->kway=2;
       }
     }
+
+    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
+    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
 
     plan->T_plan_1->method =plan->T_plan_1->method;
     plan->T_plan_2->method =plan->T_plan_1->method;
