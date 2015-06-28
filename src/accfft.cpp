@@ -1,4 +1,7 @@
-
+/**
+ * @file
+ * CPU functions of AccFFT
+ */
 /*
  *  Copyright (c) 2014-2015, Amir Gholami, George Biros
  *  All rights reserved.
@@ -32,7 +35,11 @@
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
 
-
+/**
+ * Initializes the library.
+ * @param nthreads The number of OpenMP threads to use for execution of local FFT.
+ * @return 0 if successful
+ */
 int accfft_init(int nthreads){
   int threads_ok;
   if (threads_ok) threads_ok = fftw_init_threads();
@@ -40,6 +47,9 @@ int accfft_init(int nthreads){
   return (!threads_ok);
 }
 
+/**
+ * Cleanup all CPU resources
+ */
 void accfft_cleanup(){
   fftw_cleanup_threads();
   fftw_cleanup();
@@ -79,7 +89,21 @@ int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Co
 
   return alloc_local;
 }
-int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm, bool inplace){
+
+
+/**
+ * Get the local sizes of the distributed global data for a R2C transform
+ * @param n Integer array of size 3, corresponding to the global data size
+ * @param isize The size of the data that is locally distributed to the calling process
+ * @param istart The starting index of the data that locally resides on the calling process
+ * @param osize The output size of the data that locally resides on the calling process,
+ * after the R2C transform is finished
+ * @param ostart The output starting index of the data that locally resides on the calling process,
+ * after the R2C transform is finished
+ * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
+ * @return
+ */
+int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm){
 
   //1D & 2D Decomp
   int osize_0[3]={0}, ostart_0[3]={0};
@@ -122,6 +146,17 @@ int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, i
 
 }
 
+
+/**
+ * Creates a 3D R2C parallel FFT plan.If data_out point to the same location as the input
+ * data, then an inplace plan will be created. Otherwise the plan would be outplace.
+ * @param n Integer array of size 3, corresponding to the global data size
+ * @param data Input data in spatial domain
+ * @param data_out Output data in frequency domain
+ * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
+ * @param flags AccFFT flags, See \ref flags for more details.
+ * @return
+ */
 accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, MPI_Comm c_comm,unsigned flags){
   accfft_plan *plan=new accfft_plan;
   int nprocs, procid;
@@ -372,6 +407,18 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
 
 }
 
+/**
+ * Get the local sizes of the distributed global data for a C2C transform
+ * @param n Integer array of size 3, corresponding to the global data size
+ * @param isize The size of the data that is locally distributed to the calling process
+ * @param istart The starting index of the data that locally resides on the calling process
+ * @param osize The output size of the data that locally resides on the calling process,
+ * after the C2C transform is finished
+ * @param ostart The output starting index of the data that locally resides on the calling process,
+ * after the R2C transform is finished
+ * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
+ * @return
+ */
 int accfft_local_size_dft_c2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm){
 
   int osize_0[3]={0}, ostart_0[3]={0};
@@ -421,6 +468,17 @@ int accfft_local_size_dft_c2c( int * n,int * isize, int * istart, int * osize, i
   return alloc_max;
 
 }
+
+/**
+ * Creates a 3D C2C parallel FFT plan. If data_out point to the same location as the input
+ * data, then an inplace plan will be created. Otherwise the plan would be outplace.
+ * @param n Integer array of size 3, corresponding to the global data size
+ * @param data Input data in spatial domain
+ * @param data_out Output data in frequency domain
+ * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
+ * @param flags AccFFT flags, See \ref flags for more details.
+ * @return
+ */
 accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out, MPI_Comm c_comm,unsigned flags){
   accfft_plan *plan=new accfft_plan;
   int nprocs, procid;
@@ -644,11 +702,31 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
 
 }
 
+/**
+ * Execute R2C plan. This function is blocking and only returns after the transform is completed.
+ * @note For inplace transforms, data_out should point to the same memory address as data, AND
+ * the plan must have been created as inplace.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param data Input data in spatial domain.
+ * @param data_out Output data in frequency domain.
+ * @param timer See \ref timer for more details.
+ */
 void accfft_execute_r2c(accfft_plan* plan, double * data,Complex * data_out, double * timer){
   accfft_execute(plan,-1,data,(double*)data_out,timer);
 
   return;
 }
+
+
+/**
+ * Execute C2R plan. This function is blocking and only returns after the transform is completed.
+ * @note For inplace transform, data_out should point to the same memory address as data, AND
+ * the plan must have been created as inplace.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param data Input data in frequency domain.
+ * @param data_out Output data in frequency domain.
+ * @param timer See \ref timer for more details.
+ */
 void accfft_execute_c2r(accfft_plan* plan, Complex * data,double * data_out, double * timer){
   accfft_execute(plan,1,(double*)data,data_out,timer);
 
@@ -789,6 +867,16 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
 
   return;
 }
+
+/**
+ * Execute C2C plan. This function is blocking and only returns after the transform is completed.
+ * @note For inplace transforms, data_out should point to the same memory address as data, AND
+ * the plan must have been created as inplace.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param data Input data in frequency domain.
+ * @param data_out Output data in frequency domain.
+ * @param timer See \ref timer for more details.
+ */
 void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex * data_out, double * timer){
 
   if(data==NULL)
@@ -921,6 +1009,11 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
 
   return;
 }
+
+/**
+ * Destroy AccFFT CPU plan.
+ * @param plan Input plan to be destroyed.
+ */
 void accfft_destroy_plan(accfft_plan * plan){
 
   if(plan->T_plan_1!=NULL)delete(plan->T_plan_1);

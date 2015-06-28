@@ -58,7 +58,7 @@ struct accfft_plan{
 
 int accfft_init(int nthreads);
 int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm );
-int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm, bool inplace=0);
+int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
 
 accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, MPI_Comm c_comm,unsigned flags);
 

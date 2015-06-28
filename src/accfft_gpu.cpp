@@ -1,3 +1,7 @@
+/**
+ * @file
+ * GPU functions of AccFFT
+ */
 /*
  *  Copyright (c) 2014-2015, Amir Gholami, George Biros
  *  All rights reserved.
@@ -34,6 +38,9 @@
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
 
+/**
+ * Cleanup all CPU resources
+ */
 void accfft_cleanup_gpu(){
   // empty for now
 }
@@ -73,6 +80,18 @@ int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,MP
   return alloc_local;
 }
 
+/**
+ * Get the local sizes of the distributed global data for a GPU R2C transform
+ * @param n Integer array of size 3, corresponding to the global data size
+ * @param isize The size of the data that is locally distributed to the calling process
+ * @param istart The starting index of the data that locally resides on the calling process
+ * @param osize The output size of the data that locally resides on the calling process,
+ * after the R2C transform is finished
+ * @param ostart The output starting index of the data that locally resides on the calling process,
+ * after the R2C transform is finished
+ * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
+ * @return
+ */
 int accfft_local_size_dft_r2c_gpu( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm, bool inplace){
 
   //1D & 2D Decomp
@@ -116,6 +135,17 @@ int accfft_local_size_dft_r2c_gpu( int * n,int * isize, int * istart, int * osiz
 
 }
 
+
+/**
+ * Creates a 3D R2C parallel FFT plan.If data_out point to the same location as the input
+ * data, then an inplace plan will be created. Otherwise the plan would be outplace.
+ * @param n Integer array of size 3, corresponding to the global data size
+ * @param data Input data in spatial domain
+ * @param data_out Output data in frequency domain
+ * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
+ * @param flags AccFFT flags, See \ref flags for more details.
+ * @return
+ */
 accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * data_out_d, MPI_Comm c_comm,unsigned flags){
   accfft_plan_gpu *plan=new accfft_plan_gpu;
   int procid;
@@ -408,6 +438,7 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
 
 }
 
+
 void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, double * data_out_d, double * timer){
 
   if(data_d==NULL)
@@ -586,17 +617,52 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
 
   return;
 }
+
+
+/**
+ * Execute R2C plan. This function is blocking and only returns after the transform is completed.
+ * @note For inplace transforms, data_out should point to the same memory address as data, AND
+ * the plan must have been created as inplace.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param data Input data in spatial domain.
+ * @param data_out Output data in frequency domain.
+ * @param timer See \ref timer for more details.
+ */
 void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data,Complex * data_out, double * timer){
   accfft_execute_gpu(plan,-1,data,(double*)data_out,timer);
 
   return;
 }
+
+
+/**
+ * Execute C2R plan. This function is blocking and only returns after the transform is completed.
+ * @note For inplace transforms, data_out should point to the same memory address as data, AND
+ * the plan must have been created as inplace.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param data Input data in frequency domain.
+ * @param data_out Output data in frequency domain.
+ * @param timer See \ref timer for more details.
+ */
 void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data,double * data_out, double * timer){
   accfft_execute_gpu(plan,1,(double*)data,data_out,timer);
 
   return;
 }
 
+
+/**
+ * Get the local sizes of the distributed global data for a GPU C2C transform
+ * @param n Integer array of size 3, corresponding to the global data size
+ * @param isize The size of the data that is locally distributed to the calling process
+ * @param istart The starting index of the data that locally resides on the calling process
+ * @param osize The output size of the data that locally resides on the calling process,
+ * after the C2C transform is finished
+ * @param ostart The output starting index of the data that locally resides on the calling process,
+ * after the R2C transform is finished
+ * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
+ * @return
+ */
 int accfft_local_size_dft_c2c_gpu( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm){
 
   int osize_0[3]={0}, ostart_0[3]={0};
@@ -640,6 +706,17 @@ int accfft_local_size_dft_c2c_gpu( int * n,int * isize, int * istart, int * osiz
 
 }
 
+
+/**
+ * Creates a 3D C2C parallel FFT plan. If data_out point to the same location as the input
+ * data, then an inplace plan will be created. Otherwise the plan would be outplace.
+ * @param n Integer array of size 3, corresponding to the global data size
+ * @param data Input data in spatial domain
+ * @param data_out Output data in frequency domain
+ * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
+ * @param flags AccFFT flags, See \ref flags for more details.
+ * @return
+ */
 accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex * data_out_d, MPI_Comm c_comm,unsigned flags){
   accfft_plan_gpu *plan=new accfft_plan_gpu;
   int nprocs, procid;
@@ -888,6 +965,16 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
   return plan;
 }
 
+
+/**
+ * Execute C2C plan. This function is blocking and only returns after the transform is completed.
+ * @note For inplace transforms, data_out should point to the same memory address as data, AND
+ * the plan must have been created as inplace.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param data Input data in frequency domain.
+ * @param data_out Output data in frequency domain.
+ * @param timer See \ref timer for more details.
+ */
 void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_d, Complex * data_out_d, double * timer){
 
   if(data_d==NULL)
@@ -1078,9 +1165,18 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
 }
 
 
+/**
+ * Destroy AccFFT CPU plan. This function calls \ref accfft_destroy_plan_gpu.
+ * @param plan Input plan to be destroyed.
+ */
 void accfft_destroy_plan(accfft_plan_gpu * plan){
   return (accfft_destroy_plan_gpu(plan));
 }
+
+/**
+ * Destroy AccFFT GPU plan.
+ * @param plan Input plan to be destroyed.
+ */
 void accfft_destroy_plan_gpu(accfft_plan_gpu * plan){
 
   if(plan->T_plan_1!=NULL)delete(plan->T_plan_1);

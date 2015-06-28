@@ -1,3 +1,6 @@
+/** @file
+ * common functions in AccFFT.
+ */
 /*
  *  Copyright (c) 2014-2015, Amir Gholami, George Biros
  *  All rights reserved.
@@ -17,6 +20,7 @@
  *  along with AccFFT.  If not, see <http://www.gnu.org/licenses/>.
  *
 */
+
 #include <mpi.h>
 #include <omp.h>
 #include <iostream>
@@ -24,14 +28,31 @@
 #include <math.h>
 #include "accfft_common.h"
 
+/**
+ * Allocates aligned memory to enable SIMD
+ * @param size Allocation size in Bytes
+ */
 void* accfft_alloc(ptrdiff_t size){
   void * ptr=fftw_malloc(size);
   return ptr;
 }
+/**
+ * Free memory allocated by \ref accfft_alloc
+ * @param ptr Address of the memory to be freed.
+ */
 void accfft_free(void * ptr){
   fftw_free(ptr);
   return;
 }
+/**
+ * Creates a Cartesian communicator of size c_dims[0]xc_dims[1] from its input.
+ * If c_dims[0]xc_dims[1] would not match the size of in_comm, then the function prints
+ * an error and automatically sets c_dims to the correct values.
+ *
+ * @param in_comm Input MPI communicator handle
+ * @param c_dims A 2D integer array, which sets the size of the Cartesian array to c_dims[0]xc_dims[1]
+ * @param c_comm A pointer to the Cartesian communicator which will be created
+ */
 void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
 
   int nprocs, procid;
@@ -60,6 +81,10 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
   return;
 
 }
+/**
+ * Initialize AccFFT library.
+ * @return 0 if successful.
+ */
 int accfft_init(){
   return 0;
 }
