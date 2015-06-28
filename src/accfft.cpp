@@ -176,9 +176,14 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     plan->inplace=true;}
   else{plan->inplace=false;}
 
+  unsigned fftw_flags;
+  if(flags==ACCFFT_ESTIMATE)
+    fftw_flags=FFTW_ESTIMATE;
+  else
+    fftw_flags=FFTW_MEASURE;
+
   // 1D Decomposition
   if(plan->np[1]==1){
-    unsigned fftw_flags=FFTW_MEASURE;
     int N0=n[0], N1=n[1], N2=n[2];
 
     int n_tuples_o,n_tuples_i;
@@ -231,6 +236,7 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
         FFTW_BACKWARD,fftw_flags);
     if(plan->iplan_1==NULL) std::cout<<"!!! Inverse Plan2 not Created !!!"<<std::endl;
 
+    /*
     static int method_static=0;
     static int kway_static_2=0;
     if(method_static==0){
@@ -242,10 +248,16 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
       plan->T_plan_1->method=method_static;
       plan->T_plan_1->kway=kway_static_2;
     }
-    plan->T_plan_1->method=plan->T_plan_1->method;
-      plan->T_plan_1->kway=kway_static_2;
+    */
+    if(flags==ACCFFT_MEASURE){
+      plan->T_plan_1->which_fast_method(plan->T_plan_1,data_out);
+    }
+    else{
+      plan->T_plan_1->method=2;
+      plan->T_plan_1->kway=2;
+    }
     plan->T_plan_1i->method=plan->T_plan_1->method;
-      plan->T_plan_1i->kway=kway_static_2;
+    plan->T_plan_1i->kway=plan->T_plan_1->kway;
     plan->data=data;
 
     // Make unused parts of plan NULL
@@ -306,7 +318,6 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     plan->T_plan_1i->alloc_local=plan->alloc_max;
 
     {
-      unsigned fftw_flags=FFTW_MEASURE;
       plan->fplan_0= fftw_plan_many_dft_r2c(1, &n[2],osize_0[0]*osize_0[1], //int rank, const int *n, int howmany
           data, NULL,					//double *in, const int *inembed,
           1, n_tuples_i,			//int istride, int idist,
@@ -381,6 +392,7 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
       if(plan->iplan_2==NULL) std::cout<<"!!! fplan2 not Created !!!"<<std::endl;
     }
 
+    /*
     static int method_static_2=0;
     static int kway_static_2=0;
     if(method_static_2==0){
@@ -393,14 +405,28 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
       MPI_Bcast(&kway_static_2,1, MPI_INT,0, c_comm );
       MPI_Barrier(c_comm);
     }
-    plan->T_plan_1->method=method_static_2;
-    plan->T_plan_2->method=method_static_2;
-    plan->T_plan_2i->method=method_static_2;
-    plan->T_plan_1i->method=method_static_2;
-    plan->T_plan_1->kway=kway_static_2;
-    plan->T_plan_2->kway=kway_static_2;
-    plan->T_plan_2i->kway=kway_static_2;
-    plan->T_plan_1i->kway=kway_static_2;
+    */
+    if(flags==ACCFFT_MEASURE){
+      if(coord[0]==0){
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,data_out);
+      }
+    }
+    else{
+      if(coord[0]==0){
+        plan->T_plan_1->method=2;
+        plan->T_plan_1->kway=2;
+      }
+    }
+    plan->T_plan_1->method =plan->T_plan_1->method;
+    plan->T_plan_2->method =plan->T_plan_1->method;
+    plan->T_plan_2i->method=plan->T_plan_1->method;
+    plan->T_plan_1i->method=plan->T_plan_1->method;
+
+    plan->T_plan_1->kway =plan->T_plan_1->kway;
+    plan->T_plan_2->kway =plan->T_plan_1->kway;
+    plan->T_plan_2i->kway=plan->T_plan_1->kway;
+    plan->T_plan_1i->kway=plan->T_plan_1->kway;
+
     plan->data=data;
   }
   return plan;
@@ -497,6 +523,11 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
     plan->inplace=true;}
   else{plan->inplace=false;}
 
+  unsigned fftw_flags;
+  if(flags==ACCFFT_ESTIMATE)
+    fftw_flags=FFTW_ESTIMATE;
+  else
+    fftw_flags=FFTW_MEASURE;
   // 1D Decomposition
   if (plan->np[1]==1){
     int NX=n[0],NY=n[1],NZ=n[2];
@@ -515,7 +546,6 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
     ptrdiff_t local_n1=plan->T_plan_1->local_n1;
     int N0=NX, N1=NY, N2=NZ;
 
-    unsigned fftw_flags=FFTW_MEASURE;
     plan->fplan_0= fftw_plan_many_dft(2, &n[1],plan->T_plan_1->local_n0, //int rank, const int *n, int howmany
         data, NULL,					//double *in, const int *inembed,
         1, N1*N2,			//int istride, int idist,
@@ -550,7 +580,13 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
     if(plan->iplan_1==NULL) std::cout<<"!!! Forward Plan not Created !!!"<<std::endl;
 
 
-    plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out);
+    if(flags==ACCFFT_MEASURE){
+      plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out);
+    }
+    else{
+      plan->T_plan_1->method=2;
+      plan->T_plan_1->kway=2;
+    }
     plan->T_plan_1i->method=plan->T_plan_1->method;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
 
@@ -614,7 +650,6 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
 
     {
       // fplan_0
-      unsigned fftw_flags=FFTW_MEASURE;
       plan->fplan_0= fftw_plan_many_dft(1, &n[2],osize_0[0]*osize_0[1], //int rank, const int *n, int howmany
           data, NULL,					//double *in, const int *inembed,
           1, n[2],			//int istride, int idist,
@@ -677,6 +712,7 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
 
     }
 
+    /*
     static int method_static_2=0;
     static int kway_static_2=0;
     if(method_static_2==0){
@@ -689,14 +725,28 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
       MPI_Bcast(&kway_static_2,1, MPI_INT,0, c_comm );
       MPI_Barrier(c_comm);
     }
-    plan->T_plan_1->method=method_static_2;
-    plan->T_plan_2->method=method_static_2;
-    plan->T_plan_2i->method=method_static_2;
-    plan->T_plan_1i->method=method_static_2;
-    plan->T_plan_1->kway=kway_static_2;
-    plan->T_plan_2->kway=kway_static_2;
-    plan->T_plan_2i->kway=kway_static_2;
-    plan->T_plan_1i->kway=kway_static_2;
+    */
+
+    if(flags=ACCFFT_MEASURE){
+      if(coord[0]==0){
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out);
+      }
+    }
+    else{
+      if(coord[0]==0){
+        plan->T_plan_1->method=2;
+        plan->T_plan_1->kway=2;
+      }
+    }
+
+    plan->T_plan_1->method =plan->T_plan_1->method;
+    plan->T_plan_2->method =plan->T_plan_1->method;
+    plan->T_plan_2i->method=plan->T_plan_1->method;
+    plan->T_plan_1i->method=plan->T_plan_1->method;
+    plan->T_plan_1->kway =plan->T_plan_1->kway;
+    plan->T_plan_2->kway =plan->T_plan_1->kway;
+    plan->T_plan_2i->kway=plan->T_plan_1->kway;
+    plan->T_plan_1i->kway=plan->T_plan_1->kway;
   }
   return plan;
 

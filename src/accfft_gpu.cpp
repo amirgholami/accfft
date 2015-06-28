@@ -242,25 +242,35 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
     }
 
 
-    static int method_static=0;
-    static int kway_static_2=0;
-    if(method_static==0){
+    /*
+       static int method_static=0;
+       static int kway_static_2=0;
+       if(method_static==0){
+       plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,data_out_d);
+       method_static=plan->T_plan_1->method;
+       kway_static_2=plan->T_plan_1->kway;//-4;
+       }
+       else{
+       plan->T_plan_1->method=method_static;
+       plan->T_plan_1->kway=kway_static_2;
+       }
+       */
+
+    if(flags==ACCFFT_MEASURE){
       plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,data_out_d);
-      method_static=plan->T_plan_1->method;
-      kway_static_2=plan->T_plan_1->kway;//-4;
     }
     else{
-      plan->T_plan_1->method=method_static;
-      plan->T_plan_1->kway=kway_static_2;
+      plan->T_plan_1->method=2;
+      plan->T_plan_1->kway=2;
     }
-
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
 
-    plan->T_plan_1->method=plan->T_plan_1->method;
-    plan->T_plan_1->kway=kway_static_2;
+    plan->T_plan_1->method =plan->T_plan_1->method;
     plan->T_plan_1i->method=plan->T_plan_1->method;
-    plan->T_plan_1i->kway=kway_static_2;
+
+    plan->T_plan_1->kway =plan->T_plan_1->kway;
+    plan->T_plan_1i->kway=plan->T_plan_1->kway;
 
     // Make unused parts of plan NULL
     plan->T_plan_2=NULL;
@@ -407,6 +417,7 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
 
 
 
+    /*
     static int method_static_2=0;
     static int kway_static_2=0;
     if(method_static_2==0){
@@ -419,16 +430,25 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
       MPI_Bcast(&kway_static_2,1, MPI_INT,0, c_comm );
       MPI_Barrier(c_comm);
     }
+    */
+
+    if(flags==ACCFFT_MEASURE){
+        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,data_out_d);
+    }
+    else{
+        plan->T_plan_1->method=2;
+        plan->T_plan_1->kway=2;
+    }
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
-    plan->T_plan_1->method=method_static_2;
-    plan->T_plan_2->method=method_static_2;
-    plan->T_plan_2i->method=method_static_2;
-    plan->T_plan_1i->method=method_static_2;
-    plan->T_plan_1->kway=kway_static_2;
-    plan->T_plan_2->kway=kway_static_2;
-    plan->T_plan_2i->kway=kway_static_2;
-    plan->T_plan_1i->kway=kway_static_2;
+    plan->T_plan_1->method =plan->T_plan_1->method;
+    plan->T_plan_2->method =plan->T_plan_1->method;
+    plan->T_plan_2i->method=plan->T_plan_1->method;
+    plan->T_plan_1i->method=plan->T_plan_1->method;
+    plan->T_plan_1->kway =plan->T_plan_1->kway;
+    plan->T_plan_2->kway =plan->T_plan_1->kway;
+    plan->T_plan_2i->kway=plan->T_plan_1->kway;
+    plan->T_plan_1i->kway=plan->T_plan_1->kway;
 
     plan->iplan_1=-1;
     plan->iplan_2=-1;
@@ -788,17 +808,23 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
     int ostride2=local_n1*(NZ);
     MPI_Barrier(c_comm);
     if(local_n1*NZ!=0){
-    cufft_error=cufftPlanMany(&plan->fplan_1, 1, &n[0],
-        f_inembed2, istride2, idist2, // *inembed, istride, idist
-        f_onembed2, ostride2, odist2, // *onembed, ostride, odist
-        CUFFT_Z2Z, local_n1*(NZ));
-    if(cufft_error!= CUFFT_SUCCESS){
-      fprintf(stderr, "CUFFT error: fplan2 creation failed %d\n",cufft_error); return NULL;
-    }
-    //cufftSetCompatibilityMode(fplan2,CUFFT_COMPATIBILITY_FFTW_PADDING); if (cudaGetLastError() != cudaSuccess){fprintf(stderr, "Cuda error:Failed at fplan2 cuda compatibility\n"); return;}
+      cufft_error=cufftPlanMany(&plan->fplan_1, 1, &n[0],
+          f_inembed2, istride2, idist2, // *inembed, istride, idist
+          f_onembed2, ostride2, odist2, // *onembed, ostride, odist
+          CUFFT_Z2Z, local_n1*(NZ));
+      if(cufft_error!= CUFFT_SUCCESS){
+        fprintf(stderr, "CUFFT error: fplan2 creation failed %d\n",cufft_error); return NULL;
+      }
+      //cufftSetCompatibilityMode(fplan2,CUFFT_COMPATIBILITY_FFTW_PADDING); if (cudaGetLastError() != cudaSuccess){fprintf(stderr, "Cuda error:Failed at fplan2 cuda compatibility\n"); return;}
     }
 
-    plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(double*)data_out_d);
+    if(flags==ACCFFT_MEASURE){
+      plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(double*)data_out_d);
+    }
+    else{
+      plan->T_plan_1->method=2;
+      plan->T_plan_1->kway=2;
+    }
     plan->T_plan_1i->method=plan->T_plan_1->method;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
 
@@ -936,29 +962,29 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
 
     int coords[2],np[2],periods[2];
     MPI_Cart_get(c_comm,2,np,periods,coords);
-    int transpose_method=0;
-    int kway_method=0;
-    if(coords[0]==0){
-      plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(double*)data_out_d);
-      transpose_method=plan->T_plan_1->method;
-      kway_method=plan->T_plan_1->kway;
+
+    if(flags==ACCFFT_MEASURE){
+      if(coords[0]==0){
+        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(double*)data_out_d);
+      }
+    }
+    else{
+      plan->T_plan_1->method=2;
+      plan->T_plan_1->kway=2;
     }
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
 
 
-    MPI_Bcast(&transpose_method,1, MPI_INT,0, c_comm);
-    MPI_Bcast(&kway_method,1, MPI_INT,0, c_comm);
-    MPI_Barrier(c_comm);
-    plan->T_plan_1->method=transpose_method;
-    plan->T_plan_2->method= transpose_method;
-    plan->T_plan_2i->method=transpose_method;
-    plan->T_plan_1i->method=transpose_method;
+    plan->T_plan_1->method =plan->T_plan_1->method;
+    plan->T_plan_2->method =plan->T_plan_1->method;
+    plan->T_plan_2i->method=plan->T_plan_1->method;
+    plan->T_plan_1i->method=plan->T_plan_1->method;
 
-    plan->T_plan_1->kway=kway_method;
-    plan->T_plan_2->kway= kway_method;
-    plan->T_plan_2i->kway=kway_method;
-    plan->T_plan_1i->kway=kway_method;
+    plan->T_plan_1->kway =plan->T_plan_1->kway;
+    plan->T_plan_2->kway =plan->T_plan_1->kway;
+    plan->T_plan_2i->kway=plan->T_plan_1->kway;
+    plan->T_plan_1i->kway=plan->T_plan_1->kway;
 
 
   }
