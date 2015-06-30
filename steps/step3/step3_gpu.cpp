@@ -180,81 +180,49 @@ void initialize(Complex *a,int*n, MPI_Comm c_comm) {
   }
   return;
 }
+
 void check_err(Complex* a,int*n,MPI_Comm c_comm){
-  ptrdiff_t size=n[0];
-  size*=n[1]; size*=n[2];
-
-  int NX=n[0], NY=n[1], NZ=n[2];
-  double pi=4*atan(1.0);
   int nprocs, procid;
-  int istart[3], isize[3];
-  int ostart[3], osize[3];
-
   MPI_Comm_rank(c_comm, &procid);
   MPI_Comm_size(c_comm,&nprocs);
+  long long int size=n[0];
+  size*=n[1]; size*=n[2];
+  double pi=4*atan(1.0);
+
+  int istart[3], isize[3], osize[3],ostart[3];
   accfft_local_size_dft_c2c_gpu(n,isize,istart,osize,ostart,c_comm);
 
-  if(1){
-    int num_th= omp_get_max_threads();
-    double err[num_th],norm[num_th];
-    for(int i=0;i<num_th;i++){
-      err[i]=0.;
-      norm[i]=0.;
-    }
+  double err=0,norm=0;
 
-    int counter=0;
-#pragma omp parallel num_threads(1)
-    {
-      double X,Y,Z,numerical_r,numerical_c;
-      long int ptr;
-      int thid=omp_get_thread_num();
-#pragma omp for
-      for (int i=0; i<isize[0]; i++){
-        for (int j=0; j<isize[1]; j++){
-          for (int k=0; k<isize[2]; k++){
-            X=2*pi/n[0]*(i+istart[0]);
-            Y=2*pi/n[1]*(j+istart[1]);
-            Z=2*pi/n[2]*k;
-            ptr=i*isize[1]*n[2]+j*n[2]+k;
-            numerical_r=a[ptr][0]/size; if(numerical_r!=numerical_r) numerical_r=0;
-            numerical_c=a[ptr][1]/size; if(numerical_c!=numerical_c) numerical_c=0;
-            err[thid]+=std::abs(numerical_r-testcase(X,Y,Z))+std::abs(numerical_c-testcase(X,Y,Z));
-            norm[thid]+=std::abs(testcase(X,Y,Z));
-            //PCOUT<<a[k+j*(NZ)+i*NY*(NZ)][0]/size<<" \t "<<testcase(X,Y,Z)<<std::endl;
-            if(err[thid]>1e-4 && counter<=10){
-              PCOUT<<"("<<i+istart[0]<<","<<j+istart[1]<<","<<k<<")  "<<numerical_r<<","<<numerical_c<<'\t'<<testcase(X,Y,Z)<<std::endl;
-              counter++;
-            }
-            //if(procid==0)  std::cout<<"("<<i<<","<<j<<","<<k<<")  "<<numerical_r<<","<<numerical_c<<'\t'<<testcase(X,Y,Z)<<std::endl;
-          }}
+  double X,Y,Z,numerical_r,numerical_c;
+  long int ptr;
+  for (int i=0; i<isize[0]; i++){
+    for (int j=0; j<isize[1]; j++){
+      for (int k=0; k<isize[2]; k++){
+        X=2*pi/n[0]*(i+istart[0]);
+        Y=2*pi/n[1]*(j+istart[1]);
+        Z=2*pi/n[2]*k;
+        ptr=i*isize[1]*n[2]+j*n[2]+k;
+        numerical_r=a[ptr][0]/size; if(numerical_r!=numerical_r) numerical_r=0;
+        numerical_c=a[ptr][1]/size; if(numerical_c!=numerical_c) numerical_c=0;
+        err+=std::abs(numerical_r-testcase(X,Y,Z))+std::abs(numerical_c-testcase(X,Y,Z));
+        norm+=std::abs(testcase(X,Y,Z));
       }
     }
-
-    for(int i=1;i<num_th;i++){
-      err[0]+=err[i];
-      norm[0]+=norm[i];
-    }
-
-    double gerr=0,gnorm=0;
-    MPI_Reduce(&err[0],&gerr,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
-    MPI_Reduce(&norm[0],&gnorm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
-    PCOUT<<"The L1 error between iFF(a)-a is = "<<gerr<<std::endl;
-    PCOUT<<"The Rel. L1 error between iFF(a)-a is = "<<gerr/gnorm<<std::endl;
-    if(gerr/gnorm>1e-10){
-      PCOUT<<"\033[1;31m ERROR!!! FFT not computed correctly!\033[0m"<<std::endl;
-    }
-    else{
-      PCOUT<<"\033[1;36m FFT computed correctly!\033[0m"<<std::endl;
-    }
-
   }
-  if(0)
-    for (int i=0; i<NX; i++)
-      for (int j=0; j<NY; j++)
-        for (int k=0; k<NZ; k++)
-          PCOUT<<"("<<i<<","<<j<<","<<k<<")  "<<a[k+j*(NZ)+i*NY*(NZ)][0]<<" +i "<<a[k+j*(NZ)+i*NY*(NZ)][1]<<std::endl;
-}
 
+  double g_err=0,g_norm=0;
+  MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
+  PCOUT<<"\nL1 Error of iFF(a)-a: "<<g_err<<std::endl;
+  PCOUT<<"Relative L1 Error of iFF(a)-a: "<<g_err/g_norm<<std::endl;
+  if (g_err/g_norm< 1e-10)
+    PCOUT<<"\nResults are CORRECT!\n\n";
+  else
+    PCOUT<<"\nResults are NOT CORRECT!\n\n";
+
+  return;
+} // end check_err
 int main(int argc, char **argv)
 {
 

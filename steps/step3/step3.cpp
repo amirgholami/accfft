@@ -195,7 +195,7 @@ void check_err(Complex* a,int*n,MPI_Comm c_comm){
   int istart[3], isize[3], osize[3],ostart[3];
   accfft_local_size_dft_c2c(n,isize,istart,osize,ostart,c_comm);
 
-  double err,norm;
+  double err=0,norm=0;
 
   double X,Y,Z,numerical_r,numerical_c;
   long int ptr;
