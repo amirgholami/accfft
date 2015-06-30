@@ -20,7 +20,6 @@ inline double testcase(double X,double Y,double Z){
   double analytic;
   analytic= std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
   if(analytic!=analytic) analytic=0; /* Do you think the condition will be false always? */
-  analytic=1;
   return analytic;
 } // end testcase
 void check_err(double* a,int*n,MPI_Comm c_comm);
