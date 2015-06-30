@@ -39,6 +39,9 @@ static bool IsPowerOfTwo(ulong x)
 {
       return (x & (x - 1)) == 0;
 }
+static int intpow(int a,int b){
+  return ((int)std::pow((double)a,b));
+}
 Mem_Mgr::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int specified_alloc_local){
 
   N[0]=N0;
@@ -83,7 +86,7 @@ Mem_Mgr::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int spec
   else{
     alloc_local=specified_alloc_local;
   }
-  if( alloc_local<=1.05*std::pow(2,30) )
+  if( alloc_local<=1.05*intpow(2,30) )
     PINNED=1;
   else
     PINNED=0;
@@ -332,7 +335,7 @@ void T_Plan::which_method(T_Plan* T_plan,double* data){
     kway_async=true;
 #ifndef TORUS_TOPOL
     for (int i=0;i<6;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       transpose_v7(T_plan,(double*)data,dummy,kway);  // Warmup
       time[2+i]=-MPI_Wtime();
@@ -344,7 +347,7 @@ void T_Plan::which_method(T_Plan* T_plan,double* data){
 #ifdef TORUS_TOPOL
     kway_async=false;
     for (int i=0;i<6;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       transpose_v7(T_plan,(double*)data,dummy,kway);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
@@ -384,14 +387,14 @@ void T_Plan::which_method(T_Plan* T_plan,double* data){
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+i]==smallest){
         T_plan->method=7;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=true;
         break;
       }
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+(int)log2(nprocs)+i]==smallest){
         T_plan->method=7;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=false;
         break;
       }
@@ -428,7 +431,7 @@ void T_Plan::which_fast_method(T_Plan* T_plan,double* data){
   if(IsPowerOfTwo(nprocs) && nprocs>511){
     kway_async=true;
     for (int i=0;i<6;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       fast_transpose_v3(T_plan,(double*)data,dummy,kway,2);  // Warmup
       time[2+i]=-MPI_Wtime();
@@ -438,7 +441,7 @@ void T_Plan::which_fast_method(T_Plan* T_plan,double* data){
 
     kway_async=false;
     for (int i=0;i<6;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       fast_transpose_v3(T_plan,(double*)data,dummy,kway);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
@@ -478,14 +481,14 @@ void T_Plan::which_fast_method(T_Plan* T_plan,double* data){
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+i]==smallest){
         T_plan->method=3;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=true;
         break;
       }
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+(int)log2(nprocs)+i]==smallest){
         T_plan->method=3;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=false;
         break;
       }

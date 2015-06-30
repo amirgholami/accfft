@@ -45,6 +45,9 @@ static bool IsPowerOfTwo(ulong x)
       return (x & (x - 1)) == 0;
 }
 
+static int intpow(int a,int b){
+  return ((int)std::pow((double)a,b));
+}
 #ifdef ENABLE_GPU
 Mem_Mgr_gpu::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int specified_alloc_local){
 
@@ -90,7 +93,7 @@ Mem_Mgr_gpu::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, 
   else{
     alloc_local=specified_alloc_local;
   }
-  if( alloc_local<=1.05*std::pow(2,30) )
+  if( alloc_local<=1.05*intpow(2,30) )
     PINNED=1;
   else
     PINNED=0;
@@ -407,7 +410,7 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     kway_async=true;
 #ifndef TORUS_TOPOL
     for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       transpose_cuda_v7(T_plan,(double*)data_d,dummy,kway);  // Warmup
       time[2+i]=-MPI_Wtime();
@@ -419,7 +422,7 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     kway_async=false;
 #ifdef TORUS_TOPOL
     for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       transpose_cuda_v7(T_plan,(double*)data_d,dummy,kway);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
@@ -431,7 +434,7 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
 #ifndef TORUS_TOPOL
     kway_async=true;
     for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       transpose_cuda_v7_2(T_plan,(double*)data_d,dummy,kway);  // Warmup
       time[2+2*(int)log2(nprocs)+i]=-MPI_Wtime();
@@ -443,7 +446,7 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
 #ifdef TORUS_TOPOL
     kway_async=false;
     for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       transpose_cuda_v7_2(T_plan,(double*)data_d,dummy,kway);  // Warmup
       time[2+3*(int)log2(nprocs)+i]=-MPI_Wtime();
@@ -492,14 +495,14 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+i]==smallest){
         T_plan->method=7;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=true;
         break;
       }
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+(int)log2(nprocs)+i]==smallest){
         T_plan->method=7;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=false;
         break;
       }
@@ -507,7 +510,7 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+2*(int)log2(nprocs)+i]==smallest){
         T_plan->method=7;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=true;
         break;
       }
@@ -515,7 +518,7 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+3*(int)log2(nprocs)+i]==smallest){
         T_plan->method=7;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=false;
         break;
       }
@@ -600,7 +603,7 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     kway_async=true;
 #ifndef TORUS_TOPOL
     for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2);  // Warmup
       time[2+i]=-MPI_Wtime();
@@ -612,7 +615,7 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     kway_async=false;
 #ifdef TORUS_TOPOL
     for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
@@ -624,7 +627,7 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
 #ifndef TORUS_TOPOL
     kway_async=true;
     for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2);  // Warmup
       time[2+2*(int)log2(nprocs)+i]=-MPI_Wtime();
@@ -636,7 +639,7 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
 #ifdef TORUS_TOPOL
     kway_async=false;
     for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/std::pow(2,i);
+      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2);  // Warmup
       time[2+3*(int)log2(nprocs)+i]=-MPI_Wtime();
@@ -684,14 +687,14 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+i]==smallest){
         T_plan->method=3;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=true;
         break;
       }
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+(int)log2(nprocs)+i]==smallest){
         T_plan->method=3;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=false;
         break;
       }
@@ -699,7 +702,7 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+2*(int)log2(nprocs)+i]==smallest){
         T_plan->method=32;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=true;
         break;
       }
@@ -707,7 +710,7 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs);i++)
       if(g_time[2+3*(int)log2(nprocs)+i]==smallest){
         T_plan->method=32;
-        T_plan->kway=nprocs/std::pow(2,i);
+        T_plan->kway=nprocs/intpow(2,i);
         T_plan->kway_async=false;
         break;
       }

@@ -41,7 +41,7 @@ typedef double Complex[2];
  * @return 0 if successful
  */
 int accfft_init(int nthreads){
-  int threads_ok;
+  int threads_ok=1;
   if (threads_ok) threads_ok = fftw_init_threads();
   if (threads_ok) fftw_plan_with_nthreads(nthreads);
   return (!threads_ok);
@@ -878,7 +878,7 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
 
 
 
-      plan->T_plan_2->execute(plan->T_plan_2,plan->data_out,timings,2,1,coords[1]);
+      plan->T_plan_2->execute(plan->T_plan_2,data_out,timings,2,1,coords[1]);
       /**************************************************************/
       /*******************  N0 x N1/P0 x N2/P1 **********************/
       /**************************************************************/
@@ -1073,18 +1073,21 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
  */
 void accfft_destroy_plan(accfft_plan * plan){
 
-  if(plan->T_plan_1!=NULL)delete(plan->T_plan_1);
-  if(plan->T_plan_1i!=NULL)delete(plan->T_plan_1i);
-  if(plan->T_plan_2!=NULL)delete(plan->T_plan_2);
-  if(plan->T_plan_2i!=NULL)delete(plan->T_plan_2i);
-  if(plan->Mem_mgr!=NULL)delete(plan->Mem_mgr);
-  if(plan->fplan_0!=NULL)fftw_destroy_plan(plan->fplan_0);
-  if(plan->fplan_1!=NULL)fftw_destroy_plan(plan->fplan_1);
-  if(plan->fplan_2!=NULL)fftw_destroy_plan(plan->fplan_2);
-  if(plan->iplan_0!=NULL)fftw_destroy_plan(plan->iplan_0);
-  if(plan->iplan_1!=NULL)fftw_destroy_plan(plan->iplan_1);
-  if(plan->iplan_2!=NULL)fftw_destroy_plan(plan->iplan_2);
+  if(plan!=NULL){
+    if(plan->T_plan_1!=NULL)  delete(plan->T_plan_1);
+    if(plan->T_plan_1i!=NULL) delete(plan->T_plan_1i);
+    if(plan->T_plan_2!=NULL)  delete(plan->T_plan_2);
+    if(plan->T_plan_2i!=NULL) delete(plan->T_plan_2i);
+    if(plan->Mem_mgr!=NULL)   delete(plan->Mem_mgr);
+    if(plan->fplan_0!=NULL) fftw_destroy_plan(plan->fplan_0);
+    if(plan->fplan_1!=NULL) fftw_destroy_plan(plan->fplan_1);
+    if(plan->fplan_2!=NULL) fftw_destroy_plan(plan->fplan_2);
+    if(plan->iplan_0!=NULL) fftw_destroy_plan(plan->iplan_0);
+    if(plan->iplan_1!=NULL) fftw_destroy_plan(plan->iplan_1);
+    if(plan->iplan_2!=NULL) fftw_destroy_plan(plan->iplan_2);
 
-  MPI_Comm_free(&plan->row_comm);
-  MPI_Comm_free(&plan->col_comm);
+    MPI_Comm_free(&plan->row_comm);
+    MPI_Comm_free(&plan->col_comm);
+    delete plan;
+  }
 }
