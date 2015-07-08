@@ -25,7 +25,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(FFTW REQUIRED)
 find_package(MPI REQUIRED)
 find_package(OpenMP REQUIRED)
-
+find_package(PNETCDF)
 # Make the include path visible to all targets
 INCLUDE_DIRECTORIES (
   ${accfft_SOURCE_DIR}/include
@@ -35,8 +35,11 @@ INCLUDE_DIRECTORIES (
 
 
 # Add OpenMP and FFTW cxx flags to all targets
-set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -I${FFTW_INCLUDES}" )
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -I${FFTW_INCLUDES}" )
+# FOR PGI COMPILER
+#set(OpenMP_C_FLAGS "-lpthread")
+#set(OpenMP_CXX_FLAGS "-lpthread")
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3  ${OpenMP_C_FLAGS} -I${FFTW_INCLUDES}" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 ${OpenMP_CXX_FLAGS} -I${FFTW_INCLUDES}" )
 
 # some default behavior
 if(BUILD_SHARED)
@@ -61,6 +64,7 @@ set(libaccfft_SRCS
   src/transpose.cpp 
   src/accfft.cpp 
   src/accfft_common.cpp
+  src/pnetcdf_io.cpp
   )
 
 # build CPU libaccfft (shared or static ?)
