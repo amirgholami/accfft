@@ -2,6 +2,9 @@
 #include_directories(${MPI_INCLUDE_PATH})
 include_directories(${FFTW_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+if(PNETCDF_FOUND)
+  include_directories(${PNETCDF_INCLUDE_DIRS})
+endif()
 
 # source files list
 set(step1_SRCS
@@ -16,6 +19,9 @@ target_link_libraries(step1
   accfft
   ${FFTW_LIBRARIES}
 )
+if (PNETCDF_FOUND)
+  target_link_libraries(step1 ${PNETCDF_LIBRARIES})
+endif()
 
 if(BUILD_GPU)
   #
