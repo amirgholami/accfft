@@ -64,8 +64,12 @@ set(libaccfft_SRCS
   src/transpose.cpp 
   src/accfft.cpp 
   src/accfft_common.cpp
-  src/pnetcdf_io.cpp
   )
+
+if (PNETCDF_FOUND)
+  set (libaccfft_SRCS ${libaccfft_SRCS} src/pnetcdf_io.cpp)
+  include_directories(${PNETCDF_INCLUDE_DIRS})
+endif()
 
 # build CPU libaccfft (shared or static ?)
 if(BUILD_SHARED_LIBS)
