@@ -1,6 +1,8 @@
 // for Parallel-netCDF support
 #include <pnetcdf.h>
 #include <cstdlib>
+#include <string>
+#include <iostream>
 
 #define PNETCDF_HANDLE_ERROR {				      \
     if (err != NC_NOERR)				      \

@@ -25,7 +25,6 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(FFTW REQUIRED)
 find_package(MPI REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(PNETCDF)
 # Make the include path visible to all targets
 INCLUDE_DIRECTORIES (
   ${accfft_SOURCE_DIR}/include
@@ -66,10 +65,6 @@ set(libaccfft_SRCS
   src/accfft_common.cpp
   )
 
-if (PNETCDF_FOUND)
-  set (libaccfft_SRCS ${libaccfft_SRCS} src/pnetcdf_io.cpp)
-  include_directories(${PNETCDF_INCLUDE_DIRS})
-endif()
 
 # build CPU libaccfft (shared or static ?)
 if(BUILD_SHARED_LIBS)
@@ -87,6 +82,25 @@ install (DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.h"
   PATTERN "*_gpu*" EXCLUDE
   PATTERN "*_cuda*" EXCLUDE
   )
+
+
+# ###########
+# UTILS BUILD
+# ###########
+find_package(PNETCDF)
+if (PNETCDF_FOUND)
+  set (libaccfft_utils_SRCS ${libaccfft_SRCS} src/pnetcdf_io.cpp)
+  include_directories(${PNETCDF_INCLUDE_DIRS})
+endif()
+
+# build CPU libaccfft (shared or static ?)
+if(BUILD_SHARED_LIBS)
+  add_library(accfft_utils SHARED ${libaccfft_utils_SRCS})
+else(BUILD_SHARED_LIBS)
+  add_library(accfft_utils STATIC ${libaccfft_utils_SRCS})
+endif(BUILD_SHARED_LIBS)
+
+install(TARGETS accfft_utils DESTINATION lib)
 
 # ##########
 # GPU BUILD
