@@ -1,4 +1,7 @@
-// for Parallel-netCDF support
+/**
+ * @file
+ * For Parallel-netCDF support
+ */
 #include <pnetcdf.h>
 #include <cstdlib>
 #include <string>
