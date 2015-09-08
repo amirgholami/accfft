@@ -31,7 +31,7 @@ void step1(int *n, int nthreads) {
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
   /* Create Cartesian Communicator */
-  int c_dims[2];
+  int c_dims[2]={0};
   MPI_Comm c_comm;
   accfft_create_comm(MPI_COMM_WORLD,c_dims,&c_comm);
 
