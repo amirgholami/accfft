@@ -46,7 +46,7 @@ class T_Plan{
 	public:
 		T_Plan(int N0, int N1, int n_tuples,Mem_Mgr * Mem_mgr,MPI_Comm, int howmany=1);
     void which_method(T_Plan*,double*);
-    void which_fast_method(T_Plan*,double*);
+    void which_fast_method(T_Plan*,double*,int howmany=1);
     void execute(T_Plan*,double*,double*, unsigned flags=0, int howmany=1, int tag=0);
 
     void which_method_gpu(T_Plan*,double*);

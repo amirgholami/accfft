@@ -581,7 +581,7 @@ void T_Plan_gpu::execute_gpu(T_Plan_gpu* T_plan,double* data_d,double *timings, 
   return;
 }
 
-void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
+void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d, int howmany){
 
   double dummy[4]={0};
   double * time= (double*) malloc(sizeof(double)*(4*(int)log2(nprocs)+4));
@@ -589,14 +589,14 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
   for (int i=0;i<4*(int)log2(nprocs)+4;i++)
     time[i]=1000;
 
-  fast_transpose_cuda_v1(T_plan,(double*)data_d,dummy,2);  // Warmup
+  fast_transpose_cuda_v1(T_plan,(double*)data_d,dummy,2,howmany);  // Warmup
   time[0]=-MPI_Wtime();
-  fast_transpose_cuda_v1(T_plan,(double*)data_d,dummy,2);
+  fast_transpose_cuda_v1(T_plan,(double*)data_d,dummy,2,howmany);
   time[0]+=MPI_Wtime();
 
-  fast_transpose_cuda_v2(T_plan,(double*)data_d,dummy,2);  // Warmup
+  fast_transpose_cuda_v2(T_plan,(double*)data_d,dummy,2,howmany);  // Warmup
   time[1]=-MPI_Wtime();
-  fast_transpose_cuda_v2(T_plan,(double*)data_d,dummy,2);
+  fast_transpose_cuda_v2(T_plan,(double*)data_d,dummy,2,howmany);
   time[1]+=MPI_Wtime();
 
   if(IsPowerOfTwo(nprocs) && nprocs>511){
@@ -605,9 +605,9 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2);  // Warmup
+      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2,howmany);  // Warmup
       time[2+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2);
+      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2,howmany);
       time[2+i]+=MPI_Wtime();
     }
 #endif
@@ -617,9 +617,9 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2);  // Warmup
+      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2,howmany);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2);
+      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2,howmany);
       time[2+(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
@@ -629,9 +629,9 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2);  // Warmup
+      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2,howmany);  // Warmup
       time[2+2*(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2);
+      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2,howmany);
       time[2+2*(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
@@ -641,22 +641,22 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2);  // Warmup
+      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2,howmany);  // Warmup
       time[2+3*(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2);
+      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2,howmany);
       time[2+3*(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
   }
 
-  fast_transpose_cuda_v1_2(T_plan,(double*)data_d,dummy,2);  // Warmup
+  fast_transpose_cuda_v1_2(T_plan,(double*)data_d,dummy,2,howmany);  // Warmup
   time[4*(int)log2(nprocs)+2]=-MPI_Wtime();
-  fast_transpose_cuda_v1_2(T_plan,(double*)data_d,dummy,2);
+  fast_transpose_cuda_v1_2(T_plan,(double*)data_d,dummy,2,howmany);
   time[4*(int)log2(nprocs)+2]+=MPI_Wtime();
 
-  fast_transpose_cuda_v1_3(T_plan,(double*)data_d,dummy,2);  // Warmup
+  fast_transpose_cuda_v1_3(T_plan,(double*)data_d,dummy,2,howmany);  // Warmup
   time[4*(int)log2(nprocs)+3]=-MPI_Wtime();
-  fast_transpose_cuda_v1_3(T_plan,(double*)data_d,dummy,2);
+  fast_transpose_cuda_v1_3(T_plan,(double*)data_d,dummy,2,howmany);
   time[4*(int)log2(nprocs)+3]+=MPI_Wtime();
 
   MPI_Allreduce(time,g_time,(4*(int)log2(nprocs)+4),MPI_DOUBLE,MPI_MAX, T_plan->comm);

@@ -410,7 +410,7 @@ void T_Plan::which_method(T_Plan* T_plan,double* data){
 
   return;
 }
-void T_Plan::which_fast_method(T_Plan* T_plan,double* data){
+void T_Plan::which_fast_method(T_Plan* T_plan,double* data, int howmany){
 
   double dummy[4]={0};
   double * time= (double*) malloc(sizeof(double)*(2*(int)log2(nprocs)+3));
@@ -418,14 +418,14 @@ void T_Plan::which_fast_method(T_Plan* T_plan,double* data){
   for (int i=0;i<2*(int)log2(nprocs)+3;i++)
     time[i]=1000;
 
-  fast_transpose_v1(T_plan,(double*)data,dummy,2);  // Warmup
+  fast_transpose_v1(T_plan,(double*)data,dummy,2,howmany);  // Warmup
   time[0]=-MPI_Wtime();
-  fast_transpose_v1(T_plan,(double*)data,dummy,2);
+  fast_transpose_v1(T_plan,(double*)data,dummy,2,howmany);
   time[0]+=MPI_Wtime();
 
-  fast_transpose_v2(T_plan,(double*)data,dummy,2);  // Warmup
+  fast_transpose_v2(T_plan,(double*)data,dummy,2,howmany);  // Warmup
   time[1]=-MPI_Wtime();
-  fast_transpose_v2(T_plan,(double*)data,dummy,2);
+  fast_transpose_v2(T_plan,(double*)data,dummy,2,howmany);
   time[1]+=MPI_Wtime();
 
   if(IsPowerOfTwo(nprocs) && nprocs>511){
@@ -433,9 +433,9 @@ void T_Plan::which_fast_method(T_Plan* T_plan,double* data){
     for (int i=0;i<6;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_v3(T_plan,(double*)data,dummy,kway,2);  // Warmup
+      fast_transpose_v3(T_plan,(double*)data,dummy,kway,2,howmany);  // Warmup
       time[2+i]=-MPI_Wtime();
-      fast_transpose_v3(T_plan,(double*)data,dummy,kway,2);
+      fast_transpose_v3(T_plan,(double*)data,dummy,kway,2,howmany);
       time[2+i]+=MPI_Wtime();
     }
 
@@ -443,9 +443,9 @@ void T_Plan::which_fast_method(T_Plan* T_plan,double* data){
     for (int i=0;i<6;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_v3(T_plan,(double*)data,dummy,kway);  // Warmup
+      fast_transpose_v3(T_plan,(double*)data,dummy,kway,howmany);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_v3(T_plan,(double*)data,dummy,kway);
+      fast_transpose_v3(T_plan,(double*)data,dummy,kway,howmany);
       time[2+(int)log2(nprocs)+i]+=MPI_Wtime();
     }
   }

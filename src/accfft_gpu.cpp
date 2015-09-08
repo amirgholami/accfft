@@ -434,7 +434,7 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
 
     if(flags==ACCFFT_MEASURE){
       if(coord[0]==0){
-        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,data_out_d);
+        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,data_out_d,osize_0[0]);
       }
     }
     else{
@@ -971,7 +971,7 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
 
     if(flags==ACCFFT_MEASURE){
       if(coords[0]==0){
-        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(double*)data_out_d);
+        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(double*)data_out_d,osize_0[0]);
       }
     }
     else{

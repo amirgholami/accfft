@@ -408,7 +408,7 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     */
     if(flags==ACCFFT_MEASURE){
       if(coord[0]==0){
-        plan->T_plan_1->which_fast_method(plan->T_plan_1,data_out);
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,data_out,osize_0[0]);
       }
     }
     else{
@@ -733,7 +733,7 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
 
     if(flags==ACCFFT_MEASURE){
       if(coord[0]==0){
-        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out);
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out,osize_0[0]);
       }
     }
     else{
