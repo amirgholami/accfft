@@ -295,9 +295,10 @@ void initialize(double *rho, double *sol, int *n, MPI_Comm c_comm, PoissonParams
  * Poisson fourier filter.
  * Divide fourier coefficients by -(kx^2+ky^2+kz^2).
  */
-void poisson_fourier_filter(Complex *data_hat, 
+
+void poisson_fourier_filter(Complex *data_hat,
 			    int N[3],
-			    int isize[3], 
+			    int isize[3],
 			    int istart[3],
 			    int methodNb) {
 
@@ -308,7 +309,7 @@ void poisson_fourier_filter(Complex *data_hat,
   double NX = N[0];
   double NY = N[1];
   double NZ = N[2];
-  
+
   double Lx = 1.0;
   double Ly = 1.0;
   double Lz = 1.0;
@@ -317,15 +318,10 @@ void poisson_fourier_filter(Complex *data_hat,
   double dy = Ly/NY;
   double dz = Lz/NZ;
 
-  /*printf("[mpi rank %d] Poisson filter %d %d %d | %d %d %d\n",
-	 procid,
-	 isize[0],isize[1],isize[2],
-	 istart[0],istart[1],istart[2]);*/
-
   for (int i=0; i < isize[0]; i++) {
     for (int j=0; j < isize[1]; j++) {
       for (int k=0; k < isize[2]; k++) {
-	
+
 	double kx = istart[0]+i;
 	double ky = istart[1]+j;
 	double kz = istart[2]+k;
@@ -348,29 +344,31 @@ void poisson_fourier_filter(Complex *data_hat,
 	if (methodNb==0) {
 
 	  /*
-	   * method 0 (from Numerical recipes)
+	   * method 0 (See Eq. 19.4.5 of Numerical recipes 2nd Ed.)
 	   */
-	  
-	  scaleFactor=2*( 
-			 (cos(1.0*2*M_PI*kx/NX) - 1)/(dx*dx) + 
-			 (cos(1.0*2*M_PI*ky/NY) - 1)/(dy*dy) + 
-			 (cos(1.0*2*M_PI*kz/NZ) - 1)/(dz*dz) )*(NX*NY*NZ);
-	  
+
+	  scaleFactor=2*(
+			 (cos(1.0*2*M_PI*kx/NX) - 1)/(dx*dx) +
+			 (cos(1.0*2*M_PI*ky/NY) - 1)/(dy*dy) +
+			 (cos(1.0*2*M_PI*kz/NZ) - 1)/(dz*dz) );
+
 	} else if (methodNb==1) {
-	  
+
 	  /*
-	   * method 1 (just from Continuous Fourier transform of 
+	   * method 1 (just from Continuous Fourier transform of
 	   * Poisson equation)
 	   */
-	  scaleFactor=-4*M_PI*M_PI*(kkx*kkx + kky*kky + kkz*kkz)*NX*NY*NZ;
+	  //scaleFactor=-4*M_PI*M_PI*(kkx*kkx + kky*kky + kkz*kkz)/;
+	  scaleFactor=-(4*M_PI*M_PI/Lx/Lx*kkx*kkx + 4*M_PI*M_PI/Ly/Ly*kky*kky + 4*M_PI*M_PI/Ly/Ly*kkz*kkz);
 
 	}
 
+  scaleFactor*=NX*NY*NZ; // FFT scaling factor
 
 	if (kx!=0 or ky!=0 or kz!=0) {
 	  data_hat[index][0] /= scaleFactor;
 	  data_hat[index][1] /= scaleFactor;
-	} else { // enforce mean value is zero
+	} else { // enforce mean value is zero since you cannot recover the zero frequency
 	  data_hat[index][0] = 0.0;
 	  data_hat[index][1] = 0.0;
 	}
@@ -384,6 +382,17 @@ void poisson_fourier_filter(Complex *data_hat,
 
 // =======================================================
 // =======================================================
+/*
+ * Rescale Numerical Solution.
+ * The zeroth frequency data (i.e. the mean of the solution)
+ * cannot be recovered in the Poisson problem without using additional
+ * data, such as boundary condition. Without such information
+ * any u=u+constant would satisfy the problem.
+ *
+ * Here we use specific information for each test case
+ * to "calibrate" the numerical solution with the
+ * correct constant.
+ */
 void rescale_numerical_solution(double *phi,
 				int *isize,
 				PoissonParams &params) {
@@ -539,8 +548,10 @@ void poisson_solve(PoissonParams &params, int nthreads) {
 
 
 
-  double *data, *data_cpu, *exact_solution;
-  Complex *data_hat;
+
+  // Governing Equation: Laplace(\phi)=rho
+  double *rho, *rho_cpu, *exact_solution;
+  Complex *phi_hat;
   double f_time=0*MPI_Wtime(),i_time=0, setup_time=0;
   int alloc_max=0;
 
@@ -558,10 +569,10 @@ void poisson_solve(PoissonParams &params, int nthreads) {
 	 ostart[0],ostart[1],ostart[2]
 	 );
 
-  data_cpu=(double*)malloc(isize[0]*isize[1]*isize[2]*sizeof(double));
+  rho_cpu=(double*)malloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   //data_hat=(Complex*)accfft_alloc(alloc_max);
-  cudaMalloc((void**) &data, isize[0]*isize[1]*isize[2]*sizeof(double));
-  cudaMalloc((void**) &data_hat, alloc_max);
+  cudaMalloc((void**) &rho, isize[0]*isize[1]*isize[2]*sizeof(double));
+  cudaMalloc((void**) &phi_hat, alloc_max);
 
   exact_solution=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
 
@@ -569,20 +580,20 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   setup_time=-MPI_Wtime();
   /* Create FFT plan */
   accfft_plan_gpu * plan = accfft_plan_dft_3d_r2c_gpu(n,
-						      data, (double*)data_hat,
+						      rho, (double*)phi_hat,
 						      c_comm, ACCFFT_MEASURE);
   setup_time+=MPI_Wtime();
 
-  /*  Initialize data */
+  /*  Initialize rho (force) */
   switch(testCaseNb) {
   case TESTCASE_SINE:
-    initialize<TESTCASE_SINE>(data_cpu, exact_solution, n, c_comm, params); 
+    initialize<TESTCASE_SINE>(rho_cpu, exact_solution, n, c_comm, params); 
     break;
   case TESTCASE_GAUSSIAN:
-    initialize<TESTCASE_GAUSSIAN>(data_cpu, exact_solution, n, c_comm, params); 
+    initialize<TESTCASE_GAUSSIAN>(rho_cpu, exact_solution, n, c_comm, params); 
     break;
   case TESTCASE_UNIFORM_BALL:
-    initialize<TESTCASE_UNIFORM_BALL>(data_cpu, exact_solution, n, c_comm, params); 
+    initialize<TESTCASE_UNIFORM_BALL>(rho_cpu, exact_solution, n, c_comm, params); 
     break;
   }
   MPI_Barrier(c_comm);
@@ -597,17 +608,17 @@ void poisson_solve(PoissonParams &params, int nthreads) {
 		  istart_mpi,
 		  isize_mpi,
 		  n,
-		  data_cpu);
+		  rho_cpu);
   }
 #else
   {
-    if (procId==0)
+    if (procid==0)
       std::cout << "[WARNING] You have to enable PNETCDF to be enable to dump data into files\n";
   }
 #endif // USE_PNETCDF
 
   // upload data to GPU
-  cudaMemcpy(data, data_cpu, 
+  cudaMemcpy(rho, rho_cpu, 
 	     isize[0]*isize[1]*isize[2]*sizeof(double), 
 	     cudaMemcpyHostToDevice);
 
@@ -615,7 +626,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
    * Perform forward FFT 
    */
   f_time-=MPI_Wtime();
-  accfft_execute_r2c_gpu(plan,data,data_hat);
+  accfft_execute_r2c_gpu(plan,rho,phi_hat);
   f_time+=MPI_Wtime();
 
   MPI_Barrier(c_comm);
@@ -623,28 +634,29 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   /* 
    * here perform fourier filter associated to poisson ...
    */
-  poisson_fourier_filter_gpu(data_hat, n, osize, ostart, methodNb);
+  poisson_fourier_filter_gpu(phi_hat, n, osize, ostart, methodNb);
 
   /* 
-   * Perform backward FFT : data -> data2
+   * Perform backward FFT : phi_hat -> phi
    */
-  double *data2;
-  cudaMalloc((void**)&data2, isize[0]*isize[1]*isize[2]*sizeof(double));
+  double *phi,*phi_cpu;
+  cudaMalloc((void**)&phi, isize[0]*isize[1]*isize[2]*sizeof(double));
+  phi_cpu=(double*)malloc(isize[0]*isize[1]*isize[2]*sizeof(double));
 
   i_time-=MPI_Wtime();
-  accfft_execute_c2r_gpu(plan,data_hat,data2);
+  accfft_execute_c2r_gpu(plan,phi_hat,phi);
   i_time+=MPI_Wtime();
 
   // download data to CPU
-  cudaMemcpy(data_cpu, data2, 
-	     isize[0]*isize[1]*isize[2]*sizeof(double), 
+  cudaMemcpy(phi_cpu, phi,
+	     isize[0]*isize[1]*isize[2]*sizeof(double),
 	     cudaMemcpyDeviceToHost);
 
   /* rescale numerical solution before computing L2 */
-  rescale_numerical_solution(data_cpu, isize, params);
+  rescale_numerical_solution(phi_cpu, isize, params);
 
   /* L2 error between phi and phi_exact */
-  compute_L2_error(data_cpu, exact_solution, isize, params);
+  compute_L2_error(phi_cpu, exact_solution, isize, params);
 
   /* optional : save phi (solution to poisson) and exact solution */
 
@@ -657,7 +669,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
 		  istart_mpi,
 		  isize_mpi,
 		  n,
-		  data_cpu);
+		  phi_cpu);
   }
   {
     std::string filename = "phi_exact.nc";
@@ -671,7 +683,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   }
 #else
   {
-    if (procId==0)
+    if (procid==0)
       std::cout << "[WARNING] You have to enable PNETCDF to be enable to dump data into files\n";
   }
 #endif // USE_PNETCDF
@@ -688,11 +700,12 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   PCOUT<<"FFT \t"<<g_f_time<<std::endl;
   PCOUT<<"IFFT \t"<<g_i_time<<std::endl;
 
-  free(data_cpu);
-  cudaFree(data);
+  free(phi_cpu);
+  free(rho_cpu);
+  cudaFree(rho);
   accfft_free(exact_solution);
-  cudaFree(data_hat);
-  cudaFree(data2);
+  cudaFree(phi_hat);
+  cudaFree(phi);
   accfft_destroy_plan_gpu(plan);
   accfft_cleanup_gpu();
   MPI_Comm_free(&c_comm);
@@ -717,7 +730,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
  * - a,b,c,r   for uniform ball parameter (center location + radius)
  * - l         for alpha
  */
-void getPoissonParams(const int argc, char *argv[], 
+void getPoissonParams(const int argc, char *argv[],
 		      PoissonParams &params) {
 
   int nprocs, procid;
@@ -801,7 +814,6 @@ void getPoissonParams(const int argc, char *argv[],
 int main(int argc, char *argv[])
 {
 
-  int NX,NY,NZ;
   MPI_Init (&argc, &argv);
   int nprocs, procid;
   MPI_Comm_rank(MPI_COMM_WORLD, &procid);
@@ -810,12 +822,6 @@ int main(int argc, char *argv[])
   /* parse command line arguments and fill params structure */
   PoissonParams params = PoissonParams();
   getPoissonParams(argc, argv, params);
-
-  NX = params.nx;
-  NY = params.ny;
-  NZ = params.nz;
-
-  int N[3]={NX,NY,NZ};
 
   // test case number
   const int testCaseNb = params.testcase;
