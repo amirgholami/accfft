@@ -30,6 +30,7 @@
 #include <mpi.h>
 
 #include <accfft.h>
+#include <accfft_common.h>
 
 #include <string>
 
@@ -735,8 +736,8 @@ void getPoissonParams(const int argc, char *argv[],
         value = optarg;
         tmp = atoi(value);
         if (tmp < 0 || tmp > 1) {
-          // wrong value, defaulting to 0
-          tmp = 0;
+          // wrong value, defaulting to 1
+          tmp = 1;
           if (procid==0) std::cout << "wrong value for option -m (method); defaulting to 0\n";
         }
         params.methodNb = tmp;
