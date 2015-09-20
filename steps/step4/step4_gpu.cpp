@@ -544,7 +544,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   int c_dims[2] = {0};
   MPI_Comm c_comm;
   accfft_create_comm(MPI_COMM_WORLD,c_dims,&c_comm);
-  printf("[mpi rank %d] c_dims = %d %d\n", procid, c_dims[0], c_dims[1]);
+  //printf("[mpi rank %d] c_dims = %d %d\n", procid, c_dims[0], c_dims[1]);
 
 
 
