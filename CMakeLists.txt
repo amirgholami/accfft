@@ -143,7 +143,7 @@ endif(BUILD_GPU)
 ####################
 # EXAMPLES / TESTS #
 ####################
-if(BUILD_STEPS)
-add_subdirectory(steps/step1)
-add_subdirectory(steps/step4)
-endif(BUILD_STEPS)
+add_subdirectory(steps/step1 EXCLUDE_FROM_ALL)
+add_subdirectory(steps/step2 EXCLUDE_FROM_ALL)
+add_subdirectory(steps/step3 EXCLUDE_FROM_ALL)
+add_subdirectory(steps/step4 EXCLUDE_FROM_ALL)
