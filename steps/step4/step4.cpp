@@ -30,7 +30,7 @@
 #include <mpi.h>
 
 #include <accfft.h>
-#include <accfft_common.h>
+#include <accfft_utils.h>
 
 #include <string>
 

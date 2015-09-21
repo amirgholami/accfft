@@ -32,12 +32,9 @@
 #include <cuda_runtime_api.h>
 
 #include <accfft_gpu.h>
+#include <accfft_utils.h>
 
 #include <string>
-
-#ifdef USE_PNETCDF
-#include <pnetcdf_io.h>
-#endif // USE_PNETCDF
 
 #define SQR(x) ((x)*(x))
 
