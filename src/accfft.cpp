@@ -767,9 +767,12 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
  * @param data Input data in spatial domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
+ * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-void accfft_execute_r2c(accfft_plan* plan, double * data,Complex * data_out, double * timer){
-  accfft_execute(plan,-1,data,(double*)data_out,timer);
+void accfft_execute_r2c(accfft_plan* plan, double * data,Complex * data_out, double * timer,std::bitset<3> XYZ){
+
+
+  accfft_execute(plan,-1,data,(double*)data_out,timer,XYZ);
 
   return;
 }
@@ -783,14 +786,15 @@ void accfft_execute_r2c(accfft_plan* plan, double * data,Complex * data_out, dou
  * @param data Input data in frequency domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
+ * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-void accfft_execute_c2r(accfft_plan* plan, Complex * data,double * data_out, double * timer){
-  accfft_execute(plan,1,(double*)data,data_out,timer);
+void accfft_execute_c2r(accfft_plan* plan, Complex * data,double * data_out, double * timer, std::bitset<3> XYZ){
+  accfft_execute(plan,1,(double*)data,data_out,timer,XYZ);
 
   return;
 }
 
-void accfft_execute(accfft_plan* plan, int direction,double * data,double * data_out, double * timer){
+void accfft_execute(accfft_plan* plan, int direction,double * data,double * data_out, double * timer,std::bitset<3> XYZ){
 
   if(data==NULL)
     data=plan->data;
@@ -800,6 +804,7 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
   int procid=plan->procid;
   double fft_time=0;
   double * timings;
+
   if(timer==NULL){
     timings=new double[5];
     memset(timings,0,sizeof(double)*5);
