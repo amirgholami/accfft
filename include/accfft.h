@@ -55,6 +55,7 @@ struct accfft_plan{
   Complex * data_c;
   Complex * data_out_c;
   int procid;
+  bool oneD;
   bool inplace;
 };
 

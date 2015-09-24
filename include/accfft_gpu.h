@@ -27,6 +27,7 @@
 #include <math.h>
 #include "transpose_cuda.h"
 #include <string.h>
+#include <bitset>
 #include "cuda.h"
 #include <cufft.h>
 #include "accfft_common.h"
@@ -76,6 +77,7 @@ struct accfft_plan_gpu{
   Complex * data_out_c;
   int procid;
   bool inplace;
+  bool oneD;
 };
 
 int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm );
@@ -83,16 +85,16 @@ int accfft_local_size_dft_r2c_gpu( int * n,int * isize, int * istart, int * osiz
 
 accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * data_out_d, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
 
-void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d=NULL, double * data_out_d=NULL, double * timer=NULL);
 
 int accfft_local_size_dft_c2c_gpu( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
 
 accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex * data_out_d, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
 
-void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_d=NULL, Complex * data_out_d=NULL, double * timer=NULL);
 void accfft_destroy_plan(accfft_plan_gpu * plan);
 void accfft_destroy_plan_gpu(accfft_plan_gpu * plan);
-void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data=NULL,Complex * data_out=NULL, double * timer=NULL);
-void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data=NULL,double * data_out=NULL, double * timer=NULL);
+void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data=NULL,Complex * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=1);
+void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data=NULL,double * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=1);
+void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d=NULL, double * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=1);
+void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_d=NULL, Complex * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=1);
 void accfft_cleanup_gpu();
 #endif
