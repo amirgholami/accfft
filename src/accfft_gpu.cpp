@@ -295,33 +295,32 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
     int N0=n[0], N1=n[1], N2=n[2];
 
     plan->Mem_mgr= new Mem_Mgr_gpu(N0,N1,n_tuples_o,c_comm);
-    plan->T_plan_1= new T_Plan_gpu(N0,N1,n_tuples_o, plan->Mem_mgr, c_comm);
-    plan->T_plan_1i= new T_Plan_gpu(N1,N0,n_tuples_o,plan->Mem_mgr, c_comm);
+    plan->T_plan_2= new T_Plan_gpu(N0,N1,n_tuples_o, plan->Mem_mgr, c_comm);
+    plan->T_plan_2i= new T_Plan_gpu(N1,N0,n_tuples_o,plan->Mem_mgr, c_comm);
+    plan->T_plan_1=NULL;
+    plan->T_plan_1i=NULL;
 
     plan->alloc_max=alloc_max;
-    plan->T_plan_1->alloc_local=alloc_max;
-    plan->T_plan_1i->alloc_local=alloc_max;
+    plan->T_plan_2->alloc_local=alloc_max;
+    plan->T_plan_2i->alloc_local=alloc_max;
 
 
     if(flags==ACCFFT_MEASURE){
-      plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,data_out_d);
+      plan->T_plan_2->which_fast_method_gpu(plan->T_plan_2,data_out_d);
     }
     else{
-      plan->T_plan_1->method=2;
-      plan->T_plan_1->kway=2;
+      plan->T_plan_2->method=2;
+      plan->T_plan_2->kway=2;
     }
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
 
-    plan->T_plan_1->method =plan->T_plan_1->method;
-    plan->T_plan_1i->method=plan->T_plan_1->method;
+    plan->T_plan_2->method =plan->T_plan_2->method;
+    plan->T_plan_2i->method=plan->T_plan_2->method;
 
-    plan->T_plan_1->kway =plan->T_plan_1->kway;
-    plan->T_plan_1i->kway=plan->T_plan_1->kway;
+    plan->T_plan_2->kway =plan->T_plan_2->kway;
+    plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
-    // Make unused parts of plan NULL
-    plan->T_plan_2=NULL;
-    plan->T_plan_2i=NULL;
 
   }
 
@@ -403,111 +402,37 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
   int NY=plan->N[1];
   float dummy_time=0;
 
-  // 1D Decomposition
-  if(plan->oneD){
-    int *osize_1 =plan->osize_1;// *ostart_1 =plan->ostart_1;
-    int *osize_1i=plan->osize_1i;//*ostart_1i=plan->ostart_1i;
-    if(direction==-1){
 
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2 *************************/
-      /**************************************************************/
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecD2Z(plan->fplan_0, (cufftDoubleReal*)data_d, (cufftDoubleComplex*)data_out_d));
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-      checkCuda_accfft (cudaDeviceSynchronize());
+  int *osize_0 =plan->osize_0;// *ostart_0 =plan->ostart_0;
+  int *osize_1 =plan->osize_1;// *ostart_1 =plan->ostart_1;
+  //int *osize_2 =plan->osize_2, *ostart_2 =plan->ostart_2;
+  int *osize_1i=plan->osize_1i;//*ostart_1i=plan->ostart_1i;
+  //int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
 
-
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      for (int i=0;i<osize_1[0];++i){
-        checkCuda_accfft (cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_out_d[2*i*osize_1[1]*osize_1[2]], (cufftDoubleComplex*)&data_out_d[2*i*osize_1[1]*osize_1[2]],CUFFT_FORWARD));
-      }
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-
-
-
-      MPI_Barrier(plan->c_comm);
-      plan->T_plan_1->execute_gpu(plan->T_plan_1,data_out_d,timings,2);
-      /**************************************************************/
-      /*******************  N1 x N0/P0 x N2 *************************/
-      /**************************************************************/
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_out_d, (cufftDoubleComplex*)data_out_d,CUFFT_FORWARD));
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-
-    }
-
-    if(direction==1){
-      /* Now Perform the inverse transform  */
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_d,(cufftDoubleComplex*)data_d,CUFFT_INVERSE));
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-
-      plan->T_plan_1i->execute_gpu(plan->T_plan_1i,data_d,timings,1);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2 *************************/
-      /**************************************************************/
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      for (int i=0;i<osize_1i[0];++i){
-        checkCuda_accfft (cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_d[2*i*NY*osize_1i[2]], (cufftDoubleComplex*)&data_d[2*i*NY*osize_1i[2]],CUFFT_INVERSE));
-      }
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-      checkCuda_accfft (cudaDeviceSynchronize());
-
-
-
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecZ2D(plan->iplan_0, (cufftDoubleComplex*)data_d,(cufftDoubleReal*)data_out_d));
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-
-    }
-  }
-
-  // 2D Decomposition
-  if(!plan->oneD){
-    int *osize_0 =plan->osize_0;// *ostart_0 =plan->ostart_0;
-    int *osize_1 =plan->osize_1;// *ostart_1 =plan->ostart_1;
-    //int *osize_2 =plan->osize_2, *ostart_2 =plan->ostart_2;
-    int *osize_1i=plan->osize_1i;//*ostart_1i=plan->ostart_1i;
-    //int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
-
-    if(direction==-1){
-      /**************************************************************/
-      /*******************  N0/P0 x N1/P1 x N2 **********************/
-      /**************************************************************/
-      // FFT in Z direction
+  if(direction==-1){
+    /**************************************************************/
+    /*******************  N0/P0 x N1/P1 x N2 **********************/
+    /**************************************************************/
+    // FFT in Z direction
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecD2Z(plan->fplan_0,(cufftDoubleReal*)data_d, (cufftDoubleComplex*)data_out_d));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
+    }
 
-      // Perform N0/P0 transpose
+    // Perform N0/P0 transpose
 
 
+    if(!plan->oneD){
       plan->T_plan_1->execute_gpu(plan->T_plan_1,data_out_d,timings,2,osize_0[0],coords[0]);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2/P1 **********************/
-      /**************************************************************/
+    }
+    /**************************************************************/
+    /*******************  N0/P0 x N1 x N2/P1 **********************/
+    /**************************************************************/
+    if(xyz[1]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       for (int i=0;i<osize_1[0];++i){
         checkCuda_accfft (cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_out_d[2*i*osize_1[1]*osize_1[2]], (cufftDoubleComplex*)&data_out_d[2*i*osize_1[1]*osize_1[2]],CUFFT_FORWARD));
@@ -517,11 +442,18 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
       MPI_Barrier(plan->c_comm);
+    }
 
+    if(plan->oneD){
+      plan->T_plan_2->execute_gpu(plan->T_plan_2,data_out_d,timings,2);
+    }
+    else{
       plan->T_plan_2->execute_gpu(plan->T_plan_2,data_out_d,timings,2,1,coords[1]);
-      /**************************************************************/
-      /*******************  N0 x N1/P0 x N2/P1 **********************/
-      /**************************************************************/
+    }
+    /**************************************************************/
+    /*******************  N0 x N1/P0 x N2/P1 **********************/
+    /**************************************************************/
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_out_d, (cufftDoubleComplex*)data_out_d,CUFFT_FORWARD));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -529,21 +461,29 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
     }
-    else if (direction==1){
+  }
+  else if (direction==1){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_d, (cufftDoubleComplex*)data_d,CUFFT_INVERSE));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
-
       MPI_Barrier(plan->c_comm);
+    }
 
 
+    if(plan->oneD){
+      plan->T_plan_2i->execute_gpu(plan->T_plan_2i,data_d,timings,1);
+    }
+    else{
       plan->T_plan_2i->execute_gpu(plan->T_plan_2i,data_d,timings,1,1,coords[1]);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2/P1 **********************/
-      /**************************************************************/
+    }
+    /**************************************************************/
+    /*******************  N0/P0 x N1 x N2/P1 **********************/
+    /**************************************************************/
+    if(xyz[1]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       for (int i=0;i<osize_1i[0];++i){
         checkCuda_accfft (cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_d[2*i*NY*osize_1i[2]], (cufftDoubleComplex*)&data_d[2*i*NY*osize_1i[2]],CUFFT_INVERSE));
@@ -553,25 +493,30 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
       MPI_Barrier(plan->c_comm);
+    }
 
 
 
+    if(!plan->oneD){
       plan->T_plan_1i->execute_gpu(plan->T_plan_1i,data_d,timings,1,osize_1i[0],coords[0]);
-      MPI_Barrier(plan->c_comm);
-      /**************************************************************/
-      /*******************  N0/P0 x N1/P1 x N2 **********************/
-      /**************************************************************/
+    }
+    MPI_Barrier(plan->c_comm);
+    /**************************************************************/
+    /*******************  N0/P0 x N1/P1 x N2 **********************/
+    /**************************************************************/
 
-      // IFFT in Z direction
+    // IFFT in Z direction
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2D(plan->iplan_0,(cufftDoubleComplex*)data_d,(cufftDoubleReal*)data_out_d));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
-
     }
+
   }
+
   timings[4]=fft_time;
   if(timer==NULL){
     delete [] timings;
@@ -590,6 +535,7 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
  * @param data Input data in spatial domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
+ * @param XYZ a bit set field that determines which directions FFT should be executed
  */
 void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data,Complex * data_out, double * timer,std::bitset<3> xyz){
   accfft_execute_gpu(plan,-1,data,(double*)data_out,timer,xyz);
@@ -606,6 +552,7 @@ void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data,Complex * data_
  * @param data Input data in frequency domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
+ * @param XYZ a bit set field that determines which directions FFT should be executed
  */
 void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data,double * data_out, double * timer,std::bitset<3> xyz){
   accfft_execute_gpu(plan,1,(double*)data,data_out,timer,xyz);
@@ -819,15 +766,34 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
     plan->alloc_max=alloc_max;
 
     plan->Mem_mgr= new Mem_Mgr_gpu(NX,NY,(NZ)*2,c_comm);
-    plan->T_plan_1= new T_Plan_gpu(NX,NY,(NZ)*2, plan->Mem_mgr,c_comm);
-    plan->T_plan_1i= new T_Plan_gpu(NY,NX,NZ*2, plan->Mem_mgr,c_comm);
+    plan->T_plan_2= new T_Plan_gpu(NX,NY,(NZ)*2, plan->Mem_mgr,c_comm);
+    plan->T_plan_2i= new T_Plan_gpu(NY,NX,NZ*2, plan->Mem_mgr,c_comm);
 
-    plan->T_plan_1->alloc_local=alloc_max;
-    plan->T_plan_1i->alloc_local=alloc_max;
+    plan->T_plan_2->alloc_local=alloc_max;
+    plan->T_plan_2i->alloc_local=alloc_max;
+    plan->T_plan_1=NULL;
+    plan->T_plan_1i=NULL;
 
-    // Make unused parts of plan NULL
-    plan->T_plan_2=NULL;
-    plan->T_plan_2i=NULL;
+
+
+
+    if(flags==ACCFFT_MEASURE){
+      plan->T_plan_2->which_fast_method_gpu(plan->T_plan_2,(double*)data_out_d);
+    }
+    else{
+      plan->T_plan_2->method=2;
+      plan->T_plan_2->kway=2;
+    }
+    checkCuda_accfft (cudaDeviceSynchronize());
+    MPI_Barrier(plan->c_comm);
+
+    plan->T_plan_2->method =plan->T_plan_2->method;
+    plan->T_plan_2i->method=plan->T_plan_2->method;
+
+    plan->T_plan_2->kway =plan->T_plan_2->kway;
+    plan->T_plan_2i->kway=plan->T_plan_2->kway;
+
+
   }
 
   // 2D Decomposition
@@ -892,6 +858,7 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
  * @param data Input data in frequency domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
+ * @param XYZ a bit set field that determines which directions FFT should be executed
  */
 void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_d, Complex * data_out_d, double * timer,std::bitset<3> xyz){
 
@@ -921,107 +888,35 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
   cufftResult_t cufft_error;
   float dummy_time=0;
 
-  // 1D Decomposition
-  if(plan->oneD){
-    int *osize_1 =plan->osize_1, *ostart_1 =plan->ostart_1;
-    int *osize_1i=plan->osize_1i,*ostart_1i=plan->ostart_1i;
-    if(direction==-1){
+  int *osize_0 =plan->osize_0, *ostart_0 =plan->ostart_0;
+  int *osize_1 =plan->osize_1, *ostart_1 =plan->ostart_1;
+  int *osize_2 =plan->osize_2, *ostart_2 =plan->ostart_2;
+  int *osize_1i=plan->osize_1i,*ostart_1i=plan->ostart_1i;
+  int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
 
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2 *************************/
-      /**************************************************************/
+  if(direction==-1){
+    /**************************************************************/
+    /*******************  N0/P0 x N1/P1 x N2 **********************/
+    /**************************************************************/
+    // FFT in Z direction
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft(cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_d, (cufftDoubleComplex*)data_out_d,CUFFT_FORWARD));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
-
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      for (int i=0;i<osize_1[0];++i){
-        checkCuda_accfft(cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_out_d[i*osize_1[1]*osize_1[2]], (cufftDoubleComplex*)&data_out_d[i*osize_1[1]*osize_1[2]],CUFFT_FORWARD));
-      }
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-      MPI_Barrier(plan->c_comm);
-
-
-      MPI_Barrier(plan->c_comm);
-      plan->T_plan_1->execute_gpu(plan->T_plan_1,(double*)data_out_d,timings,2);
-      /**************************************************************/
-      /*******************  N1 x N0/P0 x N2 *************************/
-      /**************************************************************/
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_out_d, (cufftDoubleComplex*)data_out_d,CUFFT_FORWARD));
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-      MPI_Barrier(plan->c_comm);
-
     }
 
-    if(direction==1){
-      /* Now Perform the inverse transform  */
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_d,(cufftDoubleComplex*)data_d,CUFFT_INVERSE));
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-
-      plan->T_plan_1i->execute_gpu(plan->T_plan_1i,(double*)data_d,timings,1);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2 *************************/
-      /**************************************************************/
-
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      for (int i=0;i<osize_1i[0];++i){
-        checkCuda_accfft (cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_d[i*NY*osize_1i[2]], (cufftDoubleComplex*)&data_d[i*NY*osize_1i[2]],CUFFT_INVERSE));
-      }
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_d,(cufftDoubleComplex*)data_out_d,CUFFT_INVERSE));
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-
-    }
-  }
-
-  // 2D Decomposition
-  if(!plan->oneD){
-    int *osize_0 =plan->osize_0, *ostart_0 =plan->ostart_0;
-    int *osize_1 =plan->osize_1, *ostart_1 =plan->ostart_1;
-    int *osize_2 =plan->osize_2, *ostart_2 =plan->ostart_2;
-    int *osize_1i=plan->osize_1i,*ostart_1i=plan->ostart_1i;
-    int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
-
-    if(direction==-1){
-      /**************************************************************/
-      /*******************  N0/P0 x N1/P1 x N2 **********************/
-      /**************************************************************/
-      // FFT in Z direction
-      checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
-      checkCuda_accfft(cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_d, (cufftDoubleComplex*)data_out_d,CUFFT_FORWARD));
-      checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
-      checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
-      checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
-      fft_time+=dummy_time/1000;
-
+    if(!plan->oneD){
       plan->T_plan_1->execute_gpu(plan->T_plan_1,(double*)data_out_d,timings,2,osize_0[0],coords[0]);
-      checkCuda_accfft (cudaDeviceSynchronize());
-      MPI_Barrier(plan->c_comm);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2/P1 **********************/
-      /**************************************************************/
+    }
+    checkCuda_accfft (cudaDeviceSynchronize());
+    MPI_Barrier(plan->c_comm);
+    /**************************************************************/
+    /*******************  N0/P0 x N1 x N2/P1 **********************/
+    /**************************************************************/
+    if(xyz[1]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       for (int i=0;i<osize_1[0];++i){
         checkCuda_accfft(cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_out_d[i*osize_1[1]*osize_1[2]], (cufftDoubleComplex*)&data_out_d[i*osize_1[1]*osize_1[2]],CUFFT_FORWARD));
@@ -1030,25 +925,35 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
-      MPI_Barrier(plan->c_comm);
+    }
+
+    MPI_Barrier(plan->c_comm);
 
 
 
+    if(plan->oneD){
+      plan->T_plan_2->execute_gpu(plan->T_plan_2,(double*)data_out_d,timings,2);
+    }
+    else{
       plan->T_plan_2->execute_gpu(plan->T_plan_2,(double*)data_out_d,timings,2,1,coords[1]);
-      checkCuda_accfft (cudaDeviceSynchronize());
-      MPI_Barrier(plan->c_comm);
-      /**************************************************************/
-      /*******************  N0 x N1/P0 x N2/P1 **********************/
-      /**************************************************************/
+    }
+    checkCuda_accfft (cudaDeviceSynchronize());
+    MPI_Barrier(plan->c_comm);
+    /**************************************************************/
+    /*******************  N0 x N1/P0 x N2/P1 **********************/
+    /**************************************************************/
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft(cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_out_d, (cufftDoubleComplex*)data_out_d,CUFFT_FORWARD));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
-
     }
-    else if (direction==1){
+
+  }
+  else if (direction==1){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_d, (cufftDoubleComplex*)data_d,CUFFT_INVERSE));
       checkCuda_accfft (cudaDeviceSynchronize());
@@ -1057,14 +962,21 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
       MPI_Barrier(plan->c_comm);
+    }
 
 
+    if(plan->oneD){
+      plan->T_plan_2i->execute_gpu(plan->T_plan_2i,(double*)data_d,timings,1);
+    }
+    else{
       plan->T_plan_2i->execute_gpu(plan->T_plan_2i,(double*)data_d,timings,1,1,coords[1]);
-      checkCuda_accfft (cudaDeviceSynchronize());
-      MPI_Barrier(plan->c_comm);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2/P1 **********************/
-      /**************************************************************/
+    }
+    checkCuda_accfft (cudaDeviceSynchronize());
+    MPI_Barrier(plan->c_comm);
+    /**************************************************************/
+    /*******************  N0/P0 x N1 x N2/P1 **********************/
+    /**************************************************************/
+    if(xyz[1]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       for (int i=0;i<osize_1i[0];++i){
         checkCuda_accfft (cufftExecZ2Z(plan->fplan_1,(cufftDoubleComplex*)&data_d[i*NY*osize_1i[2]], (cufftDoubleComplex*)&data_d[i*NY*osize_1i[2]],CUFFT_INVERSE));
@@ -1074,25 +986,28 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
       MPI_Barrier(plan->c_comm);
+    }
 
+    if(!plan->oneD){
       plan->T_plan_1i->execute_gpu(plan->T_plan_1i,(double*)data_d,timings,1,osize_1i[0],coords[0]);
-      checkCuda_accfft (cudaDeviceSynchronize());
-      MPI_Barrier(plan->c_comm);
-      /**************************************************************/
-      /*******************  N0/P0 x N1/P1 x N2 **********************/
-      /**************************************************************/
+    }
+    checkCuda_accfft (cudaDeviceSynchronize());
+    MPI_Barrier(plan->c_comm);
+    /**************************************************************/
+    /*******************  N0/P0 x N1/P1 x N2 **********************/
+    /**************************************************************/
 
-      // IFFT in Z direction
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_d,(cufftDoubleComplex*)data_out_d,CUFFT_INVERSE));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
       checkCuda_accfft( cudaEventSynchronize(fft_stopEvent) ); // wait until fft is executed
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
-
     }
 
   }
+
   timings[4]=fft_time;
   if(timer==NULL){
     delete [] timings;

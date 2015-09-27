@@ -92,9 +92,9 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
 
 void accfft_destroy_plan(accfft_plan_gpu * plan);
 void accfft_destroy_plan_gpu(accfft_plan_gpu * plan);
-void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data=NULL,Complex * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=1);
-void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data=NULL,double * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=1);
-void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d=NULL, double * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=1);
-void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_d=NULL, Complex * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=1);
+void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data=NULL,Complex * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
+void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data=NULL,double * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
+void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d=NULL, double * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=111);
+void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_d=NULL, Complex * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=111);
 void accfft_cleanup_gpu();
 #endif

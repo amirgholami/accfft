@@ -292,26 +292,25 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
   // 1D Decomposition
   if (plan->oneD){
     plan->Mem_mgr= new Mem_Mgr(n[0],n[1],n_tuples_o,c_comm);
-    plan->T_plan_1= new T_Plan(n[0],n[1],n_tuples_o, plan->Mem_mgr, c_comm);
-    plan->T_plan_1i= new T_Plan(n[1],n[0],n_tuples_o,plan->Mem_mgr, c_comm);
+    plan->T_plan_2= new T_Plan(n[0],n[1],n_tuples_o, plan->Mem_mgr, c_comm);
+    plan->T_plan_2i= new T_Plan(n[1],n[0],n_tuples_o,plan->Mem_mgr, c_comm);
+    plan->T_plan_1=NULL;
+    plan->T_plan_1i=NULL;
 
-    plan->T_plan_1->alloc_local=alloc_max;
-    plan->T_plan_1i->alloc_local=alloc_max;
+    plan->T_plan_2->alloc_local=alloc_max;
+    plan->T_plan_2i->alloc_local=alloc_max;
 
     if(flags==ACCFFT_MEASURE){
-      plan->T_plan_1->which_fast_method(plan->T_plan_1,data_out);
+      plan->T_plan_2->which_fast_method(plan->T_plan_2,data_out);
     }
     else{
-      plan->T_plan_1->method=2;
-      plan->T_plan_1->kway=2;
+      plan->T_plan_2->method=2;
+      plan->T_plan_2->kway=2;
     }
-    plan->T_plan_1i->method=plan->T_plan_1->method;
-    plan->T_plan_1i->kway=plan->T_plan_1->kway;
+    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->kway=plan->T_plan_2->kway;
     plan->data=data;
 
-    // Make unused parts of plan NULL
-    plan->T_plan_2=NULL;
-    plan->T_plan_2i=NULL;
 
     plan->data=data;
 
@@ -382,112 +381,89 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
 
 
   // 1D Decomposition
-  if(plan->oneD){
-    if(direction==-1){
+  int *osize_0 =plan->osize_0, *ostart_0 =plan->ostart_0;
+  int *osize_1 =plan->osize_1, *ostart_1 =plan->ostart_1;
+  int *osize_2 =plan->osize_2, *ostart_2 =plan->ostart_2;
+  int *osize_1i=plan->osize_1i,*ostart_1i=plan->ostart_1i;
+  int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
 
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2 *************************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
+  if(direction==-1){
+    /**************************************************************/
+    /*******************  N0/P0 x N1/P1 x N2 **********************/
+    /**************************************************************/
+    // FFT in Z direction
+    fft_time-=MPI_Wtime();
+    if(XYZ[0])
       fftw_execute_dft_r2c(plan->fplan_0,(double*)data,(fftw_complex*)data_out);
-      fftw_execute_dft(plan->fplan_1,(fftw_complex*)data_out,(fftw_complex*)data_out);
-      fft_time+=MPI_Wtime();
+    fft_time+=MPI_Wtime();
 
-      MPI_Barrier(plan->c_comm);
-      plan->T_plan_1->execute(plan->T_plan_1,data_out,timings,2);
-      /**************************************************************/
-      /*******************  N1 x N0/P0 x N2 *************************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->fplan_2,(fftw_complex*)data_out,(fftw_complex*)data_out);
-      fft_time+=MPI_Wtime();
-    }
-
-    if(direction==1){
-      /* Now Perform the inverse transform  */
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->iplan_2,(fftw_complex*)data,(fftw_complex*)data);
-      fft_time+=MPI_Wtime();
-
-      plan->T_plan_1i->execute(plan->T_plan_1i,data,timings,1);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2 *************************/
-      /**************************************************************/
-
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->iplan_1,(fftw_complex*)data,(fftw_complex*)data);
-      fftw_execute_dft_c2r(plan->iplan_0,(fftw_complex*)data,(double*)data_out);
-      fft_time+=MPI_Wtime();
-
-    }
-  }
-
-  // 2D Decomposition
-  if(!plan->oneD){
-    int *osize_0 =plan->osize_0, *ostart_0 =plan->ostart_0;
-    int *osize_1 =plan->osize_1, *ostart_1 =plan->ostart_1;
-    int *osize_2 =plan->osize_2, *ostart_2 =plan->ostart_2;
-    int *osize_1i=plan->osize_1i,*ostart_1i=plan->ostart_1i;
-    int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
-
-    if(direction==-1){
-      /**************************************************************/
-      /*******************  N0/P0 x N1/P1 x N2 **********************/
-      /**************************************************************/
-      // FFT in Z direction
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft_r2c(plan->fplan_0,(double*)data,(fftw_complex*)data_out);
-      fft_time+=MPI_Wtime();
-
-      // Perform N0/P0 transpose
-
-
+    // Perform N0/P0 transpose
+    if(!plan->oneD){
       plan->T_plan_1->execute(plan->T_plan_1,data_out,timings,2,osize_0[0],coords[0]);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2/P1 **********************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
+    }
+    /**************************************************************/
+    /*******************  N0/P0 x N1 x N2/P1 **********************/
+    /**************************************************************/
+    fft_time-=MPI_Wtime();
+    if(XYZ[1])
       fftw_execute_dft(plan->fplan_1,(fftw_complex*)data_out,(fftw_complex*)data_out);
-      fft_time+=MPI_Wtime();
+    fft_time+=MPI_Wtime();
 
 
+    if(plan->oneD){
+      plan->T_plan_2->execute(plan->T_plan_2,data_out,timings,2);
+    }
+    else{
       plan->T_plan_2->execute(plan->T_plan_2,data_out,timings,2,1,coords[1]);
-      /**************************************************************/
-      /*******************  N0 x N1/P0 x N2/P1 **********************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
+    }
+    /**************************************************************/
+    /*******************  N0 x N1/P0 x N2/P1 **********************/
+    /**************************************************************/
+    fft_time-=MPI_Wtime();
+    if(XYZ[2])
       fftw_execute_dft(plan->fplan_2,(fftw_complex*)data_out,(fftw_complex*)data_out);
-      fft_time+=MPI_Wtime();
-    }
-    else if (direction==1){
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->iplan_2,(fftw_complex*)data,(fftw_complex*)data);
-      fft_time+=MPI_Wtime();
-
-
-      plan->T_plan_2i->execute(plan->T_plan_2i,data,timings,1,1,coords[1]);
-      MPI_Barrier(plan->c_comm);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2/P1 **********************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->iplan_1,(fftw_complex*)data,(fftw_complex*)data);
-      fft_time+=MPI_Wtime();
-
-
-      plan->T_plan_1i->execute(plan->T_plan_1i,data,timings,1,osize_1i[0],coords[0]);
-      MPI_Barrier(plan->c_comm);
-      /**************************************************************/
-      /*******************  N0/P0 x N1/P1 x N2 **********************/
-      /**************************************************************/
-      // IFFT in Z direction
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft_c2r(plan->iplan_0,(fftw_complex*)data,(double*)data_out);
-      fft_time+=MPI_Wtime();
-      MPI_Barrier(plan->c_comm);
-
-    }
+    fft_time+=MPI_Wtime();
   }
+  else if (direction==1){
+    fft_time-=MPI_Wtime();
+    if(XYZ[2])
+      fftw_execute_dft(plan->iplan_2,(fftw_complex*)data,(fftw_complex*)data);
+    fft_time+=MPI_Wtime();
+
+
+    if(plan->oneD){
+      plan->T_plan_2i->execute(plan->T_plan_2i,data,timings,1);
+    }
+    else{
+      plan->T_plan_2i->execute(plan->T_plan_2i,data,timings,1,1,coords[1]);
+    }
+
+    MPI_Barrier(plan->c_comm);
+    /**************************************************************/
+    /*******************  N0/P0 x N1 x N2/P1 **********************/
+    /**************************************************************/
+    fft_time-=MPI_Wtime();
+    if(XYZ[1])
+      fftw_execute_dft(plan->iplan_1,(fftw_complex*)data,(fftw_complex*)data);
+    fft_time+=MPI_Wtime();
+
+
+    if(!plan->oneD){
+      plan->T_plan_1i->execute(plan->T_plan_1i,data,timings,1,osize_1i[0],coords[0]);
+    }
+    MPI_Barrier(plan->c_comm);
+    /**************************************************************/
+    /*******************  N0/P0 x N1/P1 x N2 **********************/
+    /**************************************************************/
+    // IFFT in Z direction
+    fft_time-=MPI_Wtime();
+    if(XYZ[0])
+      fftw_execute_dft_c2r(plan->iplan_0,(fftw_complex*)data,(double*)data_out);
+    fft_time+=MPI_Wtime();
+    MPI_Barrier(plan->c_comm);
+
+  }
+
   timings[4]=fft_time;
   if(timer==NULL){
     delete [] timings;
@@ -699,30 +675,30 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
   }
 
   // 1D Decomposition
-  if (plan->oneD==1){
+  if (plan->oneD){
     int NX=n[0],NY=n[1],NZ=n[2];
     plan->Mem_mgr= new Mem_Mgr(NX,NY,(NZ)*2,c_comm);
-    plan->T_plan_1= new T_Plan(NX,NY,(NZ)*2, plan->Mem_mgr,c_comm);
-    plan->T_plan_1i= new T_Plan(NY,NX,NZ*2, plan->Mem_mgr,c_comm);
+    plan->T_plan_2= new T_Plan(NX,NY,(NZ)*2, plan->Mem_mgr,c_comm);
+    plan->T_plan_2i= new T_Plan(NY,NX,NZ*2, plan->Mem_mgr,c_comm);
+
+    plan->T_plan_1=NULL;
+    plan->T_plan_1i=NULL;
 
     plan->alloc_max=alloc_max;
-    plan->T_plan_1->alloc_local=alloc_max;
-    plan->T_plan_1i->alloc_local=alloc_max;
+    plan->T_plan_2->alloc_local=alloc_max;
+    plan->T_plan_2i->alloc_local=alloc_max;
 
 
     if(flags==ACCFFT_MEASURE){
-      plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out);
+      plan->T_plan_2->which_fast_method(plan->T_plan_2,(double*)data_out);
     }
     else{
-      plan->T_plan_1->method=2;
-      plan->T_plan_1->kway=2;
+      plan->T_plan_2->method=2;
+      plan->T_plan_2->kway=2;
     }
-    plan->T_plan_1i->method=plan->T_plan_1->method;
-    plan->T_plan_1i->kway=plan->T_plan_1->kway;
+    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
-    // Make unused parts of plan NULL
-    plan->T_plan_2=NULL;
-    plan->T_plan_2i=NULL;
   } // end 1D decomp c2c
 
   // 2D Decomposition
@@ -739,7 +715,6 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
     plan->T_plan_2->alloc_local=plan->alloc_max;
     plan->T_plan_2i->alloc_local=plan->alloc_max;
     plan->T_plan_1i->alloc_local=plan->alloc_max;
-
 
 
     if(flags==ACCFFT_MEASURE){
@@ -812,8 +787,9 @@ void accfft_execute_c2r(accfft_plan* plan, Complex * data,double * data_out, dou
  * @param data Input data in frequency domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
+ * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex * data_out, double * timer){
+void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex * data_out, double * timer,std::bitset<3> XYZ){
 
   if(data==NULL)
     data=plan->data_c;
@@ -833,109 +809,85 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
 
 
 
-  // 1D Decomposition
-  if(plan->oneD){
-    if(direction==-1){
+  int *osize_0 =plan->osize_0, *ostart_0 =plan->ostart_0;
+  int *osize_1 =plan->osize_1, *ostart_1 =plan->ostart_1;
+  int *osize_2 =plan->osize_2, *ostart_2 =plan->ostart_2;
+  int *osize_1i=plan->osize_1i,*ostart_1i=plan->ostart_1i;
+  int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
 
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2 *************************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
+  if(direction==-1){
+    /**************************************************************/
+    /*******************  N0/P0 x N1/P1 x N2 **********************/
+    /**************************************************************/
+    // FFT in Z direction
+    fft_time-=MPI_Wtime();
+    if(XYZ[0])
       fftw_execute_dft(plan->fplan_0,data,data_out);
-      fftw_execute_dft(plan->fplan_1,data_out,data_out);
-      fft_time+=MPI_Wtime();
-
-      MPI_Barrier(plan->c_comm);
-      plan->T_plan_1->execute(plan->T_plan_1,(double*)data_out,timings,2);
-      /**************************************************************/
-      /*******************  N1 x N0/P0 x N2 *************************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->fplan_2,(fftw_complex*)data_out,(fftw_complex*)data_out);
-      fft_time+=MPI_Wtime();
-    }
-
-    if(direction==1){
-      /* Now Perform the inverse transform  */
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->iplan_2,(fftw_complex*)data,(fftw_complex*)data);
-      fft_time+=MPI_Wtime();
-
-      plan->T_plan_1i->execute(plan->T_plan_1i,(double*)data,timings,1);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2 *************************/
-      /**************************************************************/
-
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->iplan_1,data,data);
-      fftw_execute_dft(plan->iplan_0,data,data_out);
-      fft_time+=MPI_Wtime();
-
-    }
-  }
-
-  // 2D Decomposition
-  if(!plan->oneD){
-    int *osize_0 =plan->osize_0, *ostart_0 =plan->ostart_0;
-    int *osize_1 =plan->osize_1, *ostart_1 =plan->ostart_1;
-    int *osize_2 =plan->osize_2, *ostart_2 =plan->ostart_2;
-    int *osize_1i=plan->osize_1i,*ostart_1i=plan->ostart_1i;
-    int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
-
-    if(direction==-1){
-      /**************************************************************/
-      /*******************  N0/P0 x N1/P1 x N2 **********************/
-      /**************************************************************/
-      // FFT in Z direction
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->fplan_0,data,data_out);
-      fft_time+=MPI_Wtime();
+    fft_time+=MPI_Wtime();
 
 
 
+    if(!plan->oneD){
       plan->T_plan_1->execute(plan->T_plan_1,(double*)data_out,timings,2,osize_0[0],coords[0]);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2/P1 **********************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
+    }
+    /**************************************************************/
+    /*******************  N0/P0 x N1 x N2/P1 **********************/
+    /**************************************************************/
+    fft_time-=MPI_Wtime();
+    if(XYZ[1])
       fftw_execute_dft(plan->fplan_1,(fftw_complex*)data_out,(fftw_complex*)data_out);
-      fft_time+=MPI_Wtime();
+    fft_time+=MPI_Wtime();
 
 
+    if(!plan->oneD){
       plan->T_plan_2->execute(plan->T_plan_2,(double*)data_out,timings,2,1,coords[1]);
-      /**************************************************************/
-      /*******************  N0 x N1/P0 x N2/P1 **********************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
+    }
+    else{
+      plan->T_plan_2->execute(plan->T_plan_2,(double*)data_out,timings,2);
+    }
+    /**************************************************************/
+    /*******************  N0 x N1/P0 x N2/P1 **********************/
+    /**************************************************************/
+    fft_time-=MPI_Wtime();
+    if(XYZ[2])
       fftw_execute_dft(plan->fplan_2,(fftw_complex*)data_out,(fftw_complex*)data_out);
-      fft_time+=MPI_Wtime();
-    }
-    else if (direction==1){
-      fft_time-=MPI_Wtime();
+    fft_time+=MPI_Wtime();
+  }
+  else if (direction==1){
+    fft_time-=MPI_Wtime();
+    if(XYZ[2])
       fftw_execute_dft(plan->iplan_2,(fftw_complex*)data,(fftw_complex*)data);
-      fft_time+=MPI_Wtime();
+    fft_time+=MPI_Wtime();
 
 
+    if(!plan->oneD){
       plan->T_plan_2i->execute(plan->T_plan_2i,(double*)data,timings,1,1,coords[1]);
-      /**************************************************************/
-      /*******************  N0/P0 x N1 x N2/P1 **********************/
-      /**************************************************************/
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->iplan_1,(fftw_complex*)data,(fftw_complex*)data);
-      fft_time+=MPI_Wtime();
-
-      plan->T_plan_1i->execute(plan->T_plan_1i,(double*)data,timings,1,osize_1i[0],coords[0]);
-      MPI_Barrier(plan->c_comm);
-      /**************************************************************/
-      /*******************  N0/P0 x N1/P1 x N2 **********************/
-      /**************************************************************/
-
-      // IFFT in Z direction
-      fft_time-=MPI_Wtime();
-      fftw_execute_dft(plan->iplan_0,data,data_out);
-      fft_time+=MPI_Wtime();
-
     }
+    else{
+      plan->T_plan_2i->execute(plan->T_plan_2i,(double*)data,timings,1);
+    }
+    /**************************************************************/
+    /*******************  N0/P0 x N1 x N2/P1 **********************/
+    /**************************************************************/
+    fft_time-=MPI_Wtime();
+    if(XYZ[1])
+      fftw_execute_dft(plan->iplan_1,(fftw_complex*)data,(fftw_complex*)data);
+    fft_time+=MPI_Wtime();
+
+    if(!plan->oneD){
+      plan->T_plan_1i->execute(plan->T_plan_1i,(double*)data,timings,1,osize_1i[0],coords[0]);
+    }
+    MPI_Barrier(plan->c_comm);
+    /**************************************************************/
+    /*******************  N0/P0 x N1/P1 x N2 **********************/
+    /**************************************************************/
+
+    // IFFT in Z direction
+    fft_time-=MPI_Wtime();
+    if(XYZ[0])
+      fftw_execute_dft(plan->iplan_0,data,data_out);
+    fft_time+=MPI_Wtime();
+
   }
 
   timings[4]=fft_time;
