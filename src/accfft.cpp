@@ -44,6 +44,7 @@ int accfft_init(int nthreads){
   int threads_ok=1;
   if (threads_ok) threads_ok = fftw_init_threads();
   if (threads_ok) fftw_plan_with_nthreads(nthreads);
+
   return (!threads_ok);
 }
 
@@ -357,6 +358,9 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
 
     plan->data=data;
   } // end 2D r2c
+
+  plan->r2c_plan_baked=true;
+
   return plan;
 
 } // end accfft_plan_dft_3d_r2c
@@ -741,6 +745,8 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
     plan->T_plan_2i->kway=plan->T_plan_1->kway;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
   } // end 2D Decomp c2c
+
+  plan->c2c_plan_baked=true;
   return plan;
 
 } // end accfft_plan_dft_3d_c2c
@@ -756,8 +762,12 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
 void accfft_execute_r2c(accfft_plan* plan, double * data,Complex * data_out, double * timer,std::bitset<3> XYZ){
-  accfft_execute(plan,-1,data,(double*)data_out,timer);
-
+  if(plan->r2c_plan_baked){
+    accfft_execute(plan,-1,data,(double*)data_out,timer);
+  }
+  else{
+    if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
+  }
   return;
 }
 
@@ -773,8 +783,12 @@ void accfft_execute_r2c(accfft_plan* plan, double * data,Complex * data_out, dou
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
 void accfft_execute_c2r(accfft_plan* plan, Complex * data,double * data_out, double * timer,std::bitset<3> XYZ){
-  accfft_execute(plan,1,(double*)data,data_out,timer);
-
+  if(plan->r2c_plan_baked){
+    accfft_execute(plan,1,(double*)data,data_out,timer);
+  }
+  else{
+    if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
+  }
   return;
 }
 
@@ -790,6 +804,10 @@ void accfft_execute_c2r(accfft_plan* plan, Complex * data,double * data_out, dou
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
 void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex * data_out, double * timer,std::bitset<3> XYZ){
+  if(!plan->c2c_plan_baked){
+    if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
+    return;
+  }
 
   if(data==NULL)
     data=plan->data_c;

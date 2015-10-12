@@ -57,6 +57,22 @@ struct accfft_plan{
   int procid;
   bool oneD;
   bool inplace;
+  bool r2c_plan_baked;
+  bool c2c_plan_baked;
+
+  accfft_plan(){
+    r2c_plan_baked=0;
+    c2c_plan_baked=0;
+    data=NULL;
+    data_out=NULL;
+    T_plan_1=NULL;
+    T_plan_1i=NULL;
+    T_plan_2=NULL;
+    T_plan_2i=NULL;
+    Mem_mgr=NULL;
+  };
+
+
 };
 
 int accfft_init(int nthreads);

@@ -78,6 +78,21 @@ struct accfft_plan_gpu{
   int procid;
   bool inplace;
   bool oneD;
+  bool r2c_plan_baked;
+  bool c2c_plan_baked;
+
+  accfft_plan_gpu(){
+    r2c_plan_baked=0;
+    c2c_plan_baked=0;
+    data=NULL;
+    data_out=NULL;
+    T_plan_1=NULL;
+    T_plan_1i=NULL;
+    T_plan_2=NULL;
+    T_plan_2i=NULL;
+    Mem_mgr=NULL;
+  };
+
 };
 
 int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm );

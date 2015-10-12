@@ -369,6 +369,8 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
     plan->iplan_2=-1;
 
   }
+
+  plan->r2c_plan_baked=true;
   return plan;
 
 }
@@ -538,7 +540,12 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
 void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data,Complex * data_out, double * timer,std::bitset<3> xyz){
-  accfft_execute_gpu(plan,-1,data,(double*)data_out,timer,xyz);
+  if(plan->r2c_plan_baked){
+    accfft_execute_gpu(plan,-1,data,(double*)data_out,timer,xyz);
+  }
+  else{
+    if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
+  }
 
   return;
 }
@@ -555,7 +562,12 @@ void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data,Complex * data_
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
 void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data,double * data_out, double * timer,std::bitset<3> xyz){
-  accfft_execute_gpu(plan,1,(double*)data,data_out,timer,xyz);
+  if(plan->r2c_plan_baked){
+    accfft_execute_gpu(plan,1,(double*)data,data_out,timer,xyz);
+  }
+  else{
+    if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
+  }
 
   return;
 }
@@ -846,6 +858,8 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
 
 
   }
+
+  plan->c2c_plan_baked=true;
   return plan;
 }
 
@@ -861,6 +875,11 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
 void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_d, Complex * data_out_d, double * timer,std::bitset<3> xyz){
+
+  if(!plan->c2c_plan_baked){
+    if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
+    return;
+  }
 
   if(data_d==NULL)
     data_d=plan->data_c;
