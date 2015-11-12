@@ -42,16 +42,19 @@ class Mem_Mgr{
 		// Deconstructor
 		~Mem_Mgr();
 };
+
+template <typename T>
 class T_Plan{
 	public:
+		T_Plan(){};
 		T_Plan(int N0, int N1, int n_tuples,Mem_Mgr * Mem_mgr,MPI_Comm, int howmany=1);
-    void which_method(T_Plan*,double*);
-    void which_fast_method(T_Plan*,double*,int howmany=1);
-    void execute(T_Plan*,double*,double*, unsigned flags=0, int howmany=1, int tag=0);
+    void which_method(T*);
+    void which_fast_method(T_Plan<T>*,T*,int howmany=1);
+    void execute(T_Plan<T>*,T*,double*, unsigned flags=0, int howmany=1, int tag=0);
 
-    void which_method_gpu(T_Plan*,double*);
-    void which_fast_method_gpu(T_Plan*,double*);
-    void execute_gpu(T_Plan*,double*,double*, unsigned flags=0, int howmany=1, int tag=0);
+    void which_method_gpu(T_Plan<T>*,double*);
+    void which_fast_method_gpu(T_Plan<T>*,double*);
+    void execute_gpu(T_Plan<T>*,double*,double*, unsigned flags=0, int howmany=1, int tag=0);
 
     ptrdiff_t N[2];
     ptrdiff_t n_tuples;
@@ -113,15 +116,17 @@ class T_Plan{
     // Deconstructor
     ~T_Plan();
 };
-void transpose_v5(T_Plan* T_plan, double * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
-void transpose_v6(T_Plan* T_plan, double * inout, double *timings, unsigned flags=0,int howmany=1 ); // INPLACE local transpose + alltoallv+local transpose
-void transpose_v7(T_Plan* T_plan, double * inout, double *timings , int kway, unsigned flags=0, int howmany=1); // INPLACE local transpose + paralltoallv+local transpose
-void transpose_v8(T_Plan* T_plan, double * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
-void fast_transpose_v1(T_Plan* T_plan, double * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
-void fast_transpose_v2(T_Plan* T_plan, double * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
-void fast_transpose_v3(T_Plan* T_plan, double * inout, double *timings, int kway,unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
-void fast_transpose_v1_h(T_Plan* T_plan, double * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
-void fast_transpose_v2_h(T_Plan* T_plan, double * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
-void fast_transpose_v3_h(T_Plan* T_plan, double * inout, double *timings, int kway,unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
+
+void mytestfunctiondouble();
+template<typename T> void transpose_v5        (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void transpose_v6        (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1 ); // INPLACE local transpose + alltoallv+local transpose
+template<typename T> void transpose_v7        (T_Plan<T>* T_plan, T * inout, double *timings , int kway, unsigned flags=0, int howmany=1); // INPLACE local transpose + paralltoallv+local transpose
+template<typename T> void transpose_v8        (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v1   (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v2   (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v3   (T_Plan<T>* T_plan, T * inout, double *timings, int kway,unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v1_h (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v2_h (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v3_h (T_Plan<T>* T_plan, T * inout, double *timings, int kway,unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 
 #endif
