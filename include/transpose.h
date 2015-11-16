@@ -20,6 +20,7 @@
 
 #ifndef _TRANSPOSE_
 #define _TRANSPOSE_
+template <typename T>
 class Mem_Mgr{
 	public:
 		Mem_Mgr(int N0, int N1, int n_tuples, MPI_Comm Comm, int howmany=1, int specified_alloc_local=0);
@@ -34,20 +35,21 @@ class Mem_Mgr{
 
     bool PINNED;
 
-    double * buffer;
-    double * buffer_2;
-    double * buffer_d;
-    //double * data_cpu;
+    T * buffer;
+    T * buffer_2;
+    T * buffer_d;
+    //T * data_cpu;
     //MPI_Comm comm;
 		// Deconstructor
 		~Mem_Mgr();
 };
 
+
 template <typename T>
 class T_Plan{
 	public:
 		T_Plan(){};
-		T_Plan(int N0, int N1, int n_tuples,Mem_Mgr * Mem_mgr,MPI_Comm, int howmany=1);
+		T_Plan(int N0, int N1, int n_tuples,Mem_Mgr<T> * Mem_mgr,MPI_Comm, int howmany=1);
     void which_method(T*);
     void which_fast_method(T_Plan<T>*,T*,int howmany=1);
     void execute(T_Plan<T>*,T*,double*, unsigned flags=0, int howmany=1, int tag=0);
@@ -103,16 +105,17 @@ class T_Plan{
     bool is_evenly_distributed;
 
     MPI_Comm comm;
+    MPI_Datatype MPI_T;
     MPI_Datatype *stype;
     MPI_Datatype *rtype;
     MPI_Datatype *stype_v8;
     MPI_Datatype *rtype_v8;
     MPI_Datatype *rtype_v8_;
 
-    double * buffer;
-    double * buffer_2;
-    double * buffer_d;
-    //double * data_cpu;
+    T * buffer;
+    T * buffer_2;
+    T * buffer_d;
+    //T * data_cpu;
     // Deconstructor
     ~T_Plan();
 };

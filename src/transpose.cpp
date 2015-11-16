@@ -42,7 +42,10 @@ static bool IsPowerOfTwo(ulong x)
 static int intpow(int a,int b){
   return ((int)std::pow((double)a,b));
 }
-Mem_Mgr::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int specified_alloc_local){
+
+
+template <typename T>
+Mem_Mgr<T>::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int specified_alloc_local){
 
   N[0]=N0;
   N[1]=N1;
@@ -77,9 +80,9 @@ Mem_Mgr::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int spec
 
 
     // Determine alloc local based on maximum size of input and output distribution
-    alloc_local=local_n0*N[1]*n_tuples*sizeof(double);
-    if(alloc_local<local_n1*N[0]*n_tuples*sizeof(double))
-      alloc_local=local_n1*N[0]*n_tuples*sizeof(double);
+    alloc_local=local_n0*N[1]*n_tuples*sizeof(T);
+    if(alloc_local<local_n1*N[0]*n_tuples*sizeof(T))
+      alloc_local=local_n1*N[0]*n_tuples*sizeof(T);
 
     alloc_local*=howmany;
   }
@@ -97,7 +100,9 @@ Mem_Mgr::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int spec
   memset( buffer_2,0, alloc_local );
 
 }
-Mem_Mgr::~Mem_Mgr(){
+
+template <typename T>
+Mem_Mgr<T>::~Mem_Mgr(){
 
   free(buffer);
   free(buffer_2);
@@ -110,7 +115,8 @@ void mytestfunctiondouble(){
   T->which_method(NULL);
 }
 
-T_Plan<double>::T_Plan(int N0, int N1,int tuples, Mem_Mgr * Mem_mgr, MPI_Comm Comm, int howmany){
+template <typename T>
+T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm, int howmany){
 
   N[0]=N0;
   N[1]=N1;
@@ -269,6 +275,11 @@ T_Plan<double>::T_Plan(int N0, int N1,int tuples, Mem_Mgr * Mem_mgr, MPI_Comm Co
   method=5;  //Default Transpose method
   kway=8;  // for transpose_v7
   kway_async=true;
+
+
+  MPI_Type_contiguous(sizeof(T), MPI_BYTE, &MPI_T);
+  MPI_Type_commit(&MPI_T);
+
   stype=new MPI_Datatype[nprocs];
   rtype=new MPI_Datatype[nprocs];
   //stype_v8=new MPI_Datatype[nprocs];
@@ -276,14 +287,14 @@ T_Plan<double>::T_Plan(int N0, int N1,int tuples, Mem_Mgr * Mem_mgr, MPI_Comm Co
   //rtype_v8=new MPI_Datatype[nprocs];
 
   for (int i=0;i<nprocs;i++){
-    MPI_Type_vector(howmany,scount_proc[i],local_n0*N[1]*n_tuples, MPI_DOUBLE, &stype[i]);
-    MPI_Type_vector(howmany,rcount_proc[i],local_n1*N[0]*n_tuples, MPI_DOUBLE, &rtype[i]);
+    MPI_Type_vector(howmany,scount_proc[i],local_n0*N[1]*n_tuples, MPI_T, &stype[i]);
+    MPI_Type_vector(howmany,rcount_proc[i],local_n1*N[0]*n_tuples, MPI_T, &rtype[i]);
 
     MPI_Type_commit(&stype[i]);
     MPI_Type_commit(&rtype[i]);
 
-    soffset_proc_w[i]=soffset_proc[i]*8; //SNAFU in bytes
-    roffset_proc_w[i]=roffset_proc[i]*8;
+    soffset_proc_w[i]=soffset_proc[i]*sizeof(T); //SNAFU in bytes
+    roffset_proc_w[i]=roffset_proc[i]*sizeof(T);
     scount_proc_w[i]=1;
     rcount_proc_w[i]=1;
 
@@ -294,22 +305,22 @@ T_Plan<double>::T_Plan(int N0, int N1,int tuples, Mem_Mgr * Mem_mgr, MPI_Comm Co
 
 
     /*
-    if(local_n0!=0){
-      soffset_proc_v8[i]=soffset_proc[i]/local_n0;
-      scount_proc_v8[i]=scount_proc[i]/local_n0;
-    }
-    if(local_n1!=0){
-      roffset_proc_v8[i]=roffset_proc[i]/local_n1;
-      rcount_proc_v8[i]=rcount_proc[i]/local_n1;
-    }
+       if(local_n0!=0){
+       soffset_proc_v8[i]=soffset_proc[i]/local_n0;
+       scount_proc_v8[i]=scount_proc[i]/local_n0;
+       }
+       if(local_n1!=0){
+       roffset_proc_v8[i]=roffset_proc[i]/local_n1;
+       rcount_proc_v8[i]=rcount_proc[i]/local_n1;
+       }
 
-    MPI_Type_vector(local_n0,scount_proc_v8[i],N[1]*n_tuples, MPI_DOUBLE, &stype_v8[i]);
-    MPI_Type_vector(local_n1,1*n_tuples,N[0]*n_tuples, MPI_DOUBLE, &rtype_v8_[i]);
-    MPI_Type_hvector(rcount_proc_v8[i],1,n_tuples*sizeof(double),rtype_v8_[i], &rtype_v8[i]);
+       MPI_Type_vector(local_n0,scount_proc_v8[i],N[1]*n_tuples, MPI_T, &stype_v8[i]);
+       MPI_Type_vector(local_n1,1*n_tuples,N[0]*n_tuples, MPI_T, &rtype_v8_[i]);
+       MPI_Type_hvector(rcount_proc_v8[i],1,n_tuples*sizeof(double),rtype_v8_[i], &rtype_v8[i]);
 
-    MPI_Type_commit(&stype_v8[i]);
-    MPI_Type_commit(&rtype_v8[i]);
-    */
+       MPI_Type_commit(&stype_v8[i]);
+       MPI_Type_commit(&rtype_v8[i]);
+       */
 
   }
 
@@ -331,14 +342,14 @@ void T_Plan<T>::which_method(T* data){
   for (int i=0;i<2*(int)log2(nprocs)+3;i++)
     time[i]=1000;
 
-  transpose_v5(T_plan,(double*)data,dummy);  // Warmup
+  transpose_v5(T_plan,(T*)data,dummy);  // Warmup
   time[0]=-MPI_Wtime();
-  transpose_v5(T_plan,(double*)data,dummy);
+  transpose_v5(T_plan,(T*)data,dummy);
   time[0]+=MPI_Wtime();
 
-  transpose_v6(T_plan,(double*)data,dummy);  // Warmup
+  transpose_v6(T_plan,(T*)data,dummy);  // Warmup
   time[1]=-MPI_Wtime();
-  transpose_v6(T_plan,(double*)data,dummy);
+  transpose_v6(T_plan,(T*)data,dummy);
   time[1]+=MPI_Wtime();
 
   if(IsPowerOfTwo(nprocs) && nprocs>511){
@@ -347,9 +358,9 @@ void T_Plan<T>::which_method(T* data){
     for (int i=0;i<6;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      transpose_v7(T_plan,(double*)data,dummy,kway);  // Warmup
+      transpose_v7(T_plan,(T*)data,dummy,kway);  // Warmup
       time[2+i]=-MPI_Wtime();
-      transpose_v7(T_plan,(double*)data,dummy,kway);
+      transpose_v7(T_plan,(T*)data,dummy,kway);
       time[2+i]+=MPI_Wtime();
     }
 #endif
@@ -359,26 +370,26 @@ void T_Plan<T>::which_method(T* data){
     for (int i=0;i<6;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      transpose_v7(T_plan,(double*)data,dummy,kway);  // Warmup
+      transpose_v7(T_plan,(T*)data,dummy,kway);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
-      transpose_v7(T_plan,(double*)data,dummy,kway);
+      transpose_v7(T_plan,(T*)data,dummy,kway);
       time[2+(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
   }
 
-  //transpose_v8(T_plan,(double*)data,dummy);  // Warmup
+  //transpose_v8(T_plan,(T*)data,dummy);  // Warmup
   //time[2*(int)log2(nprocs)+2]=-MPI_Wtime();
-  //transpose_v8(T_plan,(double*)data,dummy);
+  //transpose_v8(T_plan,(T*)data,dummy);
   //time[2*(int)log2(nprocs)+2]+=MPI_Wtime();
 
   MPI_Allreduce(time,g_time,(2*(int)log2(nprocs)+3),MPI_DOUBLE,MPI_MAX, T_plan->comm);
   if(VERBOSE>=1)
-  if(T_plan->procid==0){
-    for(int i=0;i<2*(int)log2(nprocs)+3;++i)
-      std::cout<<" time["<<i<<"]= "<<g_time[i]<<" , ";
-    std::cout<<'\n';
-  }
+    if(T_plan->procid==0){
+      for(int i=0;i<2*(int)log2(nprocs)+3;++i)
+        std::cout<<" time["<<i<<"]= "<<g_time[i]<<" , ";
+      std::cout<<'\n';
+    }
 
   double smallest=1000;
   for (int i=0;i<2*(int)log2(nprocs)+3;i++)
@@ -411,8 +422,8 @@ void T_Plan<T>::which_method(T* data){
   }
 
   if(VERBOSE>=1){
-  PCOUT<<"smallest= "<<smallest<<std::endl;
-  PCOUT<<"Using transpose v"<<method<<" kway= "<<T_plan->kway<<" kway_async="<<T_plan->kway_async<<std::endl;
+    PCOUT<<"smallest= "<<smallest<<std::endl;
+    PCOUT<<"Using transpose v"<<method<<" kway= "<<T_plan->kway<<" kway_async="<<T_plan->kway_async<<std::endl;
   }
   free(time);
   free(g_time);
@@ -430,14 +441,14 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
   for (int i=0;i<2*(int)log2(nprocs)+3;i++)
     time[i]=1000;
 
-  fast_transpose_v1(T_plan,(double*)data,dummy,2,howmany);  // Warmup
+  fast_transpose_v1(T_plan,(T*)data,dummy,2,howmany);  // Warmup
   time[0]=-MPI_Wtime();
-  fast_transpose_v1(T_plan,(double*)data,dummy,2,howmany);
+  fast_transpose_v1(T_plan,(T*)data,dummy,2,howmany);
   time[0]+=MPI_Wtime();
 
-  fast_transpose_v2(T_plan,(double*)data,dummy,2,howmany);  // Warmup
+  fast_transpose_v2(T_plan,(T*)data,dummy,2,howmany);  // Warmup
   time[1]=-MPI_Wtime();
-  fast_transpose_v2(T_plan,(double*)data,dummy,2,howmany);
+  fast_transpose_v2(T_plan,(T*)data,dummy,2,howmany);
   time[1]+=MPI_Wtime();
 
   if(IsPowerOfTwo(nprocs) && nprocs>511){
@@ -445,9 +456,9 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
     for (int i=0;i<6;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_v3(T_plan,(double*)data,dummy,kway,2,howmany);  // Warmup
+      fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);  // Warmup
       time[2+i]=-MPI_Wtime();
-      fast_transpose_v3(T_plan,(double*)data,dummy,kway,2,howmany);
+      fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);
       time[2+i]+=MPI_Wtime();
     }
 
@@ -455,25 +466,25 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
     for (int i=0;i<6;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_v3(T_plan,(double*)data,dummy,kway,howmany);  // Warmup
+      fast_transpose_v3(T_plan,(T*)data,dummy,kway,howmany);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_v3(T_plan,(double*)data,dummy,kway,howmany);
+      fast_transpose_v3(T_plan,(T*)data,dummy,kway,howmany);
       time[2+(int)log2(nprocs)+i]+=MPI_Wtime();
     }
   }
 
-  //transpose_v8(T_plan,(double*)data,dummy);  // Warmup
+  //transpose_v8(T_plan,(T*)data,dummy);  // Warmup
   //time[2*(int)log2(nprocs)+2]=-MPI_Wtime();
-  //transpose_v8(T_plan,(double*)data,dummy);
+  //transpose_v8(T_plan,(T*)data,dummy);
   //time[2*(int)log2(nprocs)+2]+=MPI_Wtime();
 
   MPI_Allreduce(time,g_time,(2*(int)log2(nprocs)+3),MPI_DOUBLE,MPI_MAX, T_plan->comm);
   if(VERBOSE>=1){
-  if(T_plan->procid==0){
-    for(int i=0;i<2*(int)log2(nprocs)+3;++i)
-      std::cout<<" time["<<i<<"]= "<<g_time[i]<<" , ";
-    std::cout<<'\n';
-  }
+    if(T_plan->procid==0){
+      for(int i=0;i<2*(int)log2(nprocs)+3;++i)
+        std::cout<<" time["<<i<<"]= "<<g_time[i]<<" , ";
+      std::cout<<'\n';
+    }
   }
 
   double smallest=1000;
@@ -507,8 +518,8 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
   }
 
   if(VERBOSE>=1){
-  PCOUT<<"smallest= "<<smallest<<std::endl;
-  PCOUT<<"Using transpose v"<<method<<" kway= "<<T_plan->kway<<" kway_async="<<T_plan->kway_async<<std::endl;
+    PCOUT<<"smallest= "<<smallest<<std::endl;
+    PCOUT<<"Using transpose v"<<method<<" kway= "<<T_plan->kway<<" kway_async="<<T_plan->kway_async<<std::endl;
   }
   free(time);
   free(g_time);
@@ -522,29 +533,29 @@ void T_Plan<T>::execute(T_Plan* T_plan,T* data,double *timings, unsigned flags, 
 
   if(howmany==1){
     if(method==1)
-      fast_transpose_v1(T_plan,(double*)data,timings,flags,howmany,tag);
+      fast_transpose_v1(T_plan,(T*)data,timings,flags,howmany,tag);
     if(method==2)
-      fast_transpose_v2(T_plan,(double*)data,timings,flags,howmany,tag);
+      fast_transpose_v2(T_plan,(T*)data,timings,flags,howmany,tag);
     if(method==3)
-      fast_transpose_v3(T_plan,(double*)data,timings,kway,flags,howmany,tag);
+      fast_transpose_v3(T_plan,(T*)data,timings,kway,flags,howmany,tag);
   }
   else
   {
     if(method==1)
-      fast_transpose_v1_h(T_plan,(double*)data,timings,flags,howmany,tag);
+      fast_transpose_v1_h(T_plan,(T*)data,timings,flags,howmany,tag);
     if(method==2)
-      fast_transpose_v2_h(T_plan,(double*)data,timings,flags,howmany,tag);
+      fast_transpose_v2_h(T_plan,(T*)data,timings,flags,howmany,tag);
     if(method==3)
-      fast_transpose_v3_h(T_plan,(double*)data,timings,kway,flags,howmany,tag);
+      fast_transpose_v3_h(T_plan,(T*)data,timings,kway,flags,howmany,tag);
   }
   if(method==5)
-    transpose_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_v5(T_plan,(T*)data,timings,flags,howmany,tag);
   if(method==6)
-    transpose_v6(T_plan,(double*)data,timings,flags,howmany);
+    transpose_v6(T_plan,(T*)data,timings,flags,howmany);
   if(method==7)
-    transpose_v7(T_plan,(double*)data,timings,kway,flags,howmany);
+    transpose_v7(T_plan,(T*)data,timings,kway,flags,howmany);
   if(method==8)
-    transpose_v8(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_v8(T_plan,(T*)data,timings,flags,howmany,tag);
 
   return;
 }
@@ -591,7 +602,7 @@ void local_transpose(int r, int c, int n_tuples, T * in, T *out ){
   int ptr=0;
   for(int j=0;j<c;j++){
     for(int i=0;i<r;i++){
-      memcpy (&out[ptr],&in[(i*c+j)*n_tuples],sizeof(double)*n_tuples);
+      memcpy (&out[ptr],&in[(i*c+j)*n_tuples],sizeof(T)*n_tuples);
       ptr+=n_tuples;
     }
   }
@@ -608,11 +619,11 @@ void local_transpose(int r, int c, int n_tuples, int n_tuples2,T * in, T *out ){
     for(int i=0;i<r;i++){
 
       if(i==r-1){
-        memcpy (&out[ptr],&in[i*c*n_tuples+j*n_tuples2],sizeof(double)*n_tuples2);
+        memcpy (&out[ptr],&in[i*c*n_tuples+j*n_tuples2],sizeof(T)*n_tuples2);
         ptr+=n_tuples2;
       }
       else{
-        memcpy (&out[ptr],&in[(i*c+j)*n_tuples],sizeof(double)*n_tuples);
+        memcpy (&out[ptr],&in[(i*c+j)*n_tuples],sizeof(T)*n_tuples);
         ptr+=n_tuples;
       }
     }
@@ -630,11 +641,11 @@ void local_transpose_col(int r, int c, int n_tuples, int n_tuples2,T * in, T *ou
     for(int i=0;i<r;i++){
 
       if(j==c-1){
-        memcpy (&out[ptr],&in[i*((c-1)*n_tuples+n_tuples2)+(j)*n_tuples],sizeof(double)*n_tuples2);
+        memcpy (&out[ptr],&in[i*((c-1)*n_tuples+n_tuples2)+(j)*n_tuples],sizeof(T)*n_tuples2);
         ptr+=n_tuples2;
       }
       else{
-        memcpy (&out[ptr],&in[i*((c-1)*n_tuples+n_tuples2)+j*n_tuples],sizeof(double)*n_tuples);
+        memcpy (&out[ptr],&in[i*((c-1)*n_tuples+n_tuples2)+j*n_tuples],sizeof(T)*n_tuples);
         ptr+=n_tuples;
       }
     }
@@ -648,7 +659,7 @@ template <typename T>
 void local_transpose(int r, int c, int n_tuples, T* A){
   {// new CPU code
     size_t i_, j_;
-    double* buff=(double*)malloc(n_tuples*sizeof(double));
+    T* buff=(T*)malloc(n_tuples*sizeof(T));
     for(size_t i=0;i<r;i++)
       for(size_t j=0;j<c;j++){
         size_t src=j+c*i;
@@ -664,15 +675,15 @@ void local_transpose(int r, int c, int n_tuples, T* A){
         }
         if(src!=trg) continue;
 
-        memcpy(buff, A+trg*n_tuples, n_tuples*sizeof(double));
+        memcpy(buff, A+trg*n_tuples, n_tuples*sizeof(T));
         for(size_t k=0;k<cycle_len;k++){ // reverse cycle
           j_=trg/r;
           i_=trg%r;
           src=j_+c*i_;
-          memcpy(A+trg*n_tuples, A+src*n_tuples, n_tuples*sizeof(double));
+          memcpy(A+trg*n_tuples, A+src*n_tuples, n_tuples*sizeof(T));
           trg=src;
         }
-        memcpy(A+trg*n_tuples, buff, n_tuples*sizeof(double));
+        memcpy(A+trg*n_tuples, buff, n_tuples*sizeof(T));
       }
     free(buff);
   }
@@ -688,7 +699,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -700,8 +711,8 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
-  double * buffer_2= T_plan->buffer_2;
+  T * send_recv = T_plan->buffer;
+  T * buffer_2= T_plan->buffer_2;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -811,7 +822,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   }
   int counter=1;
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   if(Flags[1]==1){
     s_buf=send_recv; r_buf=data;
   }
@@ -823,9 +834,9 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
     if(proc!=procid){
       soffset=soffset_proc[proc];
       roffset=roffset_proc[proc];
-      MPI_Isend(&s_buf[soffset],scount_proc[proc],MPI_DOUBLE,proc, tag,
+      MPI_Isend(&s_buf[soffset],scount_proc[proc],T_plan->MPI_T,proc, tag,
           T_plan->comm, &s_request[proc]);
-      MPI_Irecv(&r_buf[roffset],rcount_proc[proc],MPI_DOUBLE, proc,
+      MPI_Irecv(&r_buf[roffset],rcount_proc[proc],T_plan->MPI_T, proc,
           tag, T_plan->comm, &request[proc]);
     }
   }
@@ -833,7 +844,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   soffset=soffset_proc[procid];//aoffset_proc[proc];//proc*count_proc[proc];
   roffset=roffset_proc[procid];
   for(int h=0;h<howmany;h++)
-    memcpy(&r_buf[h*odist+roffset],&s_buf[h*idist+soffset],sizeof(double)*scount_proc[procid]);
+    memcpy(&r_buf[h*odist+roffset],&s_buf[h*idist+soffset],sizeof(T)*scount_proc[procid]);
 
 
   // If the output is to be transposed locally, then everything is done in sendrecv. just copy it
@@ -915,7 +926,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_v6(T_plan,(double*)data,timings,flags,howmany);
+    transpose_v6(T_plan,(T*)data,timings,flags,howmany);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -927,8 +938,8 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
-  double * buffer_2= T_plan->buffer_2;
+  T * send_recv = T_plan->buffer;
+  T * buffer_2= T_plan->buffer_2;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -1024,7 +1035,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   MPI_Datatype *rtype=T_plan->rtype;
   MPI_Barrier(T_plan->comm);
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   if(Flags[1]==1){
     s_buf=send_recv; r_buf=data;
   }
@@ -1035,12 +1046,12 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   comm_time-=MPI_Wtime();
   if(T_plan->is_evenly_distributed==0)
     MPI_Alltoallv(s_buf,scount_proc_f,
-        soffset_proc_f, MPI_DOUBLE,r_buf,
-        rcount_proc_f,roffset_proc_f, MPI_DOUBLE,
+        soffset_proc_f, T_plan->MPI_T,r_buf,
+        rcount_proc_f,roffset_proc_f, T_plan->MPI_T,
         T_plan->comm);
   else
-    MPI_Alltoall(s_buf, scount_proc_f[0], MPI_DOUBLE,
-        r_buf, rcount_proc_f[0], MPI_DOUBLE,
+    MPI_Alltoall(s_buf, scount_proc_f[0], T_plan->MPI_T,
+        r_buf, rcount_proc_f[0], T_plan->MPI_T,
         T_plan->comm);
 
   comm_time+=MPI_Wtime();
@@ -1090,7 +1101,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
 
 
   reshuffle_time+=MPI_Wtime();
-        MPI_Barrier(T_plan->comm);
+  MPI_Barrier(T_plan->comm);
 
 
   if(VERBOSE>=1){
@@ -1114,7 +1125,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_v7(T_plan,(double*)data,timings,kway,flags,howmany);
+    transpose_v7(T_plan,(T*)data,timings,kway,flags,howmany);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -1126,8 +1137,8 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
-  double * buffer_2= T_plan->buffer_2;
+  T * send_recv = T_plan->buffer;
+  T * buffer_2= T_plan->buffer_2;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -1223,7 +1234,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
   MPI_Datatype *rtype=T_plan->rtype;
   MPI_Barrier(T_plan->comm);
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   if(Flags[1]==1){
     s_buf=send_recv; r_buf=data;
   }
@@ -1233,10 +1244,10 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
   //PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
   comm_time-=MPI_Wtime();
   if(T_plan->kway_async)
-    par::Mpi_Alltoallv_dense<double,true>(s_buf     , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense<T,true>(s_buf     , scount_proc_f, soffset_proc_f,
         r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
   else
-    par::Mpi_Alltoallv_dense<double,false>(s_buf     , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense<T,false>(s_buf     , scount_proc_f, soffset_proc_f,
         r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
 
   comm_time+=MPI_Wtime();
@@ -1286,7 +1297,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
 
 
   reshuffle_time+=MPI_Wtime();
-        MPI_Barrier(T_plan->comm);
+  MPI_Barrier(T_plan->comm);
 
 
   if(VERBOSE>=1){
@@ -1311,7 +1322,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -1323,8 +1334,8 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
-  double * buffer_2= T_plan->buffer_2;
+  T * send_recv = T_plan->buffer;
+  T * buffer_2= T_plan->buffer_2;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -1391,12 +1402,12 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
     for(int h=0;h<howmany;++h){
       for(int i=0;i<local_n0;++i){
         //for(int j=local_1_start_proc[proc];j<local_1_start_proc[proc]+local_n1_proc[proc];++j){
-        //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(double)*n_tuples);
+        //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(T)*n_tuples);
         //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
         //  ptr+=n_tuples;
         //}
-          memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(double)*n_tuples*local_n1_proc[proc]);
-          ptr+=n_tuples*local_n1_proc[proc];
+        memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(T)*n_tuples*local_n1_proc[proc]);
+        ptr+=n_tuples*local_n1_proc[proc];
       }
     }
 
@@ -1445,22 +1456,22 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   }
   int counter=1;
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=buffer_2; r_buf=send_recv;
   // SEND
   for (int proc=0;proc<nprocs;++proc){
     if(proc!=procid){
       soffset=soffset_proc[proc];
       roffset=roffset_proc[proc];
-      MPI_Isend(&s_buf[soffset*howmany],scount_proc[proc]*howmany,MPI_DOUBLE,proc, tag,
+      MPI_Isend(&s_buf[soffset*howmany],scount_proc[proc]*howmany,T_plan->MPI_T,proc, tag,
           T_plan->comm, &s_request[proc]);
-      MPI_Irecv(&r_buf[roffset*howmany],rcount_proc[proc]*howmany,MPI_DOUBLE, proc,
+      MPI_Irecv(&r_buf[roffset*howmany],rcount_proc[proc]*howmany,T_plan->MPI_T, proc,
           tag, T_plan->comm, &request[proc]);
     }
   }
   soffset=soffset_proc[procid];//aoffset_proc[proc];//proc*count_proc[proc];
   roffset=roffset_proc[procid];
-  memcpy(&r_buf[roffset*howmany],&s_buf[soffset*howmany],howmany*sizeof(double)*scount_proc[procid]);
+  memcpy(&r_buf[roffset*howmany],&s_buf[soffset*howmany],howmany*sizeof(T)*scount_proc[procid]);
 
 
   // If the output is to be transposed locally, then everything is done in sendrecv. just copy it
@@ -1497,11 +1508,11 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   for (int proc=0;proc<nprocs_0;++proc)
     for(int h=0;h<howmany;++h){
       for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-          memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(double)*n_tuples);
+        memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
         //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
-          ptr+=n_tuples*local_n1;
+        ptr+=n_tuples*local_n1;
         //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-        //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(double)*n_tuples);
+        //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
         //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
         //  ptr+=n_tuples;
         //}
@@ -1512,8 +1523,8 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
 #pragma omp parallel for
-      for(int h=0;h<howmany;h++)
-        local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
+    for(int h=0;h<howmany;h++)
+      local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
   }
 
   if(VERBOSE>=2) PCOUT<<"2nd Transpose"<<std::endl;
@@ -1534,7 +1545,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
 
 
   reshuffle_time+=MPI_Wtime();
-        MPI_Barrier(T_plan->comm);
+  MPI_Barrier(T_plan->comm);
   delete [] request;
   delete [] s_request;
 
@@ -1560,7 +1571,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_v6(T_plan,(double*)data,timings,flags,howmany);
+    transpose_v6(T_plan,(T*)data,timings,flags,howmany);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -1572,8 +1583,8 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
-  double * buffer_2= T_plan->buffer_2;
+  T * send_recv = T_plan->buffer;
+  T * buffer_2= T_plan->buffer_2;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -1640,12 +1651,12 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
     for(int h=0;h<howmany;++h){
       for(int i=0;i<local_n0;++i){
         //for(int j=local_1_start_proc[proc];j<local_1_start_proc[proc]+local_n1_proc[proc];++j){
-        //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(double)*n_tuples);
+        //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(T)*n_tuples);
         //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
         //  ptr+=n_tuples;
         //}
-          memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(double)*n_tuples*local_n1_proc[proc]);
-          ptr+=n_tuples*local_n1_proc[proc];
+        memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(T)*n_tuples*local_n1_proc[proc]);
+        ptr+=n_tuples*local_n1_proc[proc];
       }
     }
 
@@ -1687,17 +1698,17 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   MPI_Status ierr;
   int counter=1;
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=buffer_2; r_buf=send_recv;
   // SEND
   if(T_plan->is_evenly_distributed==0)
     MPI_Alltoallv(s_buf,scount_proc_f,
-        soffset_proc_f, MPI_DOUBLE,r_buf,
-        rcount_proc_f,roffset_proc_f, MPI_DOUBLE,
+        soffset_proc_f, T_plan->MPI_T,r_buf,
+        rcount_proc_f,roffset_proc_f, T_plan->MPI_T,
         T_plan->comm);
   else
-    MPI_Alltoall(s_buf, scount_proc_f[0], MPI_DOUBLE,
-        r_buf, rcount_proc_f[0], MPI_DOUBLE,
+    MPI_Alltoall(s_buf, scount_proc_f[0], T_plan->MPI_T,
+        r_buf, rcount_proc_f[0], T_plan->MPI_T,
         T_plan->comm);
 
   comm_time+=MPI_Wtime();
@@ -1728,10 +1739,10 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   for (int proc=0;proc<nprocs_0;++proc)
     for(int h=0;h<howmany;++h){
       for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-          memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(double)*n_tuples);
-          ptr+=n_tuples*local_n1;
+        memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
+        ptr+=n_tuples*local_n1;
         //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-        //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(double)*n_tuples);
+        //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
         //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
         //  ptr+=n_tuples;
         //}
@@ -1742,8 +1753,8 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
 #pragma omp parallel for
-      for(int h=0;h<howmany;h++)
-        local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
+    for(int h=0;h<howmany;h++)
+      local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
   }
 
   if(VERBOSE>=2) PCOUT<<"2nd Transpose"<<std::endl;
@@ -1765,7 +1776,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   //PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 
   reshuffle_time+=MPI_Wtime();
-        MPI_Barrier(T_plan->comm);
+  MPI_Barrier(T_plan->comm);
 
 
   if(VERBOSE>=1){
@@ -1789,7 +1800,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_v7(T_plan,(double*)data,timings,kway,flags,howmany);
+    transpose_v7(T_plan,(T*)data,timings,kway,flags,howmany);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -1801,8 +1812,8 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
-  double * buffer_2= T_plan->buffer_2;
+  T * send_recv = T_plan->buffer;
+  T * buffer_2= T_plan->buffer_2;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -1869,12 +1880,12 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
     for(int h=0;h<howmany;++h){
       for(int i=0;i<local_n0;++i){
         //for(int j=local_1_start_proc[proc];j<local_1_start_proc[proc]+local_n1_proc[proc];++j){
-        //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(double)*n_tuples);
+        //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(T)*n_tuples);
         //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
         //  ptr+=n_tuples;
         //}
-          memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(double)*n_tuples*local_n1_proc[proc]);
-          ptr+=n_tuples*local_n1_proc[proc];
+        memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(T)*n_tuples*local_n1_proc[proc]);
+        ptr+=n_tuples*local_n1_proc[proc];
       }
     }
 
@@ -1916,14 +1927,14 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   MPI_Status ierr;
   int counter=1;
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=buffer_2; r_buf=send_recv;
 
   if(T_plan->kway_async)
-    par::Mpi_Alltoallv_dense<double,true>(s_buf     , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense<T,true>(s_buf     , scount_proc_f, soffset_proc_f,
         r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
   else
-    par::Mpi_Alltoallv_dense<double,false>(s_buf     , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense<T,false>(s_buf     , scount_proc_f, soffset_proc_f,
         r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
 
   comm_time+=MPI_Wtime();
@@ -1954,10 +1965,10 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   for (int proc=0;proc<nprocs_0;++proc)
     for(int h=0;h<howmany;++h){
       for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-          memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(double)*n_tuples);
-          ptr+=n_tuples*local_n1;
+        memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
+        ptr+=n_tuples*local_n1;
         //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-        //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(double)*n_tuples);
+        //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
         //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
         //  ptr+=n_tuples;
         //}
@@ -1968,8 +1979,8 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
 #pragma omp parallel for
-      for(int h=0;h<howmany;h++)
-        local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
+    for(int h=0;h<howmany;h++)
+      local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
   }
 
   if(VERBOSE>=2) PCOUT<<"2nd Transpose"<<std::endl;
@@ -1991,7 +2002,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   //PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 
   reshuffle_time+=MPI_Wtime();
-        MPI_Barrier(T_plan->comm);
+  MPI_Barrier(T_plan->comm);
 
 
   if(VERBOSE>=1){
@@ -2023,7 +2034,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
+  T * send_recv = T_plan->buffer;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -2139,7 +2150,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
       soffset=soffset_proc[proc];//aoffset_proc[proc];//proc*count_proc[proc];
       roffset=roffset_proc[proc];
       for(int h=0;h<howmany;h++)
-        memcpy(&send_recv[h*odist+roffset],&data[h*idist+soffset],sizeof(double)*scount_proc[proc]);
+        memcpy(&send_recv[h*odist+roffset],&data[h*idist+soffset],sizeof(T)*scount_proc[proc]);
     }
   }
 
@@ -2268,7 +2279,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
+  T * send_recv = T_plan->buffer;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -2358,12 +2369,12 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   }
   else if(T_plan->is_evenly_distributed==0)
     MPI_Alltoallv(data,scount_proc,
-        soffset_proc, MPI_DOUBLE,send_recv,
-        rcount_proc,roffset_proc, MPI_DOUBLE,
+        soffset_proc, T_plan->MPI_T,send_recv,
+        rcount_proc,roffset_proc, T_plan->MPI_T,
         T_plan->comm);
   else
-    MPI_Alltoall(data, scount_proc[0], MPI_DOUBLE,
-        send_recv, rcount_proc[0], MPI_DOUBLE,
+    MPI_Alltoall(data, scount_proc[0], T_plan->MPI_T,
+        send_recv, rcount_proc[0], T_plan->MPI_T,
         T_plan->comm);
 
   comm_time+=MPI_Wtime();
@@ -2483,7 +2494,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings,int kway, unsigne
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
+  T * send_recv = T_plan->buffer;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -2558,10 +2569,10 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings,int kway, unsigne
   comm_time-=MPI_Wtime();
 
   if(T_plan->kway_async)
-    par::Mpi_Alltoallv_dense<double,true>(data     , scount_proc, soffset_proc,
+    par::Mpi_Alltoallv_dense<T,true>(data     , scount_proc, soffset_proc,
         send_recv, rcount_proc, roffset_proc, T_plan->comm,kway);
   else
-    par::Mpi_Alltoallv_dense<double,false>(data     , scount_proc, soffset_proc,
+    par::Mpi_Alltoallv_dense<T,false>(data     , scount_proc, soffset_proc,
         send_recv, rcount_proc, roffset_proc, T_plan->comm,kway);
   comm_time+=MPI_Wtime();
 
@@ -2662,7 +2673,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double * send_recv = T_plan->buffer;
+  T * send_recv = T_plan->buffer;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -2850,7 +2861,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
           MPI_Barrier(T_plan->comm);
         }
   }
-    reshuffle_time+=MPI_Wtime();
+  reshuffle_time+=MPI_Wtime();
   delete [] request;
   delete [] s_request;
   MPI_Barrier(T_plan->comm);
@@ -2871,5 +2882,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
 
 
 template class T_Plan<double>;
+template class T_Plan<float>;
 
-
+template class Mem_Mgr<double>;
+template class Mem_Mgr<float>;
