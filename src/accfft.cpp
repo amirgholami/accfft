@@ -292,11 +292,11 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
 
   // 1D Decomposition
   if (plan->oneD){
-    plan->Mem_mgr= new Mem_Mgr(n[0],n[1],n_tuples_o,c_comm);
-    plan->T_plan_2= new T_Plan(n[0],n[1],n_tuples_o, plan->Mem_mgr, c_comm);
-    plan->T_plan_2i= new T_Plan(n[1],n[0],n_tuples_o,plan->Mem_mgr, c_comm);
-    plan->T_plan_1=NULL;
-    plan->T_plan_1i=NULL;
+    plan->Mem_mgr   = new Mem_Mgr<double>(n[0],n[1],n_tuples_o,c_comm);
+    plan->T_plan_2  = new T_Plan<double>(n[0],n[1],n_tuples_o, plan->Mem_mgr, c_comm);
+    plan->T_plan_2i = new T_Plan<double>(n[1],n[0],n_tuples_o,plan->Mem_mgr, c_comm);
+    plan->T_plan_1  =NULL;
+    plan->T_plan_1i =NULL;
 
     plan->T_plan_2->alloc_local=alloc_max;
     plan->T_plan_2i->alloc_local=alloc_max;
@@ -319,11 +319,11 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
 
   // 2D Decomposition
   if (!plan->oneD){
-    plan->Mem_mgr= new Mem_Mgr(n[1],n_tuples_o/2,2,plan->row_comm,osize_0[0],alloc_max);
-    plan->T_plan_1= new T_Plan(n[1],n_tuples_o/2,2, plan->Mem_mgr, plan->row_comm,osize_0[0]);
-    plan->T_plan_2= new T_Plan(n[0],n[1],osize_2[2]*2, plan->Mem_mgr, plan->col_comm);
-    plan->T_plan_2i= new T_Plan(n[1],n[0],osize_2i[2]*2, plan->Mem_mgr, plan->col_comm);
-    plan->T_plan_1i= new T_Plan(n_tuples_o/2,n[1],2, plan->Mem_mgr, plan->row_comm,osize_1i[0]);
+    plan->Mem_mgr   = new Mem_Mgr<double>(n[1],n_tuples_o/2,2,plan->row_comm,osize_0[0],alloc_max);
+    plan->T_plan_1  = new T_Plan<double>(n[1],n_tuples_o/2,2, plan->Mem_mgr, plan->row_comm,osize_0[0]);
+    plan->T_plan_2  = new T_Plan<double>(n[0],n[1],osize_2[2]*2, plan->Mem_mgr, plan->col_comm);
+    plan->T_plan_2i = new T_Plan<double>(n[1],n[0],osize_2i[2]*2, plan->Mem_mgr, plan->col_comm);
+    plan->T_plan_1i = new T_Plan<double>(n_tuples_o/2,n[1],2, plan->Mem_mgr, plan->row_comm,osize_1i[0]);
 
     plan->T_plan_1->alloc_local=plan->alloc_max;
     plan->T_plan_2->alloc_local=plan->alloc_max;
@@ -681,9 +681,9 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
   // 1D Decomposition
   if (plan->oneD){
     int NX=n[0],NY=n[1],NZ=n[2];
-    plan->Mem_mgr= new Mem_Mgr(NX,NY,(NZ)*2,c_comm);
-    plan->T_plan_2= new T_Plan(NX,NY,(NZ)*2, plan->Mem_mgr,c_comm);
-    plan->T_plan_2i= new T_Plan(NY,NX,NZ*2, plan->Mem_mgr,c_comm);
+    plan->Mem_mgr   = new Mem_Mgr<double>(NX,NY,(NZ)*2,c_comm);
+    plan->T_plan_2  = new T_Plan<double>(NX,NY,(NZ)*2, plan->Mem_mgr,c_comm);
+    plan->T_plan_2i = new T_Plan<double>(NY,NX,NZ*2, plan->Mem_mgr,c_comm);
 
     plan->T_plan_1=NULL;
     plan->T_plan_1i=NULL;
@@ -709,11 +709,11 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
   if (!plan->oneD){
     // the reaseon for n_tuples/2 is to avoid splitting of imag and real parts of complex numbers
 
-    plan->Mem_mgr=  new Mem_Mgr(n[1],n[2],2,plan->row_comm,osize_0[0],alloc_max);
-    plan->T_plan_1= new T_Plan(n[1],n[2],2, plan->Mem_mgr, plan->row_comm,osize_0[0]);
-    plan->T_plan_2= new T_Plan(n[0],n[1],2*osize_2[2], plan->Mem_mgr, plan->col_comm);
-    plan->T_plan_2i=new T_Plan(n[1],n[0],2*osize_2i[2], plan->Mem_mgr, plan->col_comm);
-    plan->T_plan_1i=new T_Plan(n[2],n[1],2, plan->Mem_mgr, plan->row_comm,osize_1i[0]);
+    plan->Mem_mgr   =new Mem_Mgr<double>(n[1],n[2],2,plan->row_comm,osize_0[0],alloc_max);
+    plan->T_plan_1  =new T_Plan<double>(n[1],n[2],2, plan->Mem_mgr, plan->row_comm,osize_0[0]);
+    plan->T_plan_2  =new T_Plan<double>(n[0],n[1],2*osize_2[2], plan->Mem_mgr, plan->col_comm);
+    plan->T_plan_2i =new T_Plan<double>(n[1],n[0],2*osize_2i[2], plan->Mem_mgr, plan->col_comm);
+    plan->T_plan_1i =new T_Plan<double>(n[2],n[1],2, plan->Mem_mgr, plan->row_comm,osize_1i[0]);
 
     plan->T_plan_1->alloc_local=plan->alloc_max;
     plan->T_plan_2->alloc_local=plan->alloc_max;
