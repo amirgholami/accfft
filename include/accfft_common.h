@@ -29,6 +29,7 @@
 #define VERBOSE 0
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
+typedef float Complexf[2];
 
 #define ACCFFT_FORWARD -1
 #define ACCFFT_BACKWARD +1

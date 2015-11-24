@@ -32,15 +32,15 @@
 #include <bitset>
 #include "accfft_common.h"
 
-struct accfft_plan{
+struct accfft_planf{
   int N[3];
   int alloc_max;
-   Mem_Mgr<double> * Mem_mgr;
-   T_Plan<double> * T_plan_1;
-   T_Plan<double> * T_plan_2;
-   T_Plan<double> * T_plan_2i;
-   T_Plan<double> * T_plan_1i;
-  fftw_plan fplan_0, iplan_0,fplan_1,iplan_1, fplan_2, iplan_2;
+   Mem_Mgr<float> * Mem_mgr;
+   T_Plan <float>* T_plan_1;
+   T_Plan <float>* T_plan_2;
+   T_Plan <float>* T_plan_2i;
+   T_Plan <float>* T_plan_1i;
+  fftwf_plan fplan_0, iplan_0,fplan_1,iplan_1, fplan_2, iplan_2;
   int coord[2],np[2],periods[2];
   MPI_Comm c_comm,row_comm,col_comm;
 
@@ -50,17 +50,17 @@ struct accfft_plan{
   int osize_1i[3], ostart_1i[3];
   int osize_2i[3], ostart_2i[3];
 
-  double * data;
-  double * data_out;
-  Complex * data_c;
-  Complex * data_out_c;
+  float * data;
+  float * data_out;
+  Complexf * data_c;
+  Complexf * data_out_c;
   int procid;
   bool oneD;
   bool inplace;
   bool r2c_plan_baked;
   bool c2c_plan_baked;
 
-  accfft_plan(){
+  accfft_planf(){
     r2c_plan_baked=0;
     c2c_plan_baked=0;
     data=NULL;
@@ -77,19 +77,20 @@ struct accfft_plan{
 
 int accfft_init(int nthreads);
 int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm );
-int accfft_local_size_dft_r2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
 
-accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
 
-int accfft_local_size_dft_c2c( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
-accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
+int accfft_local_size_dft_c2cf( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+accfft_planf*  accfft_plan_dft_3d_c2cf(int * n, Complexf * data, Complexf * data_out, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
 
-void accfft_execute_r2c(accfft_plan* plan, double * data=NULL,Complex * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
-void accfft_execute_c2r(accfft_plan* plan, Complex * data=NULL,double * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
-void accfft_execute(accfft_plan* plan, int direction, double * data=NULL,double * data_out=NULL,double * timer=NULL,std::bitset<3> xyz=111);
-void accfft_execute_c2c(accfft_plan* plan, int direction, Complex * data=NULL, Complex * data_out=NULL,double * timer=NULL,std::bitset<3> xyz=111);
-void accfft_destroy_plan(accfft_plan * plan);
+void accfft_executef(accfft_planf* plan, int direction, float * data=NULL, float* data_out=NULL,double * timer=NULL,std::bitset<3> xyz=111);
+void accfft_execute_c2cf(accfft_planf* plan, int direction, Complexf * data=NULL, Complexf * data_out=NULL,double * timer=NULL,std::bitset<3> xyz=111);
+void accfft_destroy_plan(accfft_planf * plan);
 void accfft_cleanup();
 
 
+int accfft_local_size_dft_r2cf( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+
+accfft_planf*  accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
+void accfft_execute_r2cf(accfft_planf* plan, float * data=NULL,Complexf * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
+void accfft_execute_c2rf(accfft_planf* plan, Complexf * data=NULL,float * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
 #endif

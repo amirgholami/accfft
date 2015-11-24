@@ -49,7 +49,8 @@ static int intpow(int a,int b){
   return ((int)std::pow((double)a,b));
 }
 #ifdef ENABLE_GPU
-Mem_Mgr_gpu::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int specified_alloc_local){
+template <typename T>
+Mem_Mgr_gpu<T>::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int specified_alloc_local){
 
   N[0]=N0;
   N[1]=N1;
@@ -84,9 +85,9 @@ Mem_Mgr_gpu::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, 
 
 
     // Determine alloc local based on maximum size of input and output distribution
-    alloc_local=local_n0*N[1]*n_tuples*sizeof(double);
-    if(alloc_local<local_n1*N[0]*n_tuples*sizeof(double))
-      alloc_local=local_n1*N[0]*n_tuples*sizeof(double);
+    alloc_local=local_n0*N[1]*n_tuples*sizeof(T);
+    if(alloc_local<local_n1*N[0]*n_tuples*sizeof(T))
+      alloc_local=local_n1*N[0]*n_tuples*sizeof(T);
 
     alloc_local*=howmany;
   }
@@ -124,7 +125,9 @@ Mem_Mgr_gpu::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, 
   memset( buffer_2,0, alloc_local );
 
 }
-Mem_Mgr_gpu::~Mem_Mgr_gpu(){
+
+template <typename T>
+Mem_Mgr_gpu<T>::~Mem_Mgr_gpu(){
 
 #ifdef ENABLE_GPU
     cudaError_t cuda_err1=cudaSuccess, cuda_err2=cudaSuccess,cuda_err3=cudaSuccess;
@@ -148,7 +151,9 @@ Mem_Mgr_gpu::~Mem_Mgr_gpu(){
   free(buffer_2);
 #endif
 }
-T_Plan_gpu::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu * Mem_mgr, MPI_Comm Comm, int howmany){
+
+template <typename T>
+T_Plan_gpu<T>::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu<T> * Mem_mgr, MPI_Comm Comm, int howmany){
 
   N[0]=N0;
   N[1]=N1;
@@ -307,6 +312,11 @@ T_Plan_gpu::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu * Mem_mgr, MPI_Com
   method=5;  //Default Transpose method
   kway=8;  // for transpose_v7
   kway_async=true;
+
+
+  MPI_Type_contiguous(sizeof(T), MPI_BYTE, &MPI_T);
+  MPI_Type_commit(&MPI_T);
+
   stype=new MPI_Datatype[nprocs];
   rtype=new MPI_Datatype[nprocs];
   //stype_v8=new MPI_Datatype[nprocs];
@@ -314,8 +324,8 @@ T_Plan_gpu::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu * Mem_mgr, MPI_Com
   //rtype_v8=new MPI_Datatype[nprocs];
 
   for (int i=0;i<nprocs;i++){
-    MPI_Type_vector(howmany,scount_proc[i],local_n0*N[1]*n_tuples, MPI_DOUBLE, &stype[i]);
-    MPI_Type_vector(howmany,rcount_proc[i],local_n1*N[0]*n_tuples, MPI_DOUBLE, &rtype[i]);
+    MPI_Type_vector(howmany,scount_proc[i],local_n0*N[1]*n_tuples, MPI_FLOAT, &stype[i]);
+    MPI_Type_vector(howmany,rcount_proc[i],local_n1*N[0]*n_tuples, MPI_FLOAT, &rtype[i]);
 
     MPI_Type_commit(&stype[i]);
     MPI_Type_commit(&rtype[i]);
@@ -341,8 +351,8 @@ T_Plan_gpu::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu * Mem_mgr, MPI_Com
       rcount_proc_v8[i]=rcount_proc[i]/local_n1;
     }
 
-    MPI_Type_vector(local_n0,scount_proc_v8[i],N[1]*n_tuples, MPI_DOUBLE, &stype_v8[i]);
-    MPI_Type_vector(local_n1,1*n_tuples,N[0]*n_tuples, MPI_DOUBLE, &rtype_v8_[i]);
+    MPI_Type_vector(local_n0,scount_proc_v8[i],N[1]*n_tuples, MPI_FLOAT, &stype_v8[i]);
+    MPI_Type_vector(local_n1,1*n_tuples,N[0]*n_tuples, MPI_FLOAT, &rtype_v8_[i]);
     MPI_Type_hvector(rcount_proc_v8[i],1,n_tuples*sizeof(double),rtype_v8_[i], &rtype_v8[i]);
 
     MPI_Type_commit(&stype_v8[i]);
@@ -358,7 +368,9 @@ T_Plan_gpu::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu * Mem_mgr, MPI_Com
   //data_cpu=Mem_mgr->data_cpu;
 
 }
-T_Plan_gpu::~T_Plan_gpu(){
+
+template <typename T>
+T_Plan_gpu<T>::~T_Plan_gpu(){
   free(local_n0_proc);
   free(local_n1_proc);
   free(local_0_start_proc);
@@ -388,7 +400,9 @@ T_Plan_gpu::~T_Plan_gpu(){
   //delete [] rtype_v8;
   //delete [] rtype_v8_;
 }
-void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
+
+template <typename T>
+void T_Plan_gpu<T>::which_method_gpu(T_Plan_gpu* T_plan,T* data_d){
 
   double dummy[4]={0};
   double * time= (double*) malloc(sizeof(double)*(4*(int)log2(nprocs)+4));
@@ -396,14 +410,14 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
   for (int i=0;i<4*(int)log2(nprocs)+4;i++)
     time[i]=1000;
 
-  transpose_cuda_v5(T_plan,(double*)data_d,dummy);  // Warmup
+  transpose_cuda_v5(T_plan,(T*)data_d,dummy);  // Warmup
   time[0]=-MPI_Wtime();
-  transpose_cuda_v5(T_plan,(double*)data_d,dummy);
+  transpose_cuda_v5(T_plan,(T*)data_d,dummy);
   time[0]+=MPI_Wtime();
 
-  transpose_cuda_v6(T_plan,(double*)data_d,dummy);  // Warmup
+  transpose_cuda_v6(T_plan,(T*)data_d,dummy);  // Warmup
   time[1]=-MPI_Wtime();
-  transpose_cuda_v6(T_plan,(double*)data_d,dummy);
+  transpose_cuda_v6(T_plan,(T*)data_d,dummy);
   time[1]+=MPI_Wtime();
 
   if(IsPowerOfTwo(nprocs) && nprocs>511){
@@ -412,9 +426,9 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      transpose_cuda_v7(T_plan,(double*)data_d,dummy,kway);  // Warmup
+      transpose_cuda_v7(T_plan,(T*)data_d,dummy,kway);  // Warmup
       time[2+i]=-MPI_Wtime();
-      transpose_cuda_v7(T_plan,(double*)data_d,dummy,kway);
+      transpose_cuda_v7(T_plan,(T*)data_d,dummy,kway);
       time[2+i]+=MPI_Wtime();
     }
 #endif
@@ -424,9 +438,9 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      transpose_cuda_v7(T_plan,(double*)data_d,dummy,kway);  // Warmup
+      transpose_cuda_v7(T_plan,(T*)data_d,dummy,kway);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
-      transpose_cuda_v7(T_plan,(double*)data_d,dummy,kway);
+      transpose_cuda_v7(T_plan,(T*)data_d,dummy,kway);
       time[2+(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
@@ -436,9 +450,9 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      transpose_cuda_v7_2(T_plan,(double*)data_d,dummy,kway);  // Warmup
+      transpose_cuda_v7_2(T_plan,(T*)data_d,dummy,kway);  // Warmup
       time[2+2*(int)log2(nprocs)+i]=-MPI_Wtime();
-      transpose_cuda_v7_2(T_plan,(double*)data_d,dummy,kway);
+      transpose_cuda_v7_2(T_plan,(T*)data_d,dummy,kway);
       time[2+2*(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
@@ -448,22 +462,22 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      transpose_cuda_v7_2(T_plan,(double*)data_d,dummy,kway);  // Warmup
+      transpose_cuda_v7_2(T_plan,(T*)data_d,dummy,kway);  // Warmup
       time[2+3*(int)log2(nprocs)+i]=-MPI_Wtime();
-      transpose_cuda_v7_2(T_plan,(double*)data_d,dummy,kway);
+      transpose_cuda_v7_2(T_plan,(T*)data_d,dummy,kway);
       time[2+3*(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
   }
 
-  transpose_cuda_v5_2(T_plan,(double*)data_d,dummy);  // Warmup
+  transpose_cuda_v5_2(T_plan,(T*)data_d,dummy);  // Warmup
   time[4*(int)log2(nprocs)+2]=-MPI_Wtime();
-  transpose_cuda_v5_2(T_plan,(double*)data_d,dummy);
+  transpose_cuda_v5_2(T_plan,(T*)data_d,dummy);
   time[4*(int)log2(nprocs)+2]+=MPI_Wtime();
 
-  transpose_cuda_v5_3(T_plan,(double*)data_d,dummy);  // Warmup
+  transpose_cuda_v5_3(T_plan,(T*)data_d,dummy);  // Warmup
   time[4*(int)log2(nprocs)+3]=-MPI_Wtime();
-  transpose_cuda_v5_3(T_plan,(double*)data_d,dummy);
+  transpose_cuda_v5_3(T_plan,(T*)data_d,dummy);
   time[4*(int)log2(nprocs)+3]+=MPI_Wtime();
 
   MPI_Allreduce(time,g_time,(4*(int)log2(nprocs)+4),MPI_DOUBLE,MPI_MAX, T_plan->comm);
@@ -534,54 +548,58 @@ void T_Plan_gpu::which_method_gpu(T_Plan_gpu* T_plan,double* data_d){
 
   return;
 }
-void T_Plan_gpu::execute_gpu(T_Plan_gpu* T_plan,double* data_d,double *timings, unsigned flags, int howmany, int tag){
 
+template <typename T>
+void T_Plan_gpu<T>::execute_gpu(T_Plan_gpu* T_plan,T* data_d,double *timings, unsigned flags, int howmany, int tag){
+
+  int procid=T_plan->procid;
 
   if(howmany==1){
     if(method==1)
-      fast_transpose_cuda_v1(T_plan,(double*)data_d,timings,flags,howmany, tag);
+      fast_transpose_cuda_v1(T_plan,(T*)data_d,timings,flags,howmany, tag);
     if(method==12)
-      fast_transpose_cuda_v1_2(T_plan,(double*)data_d,timings,flags,howmany, tag);
+      fast_transpose_cuda_v1_2(T_plan,(T*)data_d,timings,flags,howmany, tag);
     if(method==13)
-      fast_transpose_cuda_v1_3(T_plan,(double*)data_d,timings,flags,howmany, tag);
+      fast_transpose_cuda_v1_3(T_plan,(T*)data_d,timings,flags,howmany, tag);
     if(method==2)
-      fast_transpose_cuda_v2(T_plan,(double*)data_d,timings,flags,howmany, tag);
+      fast_transpose_cuda_v2(T_plan,(T*)data_d,timings,flags,howmany, tag);
     if(method==3)
-      fast_transpose_cuda_v3(T_plan,(double*)data_d,timings,kway,flags,howmany, tag);
+      fast_transpose_cuda_v3(T_plan,(T*)data_d,timings,kway,flags,howmany, tag);
     if(method==32)
-      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,timings,kway,flags,howmany, tag);
+      fast_transpose_cuda_v3_2(T_plan,(T*)data_d,timings,kway,flags,howmany, tag);
   }
   else
   {
     if(method==1)
-      fast_transpose_cuda_v1_h(T_plan,(double*)data_d,timings,flags,howmany, tag);
+      fast_transpose_cuda_v1_h(T_plan,(T*)data_d,timings,flags,howmany, tag);
     if(method==12)
-      fast_transpose_cuda_v1_2_h(T_plan,(double*)data_d,timings,flags,howmany, tag);
+      fast_transpose_cuda_v1_2_h(T_plan,(T*)data_d,timings,flags,howmany, tag);
     if(method==13)
-      fast_transpose_cuda_v1_3_h(T_plan,(double*)data_d,timings,flags,howmany, tag);
+      fast_transpose_cuda_v1_3_h(T_plan,(T*)data_d,timings,flags,howmany, tag);
     if(method==2)
-      fast_transpose_cuda_v2_h(T_plan,(double*)data_d,timings,flags,howmany, tag);
+      fast_transpose_cuda_v2_h(T_plan,(T*)data_d,timings,flags,howmany, tag);
     if(method==3 || method==32)
-      fast_transpose_cuda_v3_h(T_plan,(double*)data_d,timings,kway,flags,howmany, tag);
+      fast_transpose_cuda_v3_h(T_plan,(T*)data_d,timings,kway,flags,howmany, tag);
   }
   if(method==5)
-    transpose_cuda_v5(T_plan,(double*)data_d,timings,flags,howmany, tag);
+    transpose_cuda_v5(T_plan,(T*)data_d,timings,flags,howmany, tag);
   if(method==52)
-    transpose_cuda_v5_2(T_plan,(double*)data_d,timings,flags,howmany, tag);
+    transpose_cuda_v5_2(T_plan,(T*)data_d,timings,flags,howmany, tag);
   if(method==53)
-    transpose_cuda_v5_3(T_plan,(double*)data_d,timings,flags,howmany, tag);
+    transpose_cuda_v5_3(T_plan,(T*)data_d,timings,flags,howmany, tag);
   if(method==6)
-    transpose_cuda_v6(T_plan,(double*)data_d,timings,flags,howmany, tag);
+    transpose_cuda_v6(T_plan,(T*)data_d,timings,flags,howmany, tag);
   if(method==7)
-    transpose_cuda_v7(T_plan,(double*)data_d,timings,kway,flags,howmany, tag);
+    transpose_cuda_v7(T_plan,(T*)data_d,timings,kway,flags,howmany, tag);
   if(method==72)
-    transpose_cuda_v7_2(T_plan,(double*)data_d,timings,kway,flags,howmany, tag);
+    transpose_cuda_v7_2(T_plan,(T*)data_d,timings,kway,flags,howmany, tag);
 
 
   return;
 }
 
-void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d, int howmany){
+template <typename T>
+void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, int howmany){
 
   double dummy[4]={0};
   double * time= (double*) malloc(sizeof(double)*(4*(int)log2(nprocs)+4));
@@ -589,14 +607,14 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d, int ho
   for (int i=0;i<4*(int)log2(nprocs)+4;i++)
     time[i]=1000;
 
-  fast_transpose_cuda_v1(T_plan,(double*)data_d,dummy,2,howmany);  // Warmup
+  fast_transpose_cuda_v1(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
   time[0]=-MPI_Wtime();
-  fast_transpose_cuda_v1(T_plan,(double*)data_d,dummy,2,howmany);
+  fast_transpose_cuda_v1(T_plan,(T*)data_d,dummy,2,howmany);
   time[0]+=MPI_Wtime();
 
-  fast_transpose_cuda_v2(T_plan,(double*)data_d,dummy,2,howmany);  // Warmup
+  fast_transpose_cuda_v2(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
   time[1]=-MPI_Wtime();
-  fast_transpose_cuda_v2(T_plan,(double*)data_d,dummy,2,howmany);
+  fast_transpose_cuda_v2(T_plan,(T*)data_d,dummy,2,howmany);
   time[1]+=MPI_Wtime();
 
   if(IsPowerOfTwo(nprocs) && nprocs>511){
@@ -605,9 +623,9 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d, int ho
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2,howmany);  // Warmup
+      fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
       time[2+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2,howmany);
+      fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);
       time[2+i]+=MPI_Wtime();
     }
 #endif
@@ -617,9 +635,9 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d, int ho
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2,howmany);  // Warmup
+      fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
       time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3(T_plan,(double*)data_d,dummy,kway,2,howmany);
+      fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);
       time[2+(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
@@ -629,9 +647,9 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d, int ho
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2,howmany);  // Warmup
+      fast_transpose_cuda_v3_2(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
       time[2+2*(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2,howmany);
+      fast_transpose_cuda_v3_2(T_plan,(T*)data_d,dummy,kway,2,howmany);
       time[2+2*(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
@@ -641,22 +659,22 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d, int ho
     for (int i=0;i<(int)log2(nprocs)-4;i++){
       kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2,howmany);  // Warmup
+      fast_transpose_cuda_v3_2(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
       time[2+3*(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3_2(T_plan,(double*)data_d,dummy,kway,2,howmany);
+      fast_transpose_cuda_v3_2(T_plan,(T*)data_d,dummy,kway,2,howmany);
       time[2+3*(int)log2(nprocs)+i]+=MPI_Wtime();
     }
 #endif
   }
 
-  fast_transpose_cuda_v1_2(T_plan,(double*)data_d,dummy,2,howmany);  // Warmup
+  fast_transpose_cuda_v1_2(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
   time[4*(int)log2(nprocs)+2]=-MPI_Wtime();
-  fast_transpose_cuda_v1_2(T_plan,(double*)data_d,dummy,2,howmany);
+  fast_transpose_cuda_v1_2(T_plan,(T*)data_d,dummy,2,howmany);
   time[4*(int)log2(nprocs)+2]+=MPI_Wtime();
 
-  fast_transpose_cuda_v1_3(T_plan,(double*)data_d,dummy,2,howmany);  // Warmup
+  fast_transpose_cuda_v1_3(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
   time[4*(int)log2(nprocs)+3]=-MPI_Wtime();
-  fast_transpose_cuda_v1_3(T_plan,(double*)data_d,dummy,2,howmany);
+  fast_transpose_cuda_v1_3(T_plan,(T*)data_d,dummy,2,howmany);
   time[4*(int)log2(nprocs)+3]+=MPI_Wtime();
 
   MPI_Allreduce(time,g_time,(4*(int)log2(nprocs)+4),MPI_DOUBLE,MPI_MAX, T_plan->comm);
@@ -731,23 +749,24 @@ void T_Plan_gpu::which_fast_method_gpu(T_Plan_gpu* T_plan,double* data_d, int ho
 
 
 
-void fast_transpose_cuda_v1_h(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+template <typename T>
+void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  int nprocs, procid;
+  nprocs=T_plan->nprocs;
+  procid=T_plan->procid;
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
   timings[0]-=MPI_Wtime();
-  int nprocs, procid;
   int nprocs_0, nprocs_1;
-  nprocs=T_plan->nprocs;
-  procid=T_plan->procid;
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
@@ -755,9 +774,9 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu* T_plan, double * data, double *timings
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T * data_cpu=T_plan->buffer;  //pinned
+  T * send_recv_cpu = T_plan->buffer_2;//pinned
+  T * send_recv_d = T_plan->buffer_d;
 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
@@ -819,12 +838,12 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu* T_plan, double * data, double *timings
   //  for(int h=0;h<howmany;++h){
   //    for(int i=0;i<local_n0;++i){
   //      //for(int j=local_1_start_proc[proc];j<local_1_start_proc[proc]+local_n1_proc[proc];++j){
-  //      //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(double)*n_tuples);
+  //      //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(T)*n_tuples);
   //      //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
   //      //  ptr+=n_tuples;
   //      //}
-  //      //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(double)*n_tuples*local_n1_proc[proc]);
-  //      cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(double)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
+  //      //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(T)*n_tuples*local_n1_proc[proc]);
+  //      cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(T)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
   //      ptr+=n_tuples*local_n1_proc[proc];
   //    }
   //  }
@@ -877,9 +896,9 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu* T_plan, double * data, double *timings
     s_request[proc]=MPI_REQUEST_NULL;
   }
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
-  double *r_buf_d=send_recv_d;
+  T *r_buf_d=send_recv_d;
   // data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --Th--> data_d
 
 
@@ -887,7 +906,7 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu* T_plan, double * data, double *timings
   for (int proc=0;proc<nprocs;++proc){
     if(proc!=procid){
       roffset=roffset_proc[proc];
-      MPI_Irecv(&r_buf[roffset*howmany],rcount_proc[proc]*howmany,MPI_DOUBLE, proc,
+      MPI_Irecv(&r_buf[roffset*howmany],rcount_proc[proc]*howmany,T_plan->MPI_T, proc,
           tag, T_plan->comm, &request[proc]);
     }
   }
@@ -896,14 +915,14 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu* T_plan, double * data, double *timings
   for (int proc=0;proc<nprocs;++proc){
     if(proc!=procid){
       soffset=soffset_proc[proc];
-      MPI_Isend(&s_buf[soffset*howmany],scount_proc[proc]*howmany,MPI_DOUBLE,proc, tag,
+      MPI_Isend(&s_buf[soffset*howmany],scount_proc[proc]*howmany,T_plan->MPI_T,proc, tag,
           T_plan->comm, &s_request[proc]);
     }
   }
 
   soffset=soffset_proc[procid];//aoffset_proc[proc];//proc*count_proc[proc];
   roffset=roffset_proc[procid];
-  memcpy(&r_buf[roffset*howmany],&s_buf[soffset*howmany],howmany*sizeof(double)*scount_proc[procid]);
+  memcpy(&r_buf[roffset*howmany],&s_buf[soffset*howmany],howmany*sizeof(T)*scount_proc[procid]);
 
   for (int proc=0;proc<nprocs;++proc){
     MPI_Wait(&request[proc], &ierr);
@@ -943,12 +962,12 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu* T_plan, double * data, double *timings
   //for (int proc=0;proc<nprocs_0;++proc)
   //  for(int h=0;h<howmany;++h){
   //    for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-  //      //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples);
-  //      cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples,cudaMemcpyHostToDevice);
+  //      //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples);
+  //      cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples,cudaMemcpyHostToDevice);
   //      //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
   //      ptr+=n_tuples*local_n1;
   //      //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-  //      //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(double)*n_tuples);
+  //      //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
   //      //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
   //      //  ptr+=n_tuples;
   //      //}
@@ -1020,7 +1039,8 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu* T_plan, double * data, double *timings
   return;
 }
 
-void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+template <typename T>
+void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
@@ -1028,7 +1048,7 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timin
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -1044,9 +1064,9 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timin
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;  //pinned
+  T* send_recv_cpu = T_plan->buffer_2;//pinned
+  T* send_recv_d = T_plan->buffer_d;
 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
@@ -1108,12 +1128,12 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timin
   //  for(int h=0;h<howmany;++h){
   //    for(int i=0;i<local_n0;++i){
   //      //for(int j=local_1_start_proc[proc];j<local_1_start_proc[proc]+local_n1_proc[proc];++j){
-  //      //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(double)*n_tuples);
+  //      //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(T)*n_tuples);
   //      //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
   //      //  ptr+=n_tuples;
   //      //}
-  //      //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(double)*n_tuples*local_n1_proc[proc]);
-  //      cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(double)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
+  //      //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(T)*n_tuples*local_n1_proc[proc]);
+  //      cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(T)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
   //      ptr+=n_tuples*local_n1_proc[proc];
   //    }
   //  }
@@ -1170,9 +1190,9 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timin
     s_request[proc]=MPI_REQUEST_NULL;
   }
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
-  double *r_buf_d=send_recv_d;
+  T *r_buf_d=send_recv_d;
   // data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --memcpy--> send_recv_d --Th--> data_d
 
 
@@ -1181,23 +1201,23 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timin
   for (int proc=0;proc<nprocs;++proc){
     if(proc!=procid){
       soffset=soffset_proc[proc];
-      cudaMemcpy(&s_buf[soffset*howmany], &send_recv_d[soffset*howmany],howmany*sizeof(double)*scount_proc[proc], cudaMemcpyDeviceToHost);
-      MPI_Isend(&s_buf[soffset*howmany],scount_proc[proc]*howmany, MPI_DOUBLE,proc, tag,
+      cudaMemcpy(&s_buf[soffset*howmany], &send_recv_d[soffset*howmany],howmany*sizeof(T)*scount_proc[proc], cudaMemcpyDeviceToHost);
+      MPI_Isend(&s_buf[soffset*howmany],scount_proc[proc]*howmany, T_plan->MPI_T,proc, tag,
           T_plan->comm, &s_request[proc]);
 
     }
     else{  // copy your own part directly
-      //cudaMemcpy(&r_buf_d[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToDevice);
+      //cudaMemcpy(&r_buf_d[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToDevice);
       // Note that because if Flags[1]=0 the send_d and recv_d are the same, D2D should not be used
       // Otherwise it will corrupt the data in the unbalanced cases
-      cudaMemcpy(&r_buf[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToHost);
+      cudaMemcpy(&r_buf[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToHost);
       flag[procid]=1;
     }
   }
   for (int proc=0;proc<nprocs;++proc){
     if(proc!=procid){
       roffset=roffset_proc[proc];
-      MPI_Irecv(&r_buf[roffset*howmany],rcount_proc[proc]*howmany,MPI_DOUBLE, proc,
+      MPI_Irecv(&r_buf[roffset*howmany],rcount_proc[proc]*howmany,T_plan->MPI_T, proc,
           tag, T_plan->comm, &request[proc]);
     }
   }
@@ -1206,7 +1226,7 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timin
     for (int proc=0;proc<nprocs;++proc){
       MPI_Test(&request[proc], &flag[proc],&ierr);
       if(flag[proc]==1 && color[proc]==0){
-        cudaMemcpyAsync(&r_buf_d[roffset_proc[proc]*howmany],&r_buf[roffset_proc[proc]*howmany],howmany*sizeof(double)*rcount_proc[proc],cudaMemcpyHostToDevice);
+        cudaMemcpyAsync(&r_buf_d[roffset_proc[proc]*howmany],&r_buf[roffset_proc[proc]*howmany],howmany*sizeof(T)*rcount_proc[proc],cudaMemcpyHostToDevice);
         color[proc]=1;
         counter+=1;
       }
@@ -1214,7 +1234,7 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timin
 
   }
   //cudaMemcpy(r_buf_d, send_recv_cpu, T_plan->alloc_local, cudaMemcpyHostToDevice);
-  //cudaMemcpy(&r_buf_d[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToDevice);
+  //cudaMemcpy(&r_buf_d[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToDevice);
   cudaDeviceSynchronize();
   comm_time+=MPI_Wtime();
 
@@ -1249,12 +1269,12 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timin
   //for (int proc=0;proc<nprocs_0;++proc)
   //  for(int h=0;h<howmany;++h){
   //    for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-  //      //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples);
-  //      cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples,cudaMemcpyHostToDevice);
+  //      //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples);
+  //      cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples,cudaMemcpyHostToDevice);
   //      //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
   //      ptr+=n_tuples*local_n1;
   //      //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-  //      //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(double)*n_tuples);
+  //      //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
   //      //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
   //      //  ptr+=n_tuples;
   //      //}
@@ -1325,7 +1345,9 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu* T_plan, double * data, double *timin
   timings[3]+=reshuffle_time;
   return;
 }
-void fast_transpose_cuda_v1_3_h(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+
+template <typename T>
+void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan,T * data, double *timings, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
@@ -1333,7 +1355,7 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu* T_plan, double * data, double *timin
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -1349,9 +1371,9 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu* T_plan, double * data, double *timin
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;  //pinned
+  T* send_recv_cpu = T_plan->buffer_2;//pinned
+  T* send_recv_d = T_plan->buffer_d;
 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
@@ -1413,12 +1435,12 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu* T_plan, double * data, double *timin
   //  for(int h=0;h<howmany;++h){
   //    for(int i=0;i<local_n0;++i){
   //      //for(int j=local_1_start_proc[proc];j<local_1_start_proc[proc]+local_n1_proc[proc];++j){
-  //      //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(double)*n_tuples);
+  //      //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(T)*n_tuples);
   //      //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
   //      //  ptr+=n_tuples;
   //      //}
-  //      //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(double)*n_tuples*local_n1_proc[proc]);
-  //      cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(double)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
+  //      //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(T)*n_tuples*local_n1_proc[proc]);
+  //      cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(T)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
   //      ptr+=n_tuples*local_n1_proc[proc];
   //    }
   //  }
@@ -1464,9 +1486,9 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu* T_plan, double * data, double *timin
   int soffset=0,roffset=0;
   MPI_Status ierr;
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
-  double *r_buf_d=send_recv_d;
+  T *r_buf_d=send_recv_d;
   // data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --memcpy--> send_recv_d --Th--> data_d
 
 
@@ -1476,25 +1498,25 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu* T_plan, double * data, double *timin
     if(proc!=procid){
       soffset=soffset_proc[proc];
       roffset=roffset_proc[proc];
-      cudaMemcpy(&s_buf[soffset*howmany], &send_recv_d[soffset*howmany],howmany*sizeof(double)*scount_proc[proc], cudaMemcpyDeviceToHost);
-      MPI_Sendrecv(&s_buf[soffset*howmany],scount_proc[proc]*howmany, MPI_DOUBLE,
+      cudaMemcpy(&s_buf[soffset*howmany], &send_recv_d[soffset*howmany],howmany*sizeof(T)*scount_proc[proc], cudaMemcpyDeviceToHost);
+      MPI_Sendrecv(&s_buf[soffset*howmany],scount_proc[proc]*howmany, T_plan->MPI_T,
           proc, tag,
-          &r_buf[roffset*howmany],howmany*rcount_proc[proc], MPI_DOUBLE,
+          &r_buf[roffset*howmany],howmany*rcount_proc[proc], T_plan->MPI_T,
           proc, tag,
           T_plan->comm,&ierr);
 
     }
     else{  // copy your own part directly
-      //cudaMemcpy(&r_buf_d[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToDevice);
+      //cudaMemcpy(&r_buf_d[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToDevice);
       // Note that because if Flags[1]=0 the send_d and recv_d are the same, D2D should not be used
       // Otherwise it will corrupt the data in the unbalanced cases
-      cudaMemcpy(&r_buf[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToHost);
+      cudaMemcpy(&r_buf[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToHost);
     }
   }
 
   cudaMemcpy(r_buf_d,r_buf,T_plan->alloc_local,cudaMemcpyHostToDevice);
   //cudaMemcpy(r_buf_d, send_recv_cpu, T_plan->alloc_local, cudaMemcpyHostToDevice);
-  //cudaMemcpy(&r_buf_d[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToDevice);
+  //cudaMemcpy(&r_buf_d[roffset_proc[procid]*howmany], &send_recv_d[soffset_proc[procid]*howmany],howmany*sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToDevice);
   cudaDeviceSynchronize();
   comm_time+=MPI_Wtime();
 
@@ -1526,12 +1548,12 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu* T_plan, double * data, double *timin
   //for (int proc=0;proc<nprocs_0;++proc)
   //  for(int h=0;h<howmany;++h){
   //    for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-  //      //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples);
-  //      cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples,cudaMemcpyHostToDevice);
+  //      //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples);
+  //      cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples,cudaMemcpyHostToDevice);
   //      //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
   //      ptr+=n_tuples*local_n1;
   //      //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-  //      //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(double)*n_tuples);
+  //      //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
   //      //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
   //      //  ptr+=n_tuples;
   //      //}
@@ -1600,7 +1622,8 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu* T_plan, double * data, double *timin
   return;
 }
 
-void fast_transpose_cuda_v1(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+template <typename T>
+void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -1608,7 +1631,7 @@ void fast_transpose_cuda_v1(T_Plan_gpu* T_plan, double * data, double *timings, 
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -1619,9 +1642,9 @@ void fast_transpose_cuda_v1(T_Plan_gpu* T_plan, double * data, double *timings, 
   int nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;  //pinned
+  T* send_recv_cpu = T_plan->buffer_2;//pinned
+  T* send_recv_d = T_plan->buffer_d;
 
 
   ptrdiff_t local_n0=T_plan->local_n0;
@@ -1724,7 +1747,7 @@ void fast_transpose_cuda_v1(T_Plan_gpu* T_plan, double * data, double *timings, 
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
   }
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
 
   // SEND
@@ -1735,9 +1758,9 @@ void fast_transpose_cuda_v1(T_Plan_gpu* T_plan, double * data, double *timings, 
     if(proc!=procid){
       soffset=soffset_proc[proc];
       roffset=roffset_proc[proc];
-      MPI_Isend(&s_buf[soffset],scount_proc[proc],MPI_DOUBLE,proc, tag,
+      MPI_Isend(&s_buf[soffset],scount_proc[proc],T_plan->MPI_T,proc, tag,
           T_plan->comm, &s_request[proc]);
-      MPI_Irecv(&r_buf[roffset],rcount_proc[proc],MPI_DOUBLE, proc,
+      MPI_Irecv(&r_buf[roffset],rcount_proc[proc],T_plan->MPI_T, proc,
           tag, T_plan->comm, &request[proc]);
     }
   }
@@ -1745,7 +1768,7 @@ void fast_transpose_cuda_v1(T_Plan_gpu* T_plan, double * data, double *timings, 
   soffset=soffset_proc[procid];//aoffset_proc[proc];//proc*count_proc[proc];
   roffset=roffset_proc[procid];
   for(int h=0;h<howmany;h++)
-    memcpy(&r_buf[h*odist+roffset],&s_buf[h*idist+soffset],sizeof(double)*scount_proc[procid]);
+    memcpy(&r_buf[h*odist+roffset],&s_buf[h*idist+soffset],sizeof(T)*scount_proc[procid]);
 
 
   // If the output is to be transposed locally, then everything is done in sendrecv. just copy it
@@ -1828,7 +1851,8 @@ void fast_transpose_cuda_v1(T_Plan_gpu* T_plan, double * data, double *timings, 
 
 }
 
-void fast_transpose_cuda_v1_2(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+template <typename T>
+void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -1836,7 +1860,7 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu* T_plan, double * data, double *timings
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -1847,9 +1871,9 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu* T_plan, double * data, double *timings
   int nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;  //pinned
+  T* send_recv_cpu = T_plan->buffer_2;//pinned
+  T* send_recv_d = T_plan->buffer_d;
 
 
   ptrdiff_t local_n0=T_plan->local_n0;
@@ -1956,9 +1980,9 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu* T_plan, double * data, double *timings
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
   }
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
-  double * r_buf_d;
+  T * r_buf_d;
   if(Flags[1]==1)
     r_buf_d=data;
   else
@@ -1972,7 +1996,7 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu* T_plan, double * data, double *timings
   for (int proc=0;proc<nprocs;++proc){
     if(proc!=procid){
       roffset=roffset_proc[proc];
-      MPI_Irecv(&r_buf[roffset],rcount_proc[proc], MPI_DOUBLE, proc,
+      MPI_Irecv(&r_buf[roffset],rcount_proc[proc], T_plan->MPI_T, proc,
           tag, T_plan->comm, &request[proc]);
     }
   }
@@ -1981,16 +2005,16 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu* T_plan, double * data, double *timings
   for (int proc=0;proc<nprocs;++proc){
     if(proc!=procid){
       soffset=soffset_proc[proc];
-      cudaMemcpy(&s_buf[soffset], &send_recv_d[soffset],sizeof(double)*scount_proc[proc], cudaMemcpyDeviceToHost);
-      MPI_Isend(&s_buf[soffset],scount_proc[proc], MPI_DOUBLE,proc, tag,
+      cudaMemcpy(&s_buf[soffset], &send_recv_d[soffset],sizeof(T)*scount_proc[proc], cudaMemcpyDeviceToHost);
+      MPI_Isend(&s_buf[soffset],scount_proc[proc], T_plan->MPI_T,proc, tag,
           T_plan->comm, &s_request[proc]);
 
     }
     else{  // copy your own part directly
-      //cudaMemcpy(&r_buf_d[roffset_proc[procid]], &send_recv_d[soffset_proc[procid]],sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToDevice);
+      //cudaMemcpy(&r_buf_d[roffset_proc[procid]], &send_recv_d[soffset_proc[procid]],sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToDevice);
       // Note that because if Flags[1]=0 the send_d and recv_d are the same, D2D should not be used
       // Otherwise it will corrupt the data in the unbalanced cases
-      cudaMemcpy(&r_buf[roffset_proc[procid]], &send_recv_d[soffset_proc[procid]],sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToHost);
+      cudaMemcpy(&r_buf[roffset_proc[procid]], &send_recv_d[soffset_proc[procid]],sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToHost);
       flag[procid]=1;
     }
   }
@@ -1999,7 +2023,7 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu* T_plan, double * data, double *timings
     for (int proc=0;proc<nprocs;++proc){
       MPI_Test(&request[proc], &flag[proc],&ierr);
       if(flag[proc]==1 && color[proc]==0){
-        cudaMemcpyAsync(&r_buf_d[roffset_proc[proc]],&r_buf[roffset_proc[proc]],sizeof(double)*rcount_proc[proc],cudaMemcpyHostToDevice);
+        cudaMemcpyAsync(&r_buf_d[roffset_proc[proc]],&r_buf[roffset_proc[proc]],sizeof(T)*rcount_proc[proc],cudaMemcpyHostToDevice);
         color[proc]=1;
         counter+=1;
       }
@@ -2081,7 +2105,9 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu* T_plan, double * data, double *timings
 
 
 }
-void fast_transpose_cuda_v1_3(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+
+template <typename T>
+void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -2089,7 +2115,7 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu* T_plan, double * data, double *timings
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -2100,9 +2126,9 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu* T_plan, double * data, double *timings
   int nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T * data_cpu=T_plan->buffer;  //pinned
+  T * send_recv_cpu = T_plan->buffer_2;//pinned
+  T * send_recv_d = T_plan->buffer_d;
 
 
   ptrdiff_t local_n0=T_plan->local_n0;
@@ -2208,9 +2234,9 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu* T_plan, double * data, double *timings
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
   }
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
-  double * r_buf_d;
+  T * r_buf_d;
   if(Flags[1]==1)
     r_buf_d=data;
   else
@@ -2225,23 +2251,23 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu* T_plan, double * data, double *timings
     if(proc!=procid){
       soffset=soffset_proc[proc];
       roffset=roffset_proc[proc];
-      cudaMemcpy(&s_buf[soffset], &send_recv_d[soffset],sizeof(double)*scount_proc[proc], cudaMemcpyDeviceToHost);
-      MPI_Sendrecv(&s_buf[soffset],scount_proc[proc], MPI_DOUBLE,
+      cudaMemcpy(&s_buf[soffset], &send_recv_d[soffset],sizeof(T)*scount_proc[proc], cudaMemcpyDeviceToHost);
+      MPI_Sendrecv(&s_buf[soffset],scount_proc[proc], T_plan->MPI_T,
           proc, tag,
-          &r_buf[roffset],rcount_proc[proc], MPI_DOUBLE,
+          &r_buf[roffset],rcount_proc[proc], T_plan->MPI_T,
           proc, tag,
           T_plan->comm,&ierr);
 
     }
     else{  // copy your own part directly
-      //cudaMemcpyAsync(&r_buf_d[roffset_proc[procid]], &send_recv_d[soffset_proc[procid]],sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToDevice);
+      //cudaMemcpyAsync(&r_buf_d[roffset_proc[procid]], &send_recv_d[soffset_proc[procid]],sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToDevice);
       // Note that because if Flags[1]=0 the send_d and recv_d are the same, D2D should not be used
       // Otherwise it will corrupt the data in the unbalanced cases
-      cudaMemcpy(&r_buf[roffset_proc[procid]], &send_recv_d[soffset_proc[procid]],sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToHost);
+      cudaMemcpy(&r_buf[roffset_proc[procid]], &send_recv_d[soffset_proc[procid]],sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToHost);
       flag[procid]=1;
     }
     if(Flags[1]==1)
-      cudaMemcpyAsync(&r_buf_d[roffset_proc[proc]],&r_buf[roffset_proc[proc]],sizeof(double)*rcount_proc[proc],cudaMemcpyHostToDevice);
+      cudaMemcpyAsync(&r_buf_d[roffset_proc[proc]],&r_buf[roffset_proc[proc]],sizeof(T)*rcount_proc[proc],cudaMemcpyHostToDevice);
   }
   if(Flags[1]==0)
     cudaMemcpy(r_buf_d,r_buf,T_plan->alloc_local,cudaMemcpyHostToDevice);
@@ -2318,7 +2344,8 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu* T_plan, double * data, double *timings
 
 
 
-void fast_transpose_cuda_v2(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+template <typename T>
+void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
   // This function handles cases where howmany=1 (it is more optimal)
 
 
@@ -2328,7 +2355,7 @@ void fast_transpose_cuda_v2(T_Plan_gpu* T_plan, double * data, double *timings, 
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v6(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v6(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -2339,9 +2366,9 @@ void fast_transpose_cuda_v2(T_Plan_gpu* T_plan, double * data, double *timings, 
   int nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T * data_cpu=T_plan->buffer;  //pinned
+  T * send_recv_cpu = T_plan->buffer_2;//pinned
+  T * send_recv_d = T_plan->buffer_d;
 
 
   ptrdiff_t local_n0=T_plan->local_n0;
@@ -2442,7 +2469,7 @@ void fast_transpose_cuda_v2(T_Plan_gpu* T_plan, double * data, double *timings, 
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
   }
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
 
   // SEND
@@ -2451,12 +2478,12 @@ void fast_transpose_cuda_v2(T_Plan_gpu* T_plan, double * data, double *timings, 
   cudaMemcpy(data_cpu, send_recv_d, T_plan->alloc_local, cudaMemcpyDeviceToHost);
   if(T_plan->is_evenly_distributed==0)
     MPI_Alltoallv(s_buf,scount_proc_f,
-        soffset_proc_f, MPI_DOUBLE,r_buf,
-        rcount_proc_f,roffset_proc_f, MPI_DOUBLE,
+        soffset_proc_f, T_plan->MPI_T,r_buf,
+        rcount_proc_f,roffset_proc_f, T_plan->MPI_T,
         T_plan->comm);
   else
-    MPI_Alltoall(s_buf, scount_proc_f[0], MPI_DOUBLE,
-        r_buf, rcount_proc_f[0], MPI_DOUBLE,
+    MPI_Alltoall(s_buf, scount_proc_f[0], T_plan->MPI_T,
+        r_buf, rcount_proc_f[0], T_plan->MPI_T,
         T_plan->comm);
 
 
@@ -2531,7 +2558,9 @@ void fast_transpose_cuda_v2(T_Plan_gpu* T_plan, double * data, double *timings, 
   return;
 
 }
-void fast_transpose_cuda_v3(T_Plan_gpu* T_plan, double * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
+
+template <typename T>
+void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
   // This function handles cases where howmany=1 (it is more optimal)
 
 
@@ -2541,7 +2570,7 @@ void fast_transpose_cuda_v3(T_Plan_gpu* T_plan, double * data, double *timings,i
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v5(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -2552,9 +2581,9 @@ void fast_transpose_cuda_v3(T_Plan_gpu* T_plan, double * data, double *timings,i
   int nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T * data_cpu=T_plan->buffer;  //pinned
+  T * send_recv_cpu = T_plan->buffer_2;//pinned
+  T * send_recv_d = T_plan->buffer_d;
 
 
   ptrdiff_t local_n0=T_plan->local_n0;
@@ -2655,7 +2684,7 @@ void fast_transpose_cuda_v3(T_Plan_gpu* T_plan, double * data, double *timings,i
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
   }
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
 
   // SEND
@@ -2663,10 +2692,10 @@ void fast_transpose_cuda_v3(T_Plan_gpu* T_plan, double * data, double *timings,i
   // Flags[1]=0 data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --Th--> data_d
   cudaMemcpy(data_cpu, send_recv_d, T_plan->alloc_local, cudaMemcpyDeviceToHost);
   if(T_plan->kway_async)
-    par::Mpi_Alltoallv_dense<double,true>(s_buf     , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense<T,true>(s_buf     , scount_proc_f, soffset_proc_f,
         r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
   else
-    par::Mpi_Alltoallv_dense<double,false>(s_buf     , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense<T,false>(s_buf     , scount_proc_f, soffset_proc_f,
         r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
 
   // Flags[1]=1 data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --memcpy--> data_d
@@ -2741,7 +2770,8 @@ void fast_transpose_cuda_v3(T_Plan_gpu* T_plan, double * data, double *timings,i
 
 }
 
-void fast_transpose_cuda_v3_2(T_Plan_gpu* T_plan, double * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
+template <typename T>
+void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
   // This function handles cases where howmany=1 (it is more optimal)
 
 
@@ -2751,12 +2781,12 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu* T_plan, double * data, double *timings
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v7_2(T_plan,(double*)data,timings,kway,flags,howmany, tag);
+    transpose_cuda_v7_2(T_plan,(T*)data,timings,kway,flags,howmany, tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
   if(Flags[1]==0){// because in the communicator part it will need another gpu array.
-    fast_transpose_cuda_v3(T_plan,(double*)data,timings,kway,flags,howmany, tag);
+    fast_transpose_cuda_v3(T_plan,(T*)data,timings,kway,flags,howmany, tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -2767,9 +2797,9 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu* T_plan, double * data, double *timings
   int nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  //double * send_recv_cpu = T_plan->buffer;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T * data_cpu=T_plan->buffer;  //pinned
+  //T * send_recv_cpu = T_plan->buffer;//pinned
+  T * send_recv_d = T_plan->buffer_d;
 
 
   ptrdiff_t local_n0=T_plan->local_n0;
@@ -2870,7 +2900,7 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu* T_plan, double * data, double *timings
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
   }
-  double * r_buf_d;
+  T * r_buf_d;
   // if Flags[1]==0 the other function should have been called and returned already.
   if(Flags[1]==1)
     r_buf_d=data;
@@ -2882,10 +2912,10 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu* T_plan, double * data, double *timings
   // Flags[1]=0 data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --Th--> data_d
 
   if(T_plan->kway_async)
-    par::Mpi_Alltoallv_dense_gpu<double,true>(send_recv_d , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense_gpu<T,true>(send_recv_d , scount_proc_f, soffset_proc_f,
         r_buf_d, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
   else
-    par::Mpi_Alltoallv_dense_gpu<double,false>(send_recv_d , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense_gpu<T,false>(send_recv_d , scount_proc_f, soffset_proc_f,
         r_buf_d, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
 
 
@@ -2960,7 +2990,8 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu* T_plan, double * data, double *timings
 
 
 
-void fast_transpose_cuda_v2_h(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+template <typename T>
+void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
@@ -2968,7 +2999,7 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu* T_plan, double * data, double *timings
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v6(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v6(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -2984,9 +3015,9 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu* T_plan, double * data, double *timings
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T * data_cpu=T_plan->buffer;  //pinned
+  T * send_recv_cpu = T_plan->buffer_2;//pinned
+  T * send_recv_d = T_plan->buffer_d;
 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
@@ -3049,12 +3080,12 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu* T_plan, double * data, double *timings
       for(int h=0;h<howmany;++h){
         for(int i=0;i<local_n0;++i){
           //for(int j=local_1_start_proc[proc];j<local_1_start_proc[proc]+local_n1_proc[proc];++j){
-          //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(double)*n_tuples);
+          //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(T)*n_tuples);
           //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
           //  ptr+=n_tuples;
           //}
-          //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(double)*n_tuples*local_n1_proc[proc]);
-          cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(double)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
+          //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(T)*n_tuples*local_n1_proc[proc]);
+          cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(T)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
           ptr+=n_tuples*local_n1_proc[proc];
         }
       }
@@ -3097,7 +3128,7 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu* T_plan, double * data, double *timings
   comm_time-=MPI_Wtime();
 
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
   // data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --Th--> data_d
 
@@ -3105,12 +3136,12 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu* T_plan, double * data, double *timings
   cudaMemcpy(data_cpu, send_recv_d, T_plan->alloc_local, cudaMemcpyDeviceToHost);
   if(T_plan->is_evenly_distributed==0)
     MPI_Alltoallv(s_buf,scount_proc_f,
-        soffset_proc_f, MPI_DOUBLE,r_buf,
-        rcount_proc_f,roffset_proc_f, MPI_DOUBLE,
+        soffset_proc_f, T_plan->MPI_T,r_buf,
+        rcount_proc_f,roffset_proc_f, T_plan->MPI_T,
         T_plan->comm);
   else
-    MPI_Alltoall(s_buf, scount_proc_f[0], MPI_DOUBLE,
-        r_buf, rcount_proc_f[0], MPI_DOUBLE,
+    MPI_Alltoall(s_buf, scount_proc_f[0], T_plan->MPI_T,
+        r_buf, rcount_proc_f[0], T_plan->MPI_T,
         T_plan->comm);
 
 
@@ -3147,12 +3178,12 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu* T_plan, double * data, double *timings
     for (int proc=0;proc<nprocs_0;++proc)
       for(int h=0;h<howmany;++h){
         for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-          //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples);
-          cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples,cudaMemcpyHostToDevice);
+          //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples);
+          cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples,cudaMemcpyHostToDevice);
           //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
           ptr+=n_tuples*local_n1;
           //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-          //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(double)*n_tuples);
+          //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
           //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
           //  ptr+=n_tuples;
           //}
@@ -3221,7 +3252,8 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu* T_plan, double * data, double *timings
   return;
 }
 
-void fast_transpose_cuda_v3_h(T_Plan_gpu* T_plan, double * data, double *timings,int kway, unsigned flags, int howmany , int tag){
+template <typename T>
+void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany , int tag){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
@@ -3229,7 +3261,7 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu* T_plan, double * data, double *timings
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v6(T_plan,(double*)data,timings,flags,howmany,tag);
+    transpose_cuda_v6(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
   }
@@ -3245,9 +3277,9 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu* T_plan, double * data, double *timings
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
 
-  double * data_cpu=T_plan->buffer;  //pinned
-  double * send_recv_cpu = T_plan->buffer_2;//pinned
-  double * send_recv_d = T_plan->buffer_d;
+  T * data_cpu=T_plan->buffer;  //pinned
+  T * send_recv_cpu = T_plan->buffer_2;//pinned
+  T * send_recv_d = T_plan->buffer_d;
 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
@@ -3310,12 +3342,12 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu* T_plan, double * data, double *timings
       for(int h=0;h<howmany;++h){
         for(int i=0;i<local_n0;++i){
           //for(int j=local_1_start_proc[proc];j<local_1_start_proc[proc]+local_n1_proc[proc];++j){
-          //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(double)*n_tuples);
+          //  memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+j)*n_tuples],sizeof(T)*n_tuples);
           //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
           //  ptr+=n_tuples;
           //}
-          //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(double)*n_tuples*local_n1_proc[proc]);
-          cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(double)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
+          //memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(T)*n_tuples*local_n1_proc[proc]);
+          cudaMemcpy(&send_recv_d[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples] , sizeof(T)*n_tuples*local_n1_proc[proc] , cudaMemcpyDeviceToDevice);
           ptr+=n_tuples*local_n1_proc[proc];
         }
       }
@@ -3365,17 +3397,17 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu* T_plan, double * data, double *timings
     s_request[proc]=MPI_REQUEST_NULL;
   }
 
-  double *s_buf, *r_buf;
+  T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
   // data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --Th--> data_d
 
   // SEND
   cudaMemcpy(data_cpu, send_recv_d, T_plan->alloc_local, cudaMemcpyDeviceToHost);
   if(T_plan->kway_async)
-    par::Mpi_Alltoallv_dense<double,true>(s_buf     , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense<T,true>(s_buf     , scount_proc_f, soffset_proc_f,
         r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
   else
-    par::Mpi_Alltoallv_dense<double,false>(s_buf     , scount_proc_f, soffset_proc_f,
+    par::Mpi_Alltoallv_dense<T,false>(s_buf     , scount_proc_f, soffset_proc_f,
         r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
 
   // data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --Th--> data_d
@@ -3411,12 +3443,12 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu* T_plan, double * data, double *timings
     for (int proc=0;proc<nprocs_0;++proc)
       for(int h=0;h<howmany;++h){
         for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-          //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples);
-          cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(double)*n_tuples,cudaMemcpyHostToDevice);
+          //memcpy(&data_cpu[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples);
+          cudaMemcpy(    &data[h*odist+(i*local_n1)*n_tuples],&send_recv_cpu[ptr],local_n1*sizeof(T)*n_tuples,cudaMemcpyHostToDevice);
           //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
           ptr+=n_tuples*local_n1;
           //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-          //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(double)*n_tuples);
+          //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
           //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
           //  ptr+=n_tuples;
           //}
@@ -3487,7 +3519,8 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu* T_plan, double * data, double *timings
   return;
 }
 
-void transpose_cuda_v5(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+template <typename T>
+void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -3502,9 +3535,9 @@ void transpose_cuda_v5(T_Plan_gpu* T_plan, double * data, double *timings, unsig
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double* data_cpu=T_plan->buffer;
-  double * send_recv_cpu = T_plan->buffer_2;
-  double * send_recv = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;
+  T * send_recv_cpu = T_plan->buffer_2;
+  T * send_recv = T_plan->buffer_d;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -3585,7 +3618,7 @@ void transpose_cuda_v5(T_Plan_gpu* T_plan, double * data, double *timings, unsig
   int soffset=0,roffset=0;
   MPI_Status ierr;
   MPI_Request request[nprocs], s_request[nprocs];
-#pragma omp parallel for
+//#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -3616,7 +3649,7 @@ void transpose_cuda_v5(T_Plan_gpu* T_plan, double * data, double *timings, unsig
   soffset=soffset_proc[procid];//aoffset_proc[proc];SNAFU //proc*count_proc[proc];
   roffset=roffset_proc[procid];
   for(int h=0;h<howmany;h++)
-    memcpy(&send_recv_cpu[h*odist+roffset],&data_cpu[h*idist+soffset],sizeof(double)*scount_proc[procid]);
+    memcpy(&send_recv_cpu[h*odist+roffset],&data_cpu[h*idist+soffset],sizeof(T)*scount_proc[procid]);
   for (int proc=0;proc<nprocs;++proc){
     MPI_Wait(&request[proc], &ierr);
     MPI_Wait(&s_request[proc], &ierr);
@@ -3710,7 +3743,8 @@ void transpose_cuda_v5(T_Plan_gpu* T_plan, double * data, double *timings, unsig
   return;
 }
 
-void transpose_cuda_v5_2(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+template <typename T>
+void transpose_cuda_v5_2(T_Plan_gpu<T>* T_plan, T* data, double *timings, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -3725,9 +3759,9 @@ void transpose_cuda_v5_2(T_Plan_gpu* T_plan, double * data, double *timings, uns
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double* data_cpu=T_plan->buffer;
-  double * send_recv_cpu = T_plan->buffer_2;
-  double * send_recv = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;
+  T * send_recv_cpu = T_plan->buffer_2;
+  T * send_recv = T_plan->buffer_d;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -3832,14 +3866,14 @@ void transpose_cuda_v5_2(T_Plan_gpu* T_plan, double * data, double *timings, uns
     if(proc!=procid){
       soffset=soffset_proc[proc];
       for(int h=0;h<howmany;h++)
-        cudaMemcpy(&data_cpu[h*idist+soffset], &data[h*idist+soffset],sizeof(double)*scount_proc[proc], cudaMemcpyDeviceToHost);
+        cudaMemcpy(&data_cpu[h*idist+soffset], &data[h*idist+soffset],sizeof(T)*scount_proc[proc], cudaMemcpyDeviceToHost);
       MPI_Isend(&data_cpu[soffset],1, stype[proc],proc, tag,
           T_plan->comm, &s_request[proc]);
 
     }
     else{  // copy your own part directly
       for(int h=0;h<howmany;h++)
-        cudaMemcpy(&send_recv[h*odist+roffset_proc[procid]], &data[h*idist+soffset_proc[procid]],sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToDevice);
+        cudaMemcpy(&send_recv[h*odist+roffset_proc[procid]], &data[h*idist+soffset_proc[procid]],sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToDevice);
     }
   }
   while(counter!=nprocs){
@@ -3848,7 +3882,7 @@ void transpose_cuda_v5_2(T_Plan_gpu* T_plan, double * data, double *timings, uns
       MPI_Test(&request[proc], &flag[proc],&ierr);
       if(flag[proc]==1 && color[proc]==0 && proc!=procid){
         for(int h=0;h<howmany;h++)
-          cudaMemcpyAsync(&send_recv[h*odist+roffset_proc[proc]],&send_recv_cpu[h*odist+roffset_proc[proc]],sizeof(double)*rcount_proc[proc],cudaMemcpyHostToDevice);
+          cudaMemcpyAsync(&send_recv[h*odist+roffset_proc[proc]],&send_recv_cpu[h*odist+roffset_proc[proc]],sizeof(T)*rcount_proc[proc],cudaMemcpyHostToDevice);
         color[proc]=1;
         counter+=1;
       }
@@ -3944,7 +3978,8 @@ void transpose_cuda_v5_2(T_Plan_gpu* T_plan, double * data, double *timings, uns
 }
 
 
-void transpose_cuda_v5_3(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany , int tag){
+template <typename T>
+void transpose_cuda_v5_3(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany , int tag){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -3959,9 +3994,9 @@ void transpose_cuda_v5_3(T_Plan_gpu* T_plan, double * data, double *timings, uns
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double* data_cpu=T_plan->buffer;
-  double * send_recv_cpu = T_plan->buffer_2;
-  double * send_recv = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;
+  T * send_recv_cpu = T_plan->buffer_2;
+  T * send_recv = T_plan->buffer_d;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -4049,19 +4084,19 @@ void transpose_cuda_v5_3(T_Plan_gpu* T_plan, double * data, double *timings, uns
       soffset=soffset_proc[proc];
       roffset=roffset_proc[proc];
       for(int h=0;h<howmany;h++)
-        cudaMemcpy(&data_cpu[h*idist+soffset], &data[h*idist+soffset],sizeof(double)*scount_proc[proc], cudaMemcpyDeviceToHost);
+        cudaMemcpy(&data_cpu[h*idist+soffset], &data[h*idist+soffset],sizeof(T)*scount_proc[proc], cudaMemcpyDeviceToHost);
       MPI_Sendrecv(&data_cpu[soffset],1, stype[proc],
           proc, tag,
           &send_recv_cpu[roffset],1, rtype[proc],
           proc, tag,
           T_plan->comm,&ierr);
       for(int h=0;h<howmany;h++)
-        cudaMemcpyAsync(&send_recv[h*odist+roffset_proc[proc]],&send_recv_cpu[h*odist+roffset_proc[proc]],sizeof(double)*rcount_proc[proc],cudaMemcpyHostToDevice);
+        cudaMemcpyAsync(&send_recv[h*odist+roffset_proc[proc]],&send_recv_cpu[h*odist+roffset_proc[proc]],sizeof(T)*rcount_proc[proc],cudaMemcpyHostToDevice);
 
     }
     else{  // copy your own part directly
       for(int h=0;h<howmany;h++)
-        cudaMemcpyAsync(&send_recv[h*odist+roffset_proc[procid]], &data[h*idist+soffset_proc[procid]],sizeof(double)*scount_proc[procid], cudaMemcpyDeviceToDevice);
+        cudaMemcpyAsync(&send_recv[h*odist+roffset_proc[procid]], &data[h*idist+soffset_proc[procid]],sizeof(T)*scount_proc[procid], cudaMemcpyDeviceToDevice);
     }
   }
 
@@ -4156,7 +4191,8 @@ void transpose_cuda_v5_3(T_Plan_gpu* T_plan, double * data, double *timings, uns
 
 
 
-void transpose_cuda_v6(T_Plan_gpu* T_plan, double * data, double *timings, unsigned flags, int howmany, int tag ){
+template <typename T>
+void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -4171,9 +4207,9 @@ void transpose_cuda_v6(T_Plan_gpu* T_plan, double * data, double *timings, unsig
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double* data_cpu=T_plan->buffer;
-  double * send_recv_cpu = T_plan->buffer_2;
-  double * send_recv = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;
+  T * send_recv_cpu = T_plan->buffer_2;
+  T * send_recv = T_plan->buffer_d;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -4261,12 +4297,12 @@ void transpose_cuda_v6(T_Plan_gpu* T_plan, double * data, double *timings, unsig
   }
   else if(T_plan->is_evenly_distributed==0)
     MPI_Alltoallv(data_cpu,scount_proc,
-        soffset_proc, MPI_DOUBLE,send_recv_cpu,
-        rcount_proc,roffset_proc, MPI_DOUBLE,
+        soffset_proc, T_plan->MPI_T,send_recv_cpu,
+        rcount_proc,roffset_proc, T_plan->MPI_T,
         T_plan->comm);
   else
-    MPI_Alltoall(data_cpu, scount_proc[0], MPI_DOUBLE,
-        send_recv_cpu, rcount_proc[0], MPI_DOUBLE,
+    MPI_Alltoall(data_cpu, scount_proc[0], T_plan->MPI_T,
+        send_recv_cpu, rcount_proc[0], T_plan->MPI_T,
         T_plan->comm);
 
   cudaMemcpy(send_recv, send_recv_cpu, T_plan->alloc_local, cudaMemcpyHostToDevice);
@@ -4356,7 +4392,9 @@ void transpose_cuda_v6(T_Plan_gpu* T_plan, double * data, double *timings, unsig
   timings[3]+=reshuffle_time;
   return;
 }
-void transpose_cuda_v7(T_Plan_gpu* T_plan, double * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
+
+template <typename T>
+void transpose_cuda_v7(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -4371,9 +4409,9 @@ void transpose_cuda_v7(T_Plan_gpu* T_plan, double * data, double *timings,int kw
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double* data_cpu=T_plan->buffer;
-  double * send_recv_cpu = T_plan->buffer_2;
-  double * send_recv = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;
+  T * send_recv_cpu = T_plan->buffer_2;
+  T * send_recv = T_plan->buffer_d;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -4452,18 +4490,18 @@ void transpose_cuda_v7(T_Plan_gpu* T_plan, double * data, double *timings,int kw
   cudaMemcpy(data_cpu, data, T_plan->alloc_local, cudaMemcpyDeviceToHost);
   //if(T_plan->is_evenly_distributed==0)
   //MPI_Alltoallv(data_cpu,scount_proc,
-  //                soffset_proc, MPI_DOUBLE,send_recv_cpu,
-  //                rcount_proc,roffset_proc, MPI_DOUBLE,
+  //                soffset_proc, T_plan->MPI_T,send_recv_cpu,
+  //                rcount_proc,roffset_proc, T_plan->MPI_T,
   //                T_plan->comm);
   //else
-  //MPI_Alltoall(data_cpu, scount_proc[0], MPI_DOUBLE,
-  //               send_recv_cpu, rcount_proc[0], MPI_DOUBLE,
+  //MPI_Alltoall(data_cpu, scount_proc[0], T_plan->MPI_T,
+  //               send_recv_cpu, rcount_proc[0], T_plan->MPI_T,
   //               T_plan->comm);
   if(T_plan->kway_async)
-    par::Mpi_Alltoallv_dense<double,true>(data_cpu , scount_proc, soffset_proc,
+    par::Mpi_Alltoallv_dense<T,true>(data_cpu , scount_proc, soffset_proc,
         send_recv_cpu, rcount_proc, roffset_proc, T_plan->comm,kway);
   else
-    par::Mpi_Alltoallv_dense<double,false>(data_cpu , scount_proc, soffset_proc,
+    par::Mpi_Alltoallv_dense<T,false>(data_cpu , scount_proc, soffset_proc,
         send_recv_cpu, rcount_proc, roffset_proc, T_plan->comm,kway);
 
 
@@ -4552,7 +4590,9 @@ void transpose_cuda_v7(T_Plan_gpu* T_plan, double * data, double *timings,int kw
   timings[3]+=reshuffle_time;
   return;
 }
-void transpose_cuda_v7_2(T_Plan_gpu* T_plan, double * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
+
+template <typename T>
+void transpose_cuda_v7_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -4567,9 +4607,9 @@ void transpose_cuda_v7_2(T_Plan_gpu* T_plan, double * data, double *timings,int 
   nprocs_0=T_plan->nprocs_0;
   nprocs_1=T_plan->nprocs_1;
   ptrdiff_t  *N=T_plan->N;
-  double* data_cpu=T_plan->buffer;
-  double * send_recv_cpu = T_plan->buffer_2;
-  double * send_recv = T_plan->buffer_d;
+  T* data_cpu=T_plan->buffer;
+  T * send_recv_cpu = T_plan->buffer_2;
+  T * send_recv = T_plan->buffer_d;
   ptrdiff_t local_n0=T_plan->local_n0;
   ptrdiff_t local_n1=T_plan->local_n1;
   ptrdiff_t n_tuples=T_plan->n_tuples;
@@ -4648,18 +4688,18 @@ void transpose_cuda_v7_2(T_Plan_gpu* T_plan, double * data, double *timings,int 
   //  cudaMemcpy(data_cpu, data, T_plan->alloc_local, cudaMemcpyDeviceToHost);
   //if(T_plan->is_evenly_distributed==0)
   //MPI_Alltoallv(data_cpu,scount_proc,
-  //                soffset_proc, MPI_DOUBLE,send_recv_cpu,
-  //                rcount_proc,roffset_proc, MPI_DOUBLE,
+  //                soffset_proc, T_plan->MPI_T,send_recv_cpu,
+  //                rcount_proc,roffset_proc, T_plan->MPI_T,
   //                T_plan->comm);
   //else
-  //MPI_Alltoall(data_cpu, scount_proc[0], MPI_DOUBLE,
-  //               send_recv_cpu, rcount_proc[0], MPI_DOUBLE,
+  //MPI_Alltoall(data_cpu, scount_proc[0], T_plan->MPI_T,
+  //               send_recv_cpu, rcount_proc[0], T_plan->MPI_T,
   //               T_plan->comm);
   if(T_plan->kway_async)
-    par::Mpi_Alltoallv_dense_gpu<double,true>(data , scount_proc, soffset_proc,
+    par::Mpi_Alltoallv_dense_gpu<T,true>(data , scount_proc, soffset_proc,
         send_recv, rcount_proc, roffset_proc, T_plan->comm,kway);
   else
-    par::Mpi_Alltoallv_dense_gpu<double,false>(data , scount_proc, soffset_proc,
+    par::Mpi_Alltoallv_dense_gpu<T,false>(data , scount_proc, soffset_proc,
         send_recv, rcount_proc, roffset_proc, T_plan->comm,kway);
 
 
@@ -4748,3 +4788,9 @@ void transpose_cuda_v7_2(T_Plan_gpu* T_plan, double * data, double *timings,int 
   timings[3]+=reshuffle_time;
   return;
 }
+
+template class T_Plan_gpu<double>;
+template class T_Plan_gpu<float>;
+
+template class Mem_Mgr_gpu<double>;
+template class Mem_Mgr_gpu<float>;

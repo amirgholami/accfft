@@ -53,14 +53,14 @@ inline cufftResult checkCuda_accfft(cufftResult result)
   return result;
 }
 
-struct accfft_plan_gpu{
+struct accfft_plan_gpuf{
   int N[3];
   int alloc_max;
-  Mem_Mgr_gpu<double> * Mem_mgr;
-  T_Plan_gpu <double> * T_plan_1;
-  T_Plan_gpu <double> * T_plan_2;
-  T_Plan_gpu <double> * T_plan_2i;
-  T_Plan_gpu <double> * T_plan_1i;
+  Mem_Mgr_gpu<float> * Mem_mgr;
+  T_Plan_gpu <float> * T_plan_1;
+  T_Plan_gpu <float> * T_plan_2;
+  T_Plan_gpu <float> * T_plan_2i;
+  T_Plan_gpu <float> * T_plan_1i;
   cufftHandle fplan_0, iplan_0,fplan_1,iplan_1, fplan_2, iplan_2;
   int coord[2],np[2],periods[2];
   MPI_Comm c_comm,row_comm,col_comm;
@@ -71,17 +71,17 @@ struct accfft_plan_gpu{
   int osize_1i[3], ostart_1i[3];
   int osize_2i[3], ostart_2i[3];
 
-  double * data;
-  double * data_out;
-  Complex * data_c;
-  Complex * data_out_c;
+  float * data;
+  float * data_out;
+  Complexf * data_c;
+  Complexf * data_out_c;
   int procid;
   bool inplace;
   bool oneD;
   bool r2c_plan_baked;
   bool c2c_plan_baked;
 
-  accfft_plan_gpu(){
+  accfft_plan_gpuf(){
     r2c_plan_baked=0;
     c2c_plan_baked=0;
     data=NULL;
@@ -95,21 +95,23 @@ struct accfft_plan_gpu{
 
 };
 
-int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm );
-int accfft_local_size_dft_r2c_gpu( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm, bool inplace=0);
-
-accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * data_out_d, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
+int dfft_get_local_size_gpuf(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm );
 
 
-int accfft_local_size_dft_c2c_gpu( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
 
-accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex * data_out_d, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
-
-void accfft_destroy_plan(accfft_plan_gpu * plan);
-void accfft_destroy_plan_gpu(accfft_plan_gpu * plan);
-void accfft_execute_r2c_gpu(accfft_plan_gpu* plan, double * data=NULL,Complex * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
-void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data=NULL,double * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
-void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d=NULL, double * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=111);
-void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_d=NULL, Complex * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=111);
 void accfft_cleanup_gpu();
+
+
+void accfft_destroy_plan(accfft_plan_gpuf * plan);
+void accfft_destroy_plan_gpu(accfft_plan_gpuf * plan);
+
+void accfft_execute_r2c_gpuf(accfft_plan_gpuf* plan, float * data=NULL,Complexf * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
+void accfft_execute_c2r_gpuf(accfft_plan_gpuf* plan, Complexf * data=NULL,float * data_out=NULL, double * timer=NULL,std::bitset<3> xyz=111);
+void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d=NULL, float * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=111);
+void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * data_d=NULL, Complexf * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=111);
+accfft_plan_gpuf*  accfft_plan_dft_3d_c2c_gpuf(int * n, Complexf * data_d, Complexf * data_out_d, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
+int accfft_local_size_dft_c2c_gpuf( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+accfft_plan_gpuf*  accfft_plan_dft_3d_r2c_gpuf(int * n, float * data_d, float * data_out_d, MPI_Comm c_comm,unsigned flags=ACCFFT_MEASURE);
+int accfft_local_size_dft_r2c_gpuf( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm, bool inplace=0);
+
 #endif
