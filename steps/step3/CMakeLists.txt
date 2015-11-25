@@ -8,14 +8,32 @@ endif()
 include_directories(${FFTW_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+#
+# CPU executable single precision
+#
+# source files list
+set (step3f_SRCS
+  step3f.cpp
+)
+
+add_executable(step3f ${step3f_SRCS})
+target_link_libraries(step3f
+  accfft
+  accfft_utils
+  ${FFTW_LIBRARIES}
+)
+if (PNETCDF_FOUND)
+  target_link_libraries(step3f ${PNETCDF_LIBRARIES})
+endif()
+
+#
+# CPU executable double precision
+#
 # source files list
 set (step3_SRCS
   step3.cpp
 )
 
-#
-# CPU executable
-#
 add_executable(step3 ${step3_SRCS})
 target_link_libraries(step3
   accfft
@@ -26,10 +44,33 @@ if (PNETCDF_FOUND)
   target_link_libraries(step3 ${PNETCDF_LIBRARIES})
 endif()
 
-#
-# GPU executable
-#
 if(BUILD_GPU)
+  #
+  # GPU executable single precision
+  #
+  set(step3_gpuf_SRCS
+    step3_gpuf.cpp
+    )
+  
+  cuda_add_executable(step3_gpuf ${step3_gpuf_SRCS})
+  set_target_properties(step3_gpuf PROPERTIES COMPILE_FLAGS "-DENABLE_GPU")
+  target_link_libraries(step3_gpuf
+    accfft_gpu
+    accfft_utils
+    ${FFTW_LIBRARIES}
+    ${CUDA_LIBRARIES}
+  )
+
+  if (PNETCDF_FOUND)
+    target_link_libraries(step3_gpuf ${PNETCDF_LIBRARIES})
+  endif()
+
+  cuda_add_cufft_to_target(step3_gpuf)
+
+
+  #
+  # GPU executable double precision
+  #
   set(step3_gpu_SRCS
     step3_gpu.cpp
     )

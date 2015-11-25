@@ -949,7 +949,6 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
     MPI_Barrier(plan->c_comm);
 
 
-
     if(plan->oneD){
       plan->T_plan_2->execute_gpu(plan->T_plan_2,(double*)data_out_d,timings,2);
     }

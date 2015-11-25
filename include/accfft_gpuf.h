@@ -99,7 +99,7 @@ int dfft_get_local_size_gpuf(int N0, int N1, int N2, int * isize, int * istart,M
 
 
 
-void accfft_cleanup_gpu();
+void accfft_cleanup_gpuf();
 
 
 void accfft_destroy_plan(accfft_plan_gpuf * plan);

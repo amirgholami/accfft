@@ -137,7 +137,7 @@ void step3_gpu(int *n) {
   cudaFree(data2);
 #endif
   accfft_destroy_plan_gpu(plan);
-  accfft_cleanup_gpu();
+  accfft_cleanup_gpuf();
   MPI_Comm_free(&c_comm);
   return ;
 

@@ -12,11 +12,11 @@
 #include <math.h> // M_PI
 #include <mpi.h>
 #include <cuda_runtime_api.h>
-//#include <accfft.h>
 #include <accfft_gpu.h>
 
 void initialize(double *a,int*n, MPI_Comm c_comm);
 void initialize_gpu(double *a,int*n, int* isize, int * istart);
+void check_err(double* a,int*n,MPI_Comm c_comm);
 
 
 void step1_gpu(int *n) {
@@ -86,19 +86,20 @@ void step1_gpu(int *n) {
   double err=0,g_err=0;
   double norm=0,g_norm=0;
   for (int i=0;i<isize[0]*isize[1]*isize[2];++i){
-    err+=data2_cpu[i]/n[0]/n[1]/n[2]-data_cpu[i];
-    norm+=data2_cpu[i]/n[0]/n[1]/n[2];
+    err+=std::abs(data2_cpu[i]/n[0]/n[1]/n[2]-data_cpu[i]);
+    norm+=std::abs(data_cpu[i]);
   }
-  MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
+  MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
   MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);
 
-  PCOUT<<"\nError is "<<g_err<<std::endl;
-  PCOUT<<"Relative Error is "<<g_err/g_norm<<std::endl;
+  PCOUT<<"\nL1 Error is "<<g_err<<std::endl;
+  PCOUT<<"Relative L1 Error is "<<g_err/g_norm<<std::endl;
   if (g_err/g_norm< 1e-10)
     PCOUT<<"\nResults are CORRECT!\n\n";
   else
     PCOUT<<"\nResults are NOT CORRECT!\n\n";
 
+  check_err(data2_cpu,n,c_comm);
 
   /* Compute some timings statistics */
   double g_f_time, g_i_time, g_setup_time;

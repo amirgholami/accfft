@@ -1,6 +1,6 @@
 /**
  * @file
- * GPU functions of AccFFT
+ * Single precision GPU functions of AccFFT
  */
 /*
  *  Copyright (c) 2014-2015, Amir Gholami, George Biros
@@ -40,7 +40,7 @@
 /**
  * Cleanup all CPU resources
  */
-void accfft_cleanup_gpu(){
+void accfft_cleanup_gpuf(){
   // empty for now
 }
 
@@ -982,7 +982,6 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     }
 
 
-    plan->T_plan_2i->method=2;
     if(plan->oneD){
       plan->T_plan_2i->execute_gpu(plan->T_plan_2i,(float*)data_d,timings,1);
     }
@@ -1006,7 +1005,6 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     }
     MPI_Barrier(plan->c_comm);
 
-    plan->T_plan_1i->method=1;
     if(!plan->oneD){
       plan->T_plan_1i->execute_gpu(plan->T_plan_1i,(float*)data_d,timings,1,osize_1i[0],coords[0]);
     }

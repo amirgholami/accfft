@@ -57,23 +57,23 @@ if( FFTW_ROOT )
     NO_DEFAULT_PATH
   )
 
-#  #find libs (single precision)
-#  find_library(
-#    FFTWF_LIB
-#    NAMES "fftw3f"
-#    PATHS ${FFTW_ROOT}
-#    PATH_SUFFIXES "lib" "lib64"
-#    NO_DEFAULT_PATH
-#  )
-#
-#  find_library(
-#    FFTWF_THREADS_LIB
-#    NAMES "fftw3f_threads"
-#    PATHS ${FFTW_ROOT}
-#    PATH_SUFFIXES "lib" "lib64"
-#    NO_DEFAULT_PATH
-#  )
-#
+  #find libs (single precision)
+  find_library(
+    FFTWF_LIB
+    NAMES "fftw3f"
+    PATHS ${FFTW_ROOT}
+    PATH_SUFFIXES "lib" "lib64"
+    NO_DEFAULT_PATH
+  )
+
+  find_library(
+    FFTWF_THREADS_LIB
+    NAMES "fftw3f_threads"
+    PATHS ${FFTW_ROOT}
+    PATH_SUFFIXES "lib" "lib64"
+    NO_DEFAULT_PATH
+  )
+
 #  #find libs (long double precision)
 #  find_library(
 #    FFTWL_LIB
@@ -114,17 +114,17 @@ else()
     PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
   )
 
-#  #find libs (single precision)
-#  find_library(
-#    FFTWF_LIB
-#    NAMES "fftw3f"
-#    PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
-#  )
-#  find_library(
-#    FFTWF_THREADS_LIB
-#    NAMES "fftw3f_threads"
-#    PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
-#  )
+  #find libs (single precision)
+  find_library(
+    FFTWF_LIB
+    NAMES "fftw3f"
+    PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
+  )
+  find_library(
+    FFTWF_THREADS_LIB
+    NAMES "fftw3f_threads"
+    PATHS ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR}
+  )
 #
 #
 #  #find libs (long double precision)

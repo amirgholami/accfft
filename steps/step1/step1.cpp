@@ -81,8 +81,8 @@ void step1(int *n, int nthreads) {
   double err=0,g_err=0;
   double norm=0,g_norm=0;
   for (int i=0;i<isize[0]*isize[1]*isize[2];++i){
-    err+=data2[i]/n[0]/n[1]/n[2]-data[i];
-    norm+=data[i]/n[0]/n[1]/n[2];
+    err+=std::abs(data2[i]/n[0]/n[1]/n[2]-data[i]);
+    norm+=std::abs(data[i]);
   }
   MPI_Reduce(&err,&g_err,1, MPI_DOUBLE, MPI_MAX,0, MPI_COMM_WORLD);
   MPI_Reduce(&norm,&g_norm,1, MPI_DOUBLE, MPI_SUM,0, MPI_COMM_WORLD);

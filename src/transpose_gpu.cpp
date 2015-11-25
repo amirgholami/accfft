@@ -324,8 +324,8 @@ T_Plan_gpu<T>::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu<T> * Mem_mgr, M
   //rtype_v8=new MPI_Datatype[nprocs];
 
   for (int i=0;i<nprocs;i++){
-    MPI_Type_vector(howmany,scount_proc[i],local_n0*N[1]*n_tuples, MPI_FLOAT, &stype[i]);
-    MPI_Type_vector(howmany,rcount_proc[i],local_n1*N[0]*n_tuples, MPI_FLOAT, &rtype[i]);
+    MPI_Type_vector(howmany,scount_proc[i],local_n0*N[1]*n_tuples, MPI_T, &stype[i]);
+    MPI_Type_vector(howmany,rcount_proc[i],local_n1*N[0]*n_tuples, MPI_T, &rtype[i]);
 
     MPI_Type_commit(&stype[i]);
     MPI_Type_commit(&rtype[i]);
@@ -351,9 +351,9 @@ T_Plan_gpu<T>::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu<T> * Mem_mgr, M
       rcount_proc_v8[i]=rcount_proc[i]/local_n1;
     }
 
-    MPI_Type_vector(local_n0,scount_proc_v8[i],N[1]*n_tuples, MPI_FLOAT, &stype_v8[i]);
-    MPI_Type_vector(local_n1,1*n_tuples,N[0]*n_tuples, MPI_FLOAT, &rtype_v8_[i]);
-    MPI_Type_hvector(rcount_proc_v8[i],1,n_tuples*sizeof(double),rtype_v8_[i], &rtype_v8[i]);
+    MPI_Type_vector(local_n0,scount_proc_v8[i],N[1]*n_tuples, MPI_T, &stype_v8[i]);
+    MPI_Type_vector(local_n1,1*n_tuples,N[0]*n_tuples, MPI_T, &rtype_v8_[i]);
+    MPI_Type_hvector(rcount_proc_v8[i],1,n_tuples*sizeof(T),rtype_v8_[i], &rtype_v8[i]);
 
     MPI_Type_commit(&stype_v8[i]);
     MPI_Type_commit(&rtype_v8[i]);

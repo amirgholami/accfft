@@ -62,6 +62,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}" )
 set(libaccfft_SRCS
   src/transpose.cpp 
   src/accfft.cpp 
+  src/accfftf.cpp 
   src/accfft_common.cpp
   )
 
@@ -118,6 +119,7 @@ if(BUILD_GPU)
     src/transpose_gpu.cpp
     src/transpose_cuda.cu
     src/accfft_gpu.cpp 
+    src/accfft_gpuf.cpp 
     src/accfft_common.cpp
     )
   
@@ -143,7 +145,7 @@ endif(BUILD_GPU)
 ####################
 # EXAMPLES / TESTS #
 ####################
-add_subdirectory(steps/step1 EXCLUDE_FROM_ALL)
-add_subdirectory(steps/step2 EXCLUDE_FROM_ALL)
-add_subdirectory(steps/step3 EXCLUDE_FROM_ALL)
-add_subdirectory(steps/step4 EXCLUDE_FROM_ALL)
+add_subdirectory(steps/step1 )
+add_subdirectory(steps/step2 ) # EXCLUDE_FROM_ALL)
+add_subdirectory(steps/step3 )
+add_subdirectory(steps/step4 )

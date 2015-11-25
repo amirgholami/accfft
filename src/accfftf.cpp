@@ -1,6 +1,6 @@
 /**
  * @file
- * CPU functions of AccFFT
+ * Single precision CPU functions of AccFFT
  */
 /*
  *  Copyright (c) 2014-2015, Amir Gholami, George Biros
@@ -39,7 +39,7 @@
  * @param nthreads The number of OpenMP threads to use for execution of local FFT.
  * @return 0 if successful
  */
-int accfft_init(int nthreads){
+int accfft_initf(int nthreads){
   int threads_ok=1;
   if (threads_ok) threads_ok = fftw_init_threads();
   if (threads_ok) fftw_plan_with_nthreads(nthreads);
@@ -50,7 +50,7 @@ int accfft_init(int nthreads){
 /**
  * Cleanup all CPU resources
  */
-void accfft_cleanup(){
+void accfft_cleanupf(){
   fftw_cleanup_threads();
   fftw_cleanup();
 }
