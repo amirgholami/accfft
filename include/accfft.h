@@ -35,11 +35,11 @@
 struct accfft_plan{
   int N[3];
   int alloc_max;
-   Mem_Mgr<double> * Mem_mgr;
-   T_Plan<double> * T_plan_1;
-   T_Plan<double> * T_plan_2;
-   T_Plan<double> * T_plan_2i;
-   T_Plan<double> * T_plan_1i;
+  Mem_Mgr<double> * Mem_mgr;
+  T_Plan<double> * T_plan_1;
+  T_Plan<double> * T_plan_2;
+  T_Plan<double> * T_plan_2i;
+  T_Plan<double> * T_plan_1i;
   fftw_plan fplan_0, iplan_0,fplan_1,iplan_1, fplan_2, iplan_2;
   int coord[2],np[2],periods[2];
   MPI_Comm c_comm,row_comm,col_comm;

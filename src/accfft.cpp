@@ -391,6 +391,7 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
   int *osize_1i=plan->osize_1i,*ostart_1i=plan->ostart_1i;
   int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
 
+  PCOUT<<"XYZ= "<<XYZ<<std::endl;
   if(direction==-1){
     /**************************************************************/
     /*******************  N0/P0 x N1/P1 x N2 **********************/
@@ -399,6 +400,8 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
     fft_time-=MPI_Wtime();
     if(XYZ[0])
       fftw_execute_dft_r2c(plan->fplan_0,(double*)data,(fftw_complex*)data_out);
+    else
+      data_out=data;
     fft_time+=MPI_Wtime();
 
     // Perform N0/P0 transpose
@@ -463,6 +466,8 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
     fft_time-=MPI_Wtime();
     if(XYZ[0])
       fftw_execute_dft_c2r(plan->iplan_0,(fftw_complex*)data,(double*)data_out);
+    else
+      data_out=data;
     fft_time+=MPI_Wtime();
     MPI_Barrier(plan->c_comm);
 
@@ -763,7 +768,7 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
  */
 void accfft_execute_r2c(accfft_plan* plan, double * data,Complex * data_out, double * timer,std::bitset<3> XYZ){
   if(plan->r2c_plan_baked){
-    accfft_execute(plan,-1,data,(double*)data_out,timer);
+    accfft_execute(plan,-1,data,(double*)data_out,timer,XYZ);
   }
   else{
     if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
@@ -784,7 +789,7 @@ void accfft_execute_r2c(accfft_plan* plan, double * data,Complex * data_out, dou
  */
 void accfft_execute_c2r(accfft_plan* plan, Complex * data,double * data_out, double * timer,std::bitset<3> XYZ){
   if(plan->r2c_plan_baked){
-    accfft_execute(plan,1,(double*)data,data_out,timer);
+    accfft_execute(plan,1,(double*)data,data_out,timer,XYZ);
   }
   else{
     if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
@@ -841,6 +846,8 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
     fft_time-=MPI_Wtime();
     if(XYZ[0])
       fftw_execute_dft(plan->fplan_0,data,data_out);
+    else
+      data_out=data;
     fft_time+=MPI_Wtime();
 
 
@@ -904,6 +911,8 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
     fft_time-=MPI_Wtime();
     if(XYZ[0])
       fftw_execute_dft(plan->iplan_0,data,data_out);
+    else
+      data_out=data;
     fft_time+=MPI_Wtime();
 
   }

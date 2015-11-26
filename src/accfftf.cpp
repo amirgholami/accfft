@@ -398,6 +398,8 @@ void accfft_executef(accfft_planf* plan, int direction,float * data, float* data
     fft_time-=MPI_Wtime();
     if(XYZ[0])
       fftwf_execute_dft_r2c(plan->fplan_0,(float*)data,(fftwf_complex*)data_out);
+    else
+      data_out=data;
     fft_time+=MPI_Wtime();
 
     // Perform N0/P0 transpose
@@ -462,6 +464,8 @@ void accfft_executef(accfft_planf* plan, int direction,float * data, float* data
     fft_time-=MPI_Wtime();
     if(XYZ[0])
       fftwf_execute_dft_c2r(plan->iplan_0,(fftwf_complex*)data,(float*)data_out);
+    else
+      data_out=data;
     fft_time+=MPI_Wtime();
     MPI_Barrier(plan->c_comm);
 
@@ -762,7 +766,7 @@ accfft_planf*  accfft_plan_dft_3d_c2cf(int * n, Complexf * data, Complexf * data
  */
 void accfft_execute_r2cf(accfft_planf* plan, float * data,Complexf * data_out, double * timer,std::bitset<3> XYZ){
   if(plan->r2c_plan_baked){
-    accfft_executef(plan,-1,data,(float*)data_out,timer);
+    accfft_executef(plan,-1,data,(float*)data_out,timer,XYZ);
   }
   else{
     if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
@@ -783,7 +787,7 @@ void accfft_execute_r2cf(accfft_planf* plan, float * data,Complexf * data_out, d
  */
 void accfft_execute_c2rf(accfft_planf* plan, Complexf * data,float * data_out, double * timer,std::bitset<3> XYZ){
   if(plan->r2c_plan_baked){
-    accfft_executef(plan,1,(float*)data,data_out,timer);
+    accfft_executef(plan,1,(float*)data,data_out,timer,XYZ);
   }
   else{
     if(plan->procid==0) std::cout<<"Error. r2c plan has not been made correctly. Please first create the plan before calling execute functions."<<std::endl;
@@ -840,6 +844,8 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction,Complexf * data, Comp
     fft_time-=MPI_Wtime();
     if(XYZ[0])
       fftwf_execute_dft(plan->fplan_0,data,data_out);
+    else
+      data_out=data;
     fft_time+=MPI_Wtime();
 
 
@@ -903,6 +909,8 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction,Complexf * data, Comp
     fft_time-=MPI_Wtime();
     if(XYZ[0])
       fftwf_execute_dft(plan->iplan_0,data,data_out);
+    else
+      data_out=data;
     fft_time+=MPI_Wtime();
 
   }

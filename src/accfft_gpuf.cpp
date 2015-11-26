@@ -423,6 +423,8 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
     }
+    else
+      data_out_d=data_d;
 
     // Perform N0/P0 transpose
 
@@ -514,6 +516,8 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
     }
+    else
+      data_out_d=data_d;
 
   }
 
@@ -924,6 +928,8 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
     }
+    else
+      data_out_d=data_d;
 
     if(!plan->oneD){
       plan->T_plan_1->execute_gpu(plan->T_plan_1,(float*)data_out_d,timings,2,osize_0[0],coords[0]);
@@ -1022,6 +1028,8 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
       checkCuda_accfft( cudaEventElapsedTime(&dummy_time, fft_startEvent, fft_stopEvent) );
       fft_time+=dummy_time/1000;
     }
+    else
+      data_out_d=data_d;
 
   }
 
