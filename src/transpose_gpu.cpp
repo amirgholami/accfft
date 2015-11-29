@@ -394,8 +394,13 @@ T_Plan_gpu<T>::~T_Plan_gpu(){
   //free(rcount_proc_v8);
   //free(soffset_proc_v8);
   //free(roffset_proc_v8);
+  for (int i=0;i<nprocs;i++){
+    MPI_Type_free(&stype[i]);
+    MPI_Type_free(&rtype[i]);
+  }
   delete [] stype;
   delete [] rtype;
+  MPI_Type_free(&MPI_T);
   //delete [] stype_v8;
   //delete [] rtype_v8;
   //delete [] rtype_v8_;

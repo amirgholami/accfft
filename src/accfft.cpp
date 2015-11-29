@@ -32,29 +32,7 @@
 #include "accfft.h"
 #include "accfft_common.h"
 #define VERBOSE 0
-#define PCOUT if(procid==0) std::cout
-typedef double Complex[2];
 
-/**
- * Initializes the library.
- * @param nthreads The number of OpenMP threads to use for execution of local FFT.
- * @return 0 if successful
- */
-int accfft_init(int nthreads){
-  int threads_ok=1;
-  if (threads_ok) threads_ok = fftw_init_threads();
-  if (threads_ok) fftw_plan_with_nthreads(nthreads);
-
-  return (!threads_ok);
-}
-
-/**
- * Cleanup all CPU resources
- */
-void accfft_cleanup(){
-  fftw_cleanup_threads();
-  fftw_cleanup();
-}
 
 int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm ){
   int nprocs, procid;
@@ -391,7 +369,6 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
   int *osize_1i=plan->osize_1i,*ostart_1i=plan->ostart_1i;
   int *osize_2i=plan->osize_2i,*ostart_2i=plan->ostart_2i;
 
-  PCOUT<<"XYZ= "<<XYZ<<std::endl;
   if(direction==-1){
     /**************************************************************/
     /*******************  N0/P0 x N1/P1 x N2 **********************/
@@ -950,3 +927,25 @@ void accfft_destroy_plan(accfft_plan * plan){
     delete plan;
   }
 }
+
+
+template <typename T,typename Tc>
+void accfft_execute_r2c_t(accfft_plan* plan, T* data,Tc* data_out, double * timer,std::bitset<3> XYZ){
+  accfft_execute_r2c(plan,data,data_out,timer,XYZ);
+  return;
+}
+template <typename Tc, typename T>
+void accfft_execute_c2r_t(accfft_plan* plan, Tc* data,T* data_out, double * timer,std::bitset<3> XYZ){
+  accfft_execute_c2r(plan,data,data_out,timer,XYZ);
+  return;
+}
+template void accfft_execute_r2c_t<double,Complex>(accfft_plan* plan, double* data,Complex* data_out, double * timer,std::bitset<3> XYZ);
+template void accfft_execute_c2r_t<Complex,double>(accfft_plan* plan, Complex* data,double* data_out, double * timer,std::bitset<3> XYZ);
+
+template <typename T>
+int accfft_local_size_dft_r2c_t( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm){
+  return accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
+}
+template int accfft_local_size_dft_r2c_t<double>( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+template int accfft_local_size_dft_r2c_t<Complex>( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+

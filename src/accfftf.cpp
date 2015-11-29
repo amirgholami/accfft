@@ -34,26 +34,6 @@
 #define VERBOSE 0
 #define PCOUT if(procid==0) std::cout
 
-/**
- * Initializes the library.
- * @param nthreads The number of OpenMP threads to use for execution of local FFT.
- * @return 0 if successful
- */
-int accfft_initf(int nthreads){
-  int threads_ok=1;
-  if (threads_ok) threads_ok = fftw_init_threads();
-  if (threads_ok) fftw_plan_with_nthreads(nthreads);
-
-  return (!threads_ok);
-}
-
-/**
- * Cleanup all CPU resources
- */
-void accfft_cleanupf(){
-  fftw_cleanup_threads();
-  fftw_cleanup();
-}
 
 int dfft_get_local_sizef(int N0, int N1, int N2, int * isize, int * istart,MPI_Comm c_comm ){
   int nprocs, procid;
@@ -948,3 +928,25 @@ void accfft_destroy_plan(accfft_planf * plan){
     delete plan;
   }
 }
+
+template <typename T,typename Tc>
+void accfft_execute_r2c_t(accfft_planf* plan, T* data, Tc* data_out, double* timer,std::bitset<3> XYZ){
+  accfft_execute_r2cf(plan,data,data_out,timer,XYZ);
+  return;
+}
+template <typename Tc, typename T>
+void accfft_execute_c2r_t(accfft_planf* plan, Tc* data,T* data_out, double * timer,std::bitset<3> XYZ){
+  accfft_execute_c2rf(plan,data,data_out,timer,XYZ);
+  return;
+}
+
+template void accfft_execute_r2c_t<float,Complexf>(accfft_planf* plan, float* data,Complexf* data_out, double * timer,std::bitset<3> XYZ);
+template void accfft_execute_c2r_t<Complexf,float>(accfft_planf* plan, Complexf* data,float* data_out, double * timer,std::bitset<3> XYZ);
+
+
+template <typename T>
+int accfft_local_size_dft_r2c_t( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm){
+  return accfft_local_size_dft_r2cf(n,isize,istart,osize,ostart,c_comm);
+}
+template int accfft_local_size_dft_r2c_t<float>( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+template int accfft_local_size_dft_r2c_t<Complexf>( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);

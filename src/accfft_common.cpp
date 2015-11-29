@@ -88,3 +88,24 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
 int accfft_init(){
   return 0;
 }
+
+/**
+ * Initializes the library.
+ * @param nthreads The number of OpenMP threads to use for execution of local FFT.
+ * @return 0 if successful
+ */
+int accfft_init(int nthreads){
+  int threads_ok=1;
+  if (threads_ok) threads_ok = fftw_init_threads();
+  if (threads_ok) fftw_plan_with_nthreads(nthreads);
+
+  return (!threads_ok);
+}
+
+/**
+ * Cleanup all CPU resources
+ */
+void accfft_cleanup(){
+  fftw_cleanup_threads();
+  fftw_cleanup();
+}

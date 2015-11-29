@@ -60,7 +60,7 @@ Mem_Mgr<T>::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int s
     {
       ptrdiff_t * local_n0_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
       ptrdiff_t * local_n1_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-#pragma omp parallel for
+//#pragma omp parallel for
       for (int proc=0;proc<nprocs;++proc){
         local_n0_proc[proc]=ceil(N[0]/(double)nprocs);
         local_n1_proc[proc]=ceil(N[1]/(double)nprocs);
@@ -586,8 +586,13 @@ T_Plan<T>::~T_Plan(){
   //free(rcount_proc_v8);
   //free(soffset_proc_v8);
   //free(roffset_proc_v8);
+  for (int i=0;i<nprocs;i++){
+    MPI_Type_free(&stype[i]);
+    MPI_Type_free(&rtype[i]);
+  }
   delete [] stype;
   delete [] rtype;
+  MPI_Type_free(&MPI_T);
   //delete [] stype_v8;
   //delete [] rtype_v8;
   //delete [] rtype_v8_;

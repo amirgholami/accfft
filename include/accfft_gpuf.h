@@ -18,8 +18,8 @@
  *
 */
 
-#ifndef ACCFFT_GPU_H
-#define ACCFFT_GPU_H
+#ifndef ACCFFT_GPUF_H
+#define ACCFFT_GPUF_H
 #include <mpi.h>
 #include <omp.h>
 #include <iostream>
