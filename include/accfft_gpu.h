@@ -26,6 +26,7 @@
 #include <cmath>
 #include <math.h>
 #include "transpose_cuda.h"
+//#include <cuda_runtime_api.h>
 #include <string.h>
 #include <bitset>
 #include "cuda.h"
@@ -112,4 +113,13 @@ void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data=NULL,double * 
 void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d=NULL, double * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=111);
 void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_d=NULL, Complex * data_out_d=NULL, double * timer=NULL,std::bitset<3> xyz=111);
 void accfft_cleanup_gpu();
+
+template <typename T,typename Tc>
+void accfft_execute_r2c_gpu_t(accfft_plan_gpu* plan, T* data,Tc* data_out, double * timer=NULL,std::bitset<3> XYZ=111);
+template <typename Tc, typename T>
+void accfft_execute_c2r_gpu_t(accfft_plan_gpu* plan, Tc* data,T* data_out, double * timer=NULL,std::bitset<3> XYZ=111);
+
+template <typename T>
+int accfft_local_size_dft_r2c_gpu_t( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+
 #endif

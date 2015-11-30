@@ -1076,3 +1076,25 @@ void accfft_destroy_plan_gpu(accfft_plan_gpu * plan){
   MPI_Comm_free(&plan->col_comm);
   return;
 }
+
+
+template <typename T,typename Tc>
+void accfft_execute_r2c_gpu_t(accfft_plan_gpu* plan, T* data,Tc* data_out, double * timer,std::bitset<3> XYZ){
+  accfft_execute_r2c_gpu(plan,data,data_out,timer,XYZ);
+  return;
+}
+template <typename Tc, typename T>
+void accfft_execute_c2r_gpu_t(accfft_plan_gpu* plan, Tc* data,T* data_out, double * timer,std::bitset<3> XYZ){
+  accfft_execute_c2r_gpu(plan,data,data_out,timer,XYZ);
+  return;
+}
+template void accfft_execute_r2c_gpu_t<double,Complex>(accfft_plan_gpu* plan, double* data,Complex* data_out, double * timer,std::bitset<3> XYZ);
+template void accfft_execute_c2r_gpu_t<Complex,double>(accfft_plan_gpu* plan, Complex* data,double* data_out, double * timer,std::bitset<3> XYZ);
+
+template <typename T>
+int accfft_local_size_dft_r2c_gpu_t( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm){
+  return accfft_local_size_dft_r2c_gpu(n,isize,istart,osize,ostart,c_comm);
+}
+template int accfft_local_size_dft_r2c_gpu_t<double>( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+template int accfft_local_size_dft_r2c_gpu_t<Complex>( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+
