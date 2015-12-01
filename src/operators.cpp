@@ -32,10 +32,10 @@
 #include <../src/operators.txx>
 
 
-template void grad_mult_wave_nunmberx<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
-template void grad_mult_wave_nunmbery<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
-template void grad_mult_wave_nunmberz<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
-template void grad_mult_wave_nunmber_laplace<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm );
+template void grad_mult_wave_numberx<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
+template void grad_mult_wave_numbery<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
+template void grad_mult_wave_numberz<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
+template void grad_mult_wave_number_laplace<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm );
 
 template void accfft_grad_t<double,accfft_plan>(double * A_x, double *A_y, double *A_z,double *A,accfft_plan *plan, std::bitset<3> XYZ, double* timer);
 template void accfft_laplace_t<double,accfft_plan>(double * LA,double *A,accfft_plan *plan, double* timer);

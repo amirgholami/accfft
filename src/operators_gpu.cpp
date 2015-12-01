@@ -29,13 +29,19 @@
 #include <string.h>
 #include <cuda_runtime_api.h>
 #include <accfft_gpu.h>
+#include <accfft_gpuf.h>
 
 #include <../src/operators_gpu.txx>
 
-
+/* Double Precision Instantiation */
 template void accfft_grad_gpu_t<double,accfft_plan_gpu>(double * A_x, double *A_y, double *A_z,double *A,accfft_plan_gpu *plan, std::bitset<3> XYZ, double* timer);
 template void accfft_laplace_gpu_t<double,accfft_plan_gpu>(double * LA,double *A,accfft_plan_gpu *plan, double* timer);
 template void accfft_divergence_gpu_t<double,accfft_plan_gpu>(double* divA, double * A_x, double *A_y, double *A_z,accfft_plan_gpu *plan, double* timer);
+
+/* Single Precision Instantiation */
+template void accfft_grad_gpu_t<float,accfft_plan_gpuf>       (float* A_x , float* A_y, float *A_z, float* A,accfft_plan_gpuf *plan, std::bitset<3> XYZ, double* timer);
+template void accfft_laplace_gpu_t<float,accfft_plan_gpuf>    (float* LA  , float* A  , accfft_plan_gpuf *plan, double* timer);
+template void accfft_divergence_gpu_t<float,accfft_plan_gpuf> (float* divA, float* A_x, float *A_y, float* A_z,accfft_plan_gpuf *plan, double* timer);
 
 
 void accfft_grad_gpu(double * A_x, double *A_y, double *A_z,double *A,accfft_plan_gpu *plan, std::bitset<3> XYZ, double* timer){

@@ -159,6 +159,17 @@ __global__ void laplace_mult_wave_number_cu(Tc* wA, Tc* A, int* N, int* osize, i
   return;
 } // end grad_mult_wave_numberx_cu
 
+template <typename T>
+__global__ void daxpy_cu(const long long int n,const T  alpha, T* x, T* y){
+  // BLAS SAXPY( n, alpha, x, incx, y, incy )
+  unsigned int i = blockDim.x * blockIdx.x + threadIdx.x;
+
+  if(i>=n) return;
+  y[i]+=x[i]*alpha;
+  return;
+}
+
+
 /* Host Functions */
 template <typename Tc>
 void grad_mult_wave_numberx_gpu_(Tc* wA, Tc* A, int* N, int * osize, int * ostart, std::bitset<3> xyz) {
@@ -309,12 +320,27 @@ void laplace_mult_wave_number_gpu_(Tc* wA, Tc* A, int* N, int * osize, int * ost
 } // end grad_mult_wave_numberx_gpu
 //template __global__ void grad_mult_wave_nunmberx_cu<Complex>(Complex* wA, Complex* A, int* N, int* osize, int * ostart, double scale );
 
+template <typename T>
+void daxpy_gpu_(const long long int n, const T alpha, T* x, T* y){
+  // corresponding GPU sizes
+  int blocksInX = std::ceil(n/128.);
+
+  dim3 Dg(blocksInX, 1, 1);
+  dim3 Db(128,1,1);
+  daxpy_cu<<<Dg, Db>>>(n, alpha,x,y);
+  cudaDeviceSynchronize();
+  return;
+
+}
+
+
+
 extern "C"{
+/* Double Precision */
 void grad_mult_wave_numberx_gpu_c(Complex* wA, Complex* A, int*n, int * osize, int * ostart, std::bitset<3> xyz){
   grad_mult_wave_numberx_gpu_(wA, A, n, osize,ostart,  xyz);
   return;
 }
-
 void grad_mult_wave_numbery_gpu_c(Complex* wA, Complex* A, int*n, int * osize, int * ostart, std::bitset<3> xyz){
   grad_mult_wave_numbery_gpu_(wA, A, n, osize,ostart,  xyz);
   return;
@@ -323,9 +349,35 @@ void grad_mult_wave_numberz_gpu_c(Complex* wA, Complex* A, int*n, int * osize, i
   grad_mult_wave_numberz_gpu_(wA, A, n, osize,ostart,  xyz);
   return;
 }
-
 void laplace_mult_wave_number_gpu_c(Complex* wA, Complex* A, int*n, int * osize, int * ostart){
   laplace_mult_wave_number_gpu_(wA, A, n, osize,ostart);
   return;
 }
+void daxpy_gpu_c(const long long int n, const double alpha, double *x, double* y){
+  daxpy_gpu_(n,alpha,x,y);
+  return;
+}
+
+/* Single Precision */
+void grad_mult_wave_numberx_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart, std::bitset<3> xyz){
+  grad_mult_wave_numberx_gpu_(wA, A, n, osize,ostart,  xyz);
+  return;
+}
+void grad_mult_wave_numbery_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart, std::bitset<3> xyz){
+  grad_mult_wave_numbery_gpu_(wA, A, n, osize,ostart,  xyz);
+  return;
+}
+void grad_mult_wave_numberz_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart, std::bitset<3> xyz){
+  grad_mult_wave_numberz_gpu_(wA, A, n, osize,ostart,  xyz);
+  return;
+}
+void laplace_mult_wave_number_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart){
+  laplace_mult_wave_number_gpu_(wA, A, n, osize,ostart);
+  return;
+}
+void daxpy_gpu_cf(const long long int n, const float alpha, float* x, float* y){
+  daxpy_gpu_(n,alpha,x,y);
+  return;
+}
+
 }

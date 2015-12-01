@@ -33,26 +33,6 @@
 #include <cufft.h>
 #include "accfft_common.h"
 
-inline cudaError_t checkCuda_accfft(cudaError_t result)
-{
-#if defined(DEBUG) || defined(_DEBUG)
-  if (result != cudaSuccess) {
-    fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
-    assert(result == cudaSuccess);
-  }
-#endif
-  return result;
-}
-inline cufftResult checkCuda_accfft(cufftResult result)
-{
-#if defined(DEBUG) || defined(_DEBUG)
-  if (result != CUFFT_SUCCESS) {
-    fprintf(stderr, "CUDA Runtime Error: %s\n", result);
-    assert(result == CUFFT_SUCCESS);
-  }
-#endif
-  return result;
-}
 
 struct accfft_plan_gpu{
   int N[3];
@@ -118,8 +98,30 @@ template <typename T,typename Tc>
 void accfft_execute_r2c_gpu_t(accfft_plan_gpu* plan, T* data,Tc* data_out, double * timer=NULL,std::bitset<3> XYZ=111);
 template <typename Tc, typename T>
 void accfft_execute_c2r_gpu_t(accfft_plan_gpu* plan, Tc* data,T* data_out, double * timer=NULL,std::bitset<3> XYZ=111);
-
 template <typename T>
 int accfft_local_size_dft_r2c_gpu_t( int * n,int * isize, int * istart, int * osize, int *ostart,MPI_Comm c_comm);
+#endif
 
+#ifndef ACCFFT_CHECKCUDA_H
+#define ACCFFT_CHECKCUDA_H
+inline cudaError_t checkCuda_accfft(cudaError_t result)
+{
+#if defined(DEBUG) || defined(_DEBUG)
+  if (result != cudaSuccess) {
+    fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
+    assert(result == cudaSuccess);
+  }
+#endif
+  return result;
+}
+inline cufftResult checkCuda_accfft(cufftResult result)
+{
+#if defined(DEBUG) || defined(_DEBUG)
+  if (result != CUFFT_SUCCESS) {
+    fprintf(stderr, "CUDA Runtime Error: %s\n", result);
+    assert(result == CUFFT_SUCCESS);
+  }
+#endif
+  return result;
+}
 #endif

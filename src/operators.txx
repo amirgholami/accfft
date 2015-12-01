@@ -25,7 +25,7 @@
 #ifndef OPERATORS_TXX
 #define OPERATORS_TXX
 template <typename Tc>
-static void grad_mult_wave_nunmberx(Tc* wA, Tc* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz ){
+static void grad_mult_wave_numberx(Tc* wA, Tc* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz ){
 
 	int procid;
 	MPI_Comm_rank(c_comm,&procid);
@@ -71,7 +71,7 @@ static void grad_mult_wave_nunmberx(Tc* wA, Tc* A, int* N,MPI_Comm c_comm,std::b
 
 
 template <typename Tc>
-static void grad_mult_wave_nunmbery(Tc* wA, Tc* A, int* N,MPI_Comm c_comm ,std::bitset<3> xyz){
+static void grad_mult_wave_numbery(Tc* wA, Tc* A, int* N,MPI_Comm c_comm ,std::bitset<3> xyz){
 
 	int procid;
 	MPI_Comm_rank(c_comm,&procid);
@@ -117,7 +117,7 @@ static void grad_mult_wave_nunmbery(Tc* wA, Tc* A, int* N,MPI_Comm c_comm ,std::
 }
 
 template <typename Tc>
-static void grad_mult_wave_nunmberz(Tc* wA, Tc* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz ){
+static void grad_mult_wave_numberz(Tc* wA, Tc* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz ){
 
 	int procid;
 	MPI_Comm_rank(c_comm,&procid);
@@ -164,7 +164,7 @@ static void grad_mult_wave_nunmberz(Tc* wA, Tc* A, int* N,MPI_Comm c_comm,std::b
 
 
 template <typename Tc>
-static void grad_mult_wave_nunmber_laplace(Tc* wA, Tc* A, int* N,MPI_Comm c_comm ){
+static void grad_mult_wave_number_laplace(Tc* wA, Tc* A, int* N,MPI_Comm c_comm ){
 
 	int procid;
 	MPI_Comm_rank(c_comm,&procid);
@@ -257,7 +257,7 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ, dou
 
 	/* Multiply x Wave Numbers */
 	if(XYZ[0]){
-		grad_mult_wave_nunmberx<Tc>(tmp,A_hat, N,c_comm,scale_xyz);
+		grad_mult_wave_numberx<Tc>(tmp,A_hat, N,c_comm,scale_xyz);
 		MPI_Barrier(c_comm);
 
 		/* Backward transform */
@@ -265,14 +265,14 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ, dou
 	}
 	/* Multiply y Wave Numbers */
 	if(XYZ[1]){
-		grad_mult_wave_nunmbery<Tc>(tmp,A_hat, N,c_comm,scale_xyz);
+		grad_mult_wave_numbery<Tc>(tmp,A_hat, N,c_comm,scale_xyz);
 		/* Backward transform */
     accfft_execute_c2r_t<Tc,T>(plan,tmp,A_y,timings);
 	}
 
 	/* Multiply z Wave Numbers */
 	if(XYZ[2]){
-		grad_mult_wave_nunmberz<Tc>(tmp,A_hat, N,c_comm,scale_xyz);
+		grad_mult_wave_numberz<Tc>(tmp,A_hat, N,c_comm,scale_xyz);
 		/* Backward transform */
     accfft_execute_c2r_t<Tc,T>(plan,tmp,A_z,timings);
 	}
@@ -323,7 +323,7 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer){
   accfft_execute_r2c_t<T,Tc>(plan,A,A_hat,timings);
 
   /* Multiply x Wave Numbers */
-  grad_mult_wave_nunmber_laplace<Tc>(tmp,A_hat, N,c_comm);
+  grad_mult_wave_number_laplace<Tc>(tmp,A_hat, N,c_comm);
   MPI_Barrier(c_comm);
 
   /* Backward transform */
@@ -381,7 +381,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
   xyz[2]=1;
   accfft_execute_r2c_t<T,Tc>(plan,A_x,A_hat,timings,xyz);
   /* Multiply x Wave Numbers */
-  grad_mult_wave_nunmberx<T[2]>(tmp,A_hat, N,c_comm,xyz);
+  grad_mult_wave_numberx<T[2]>(tmp,A_hat, N,c_comm,xyz);
   MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_t<Tc,T>(plan,tmp,tmp2,timings,xyz);
@@ -394,7 +394,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
   xyz[2]=0;
   accfft_execute_r2c_t<T,Tc>(plan,A_y,A_hat,timings,xyz);
   /* Multiply y Wave Numbers */
-  grad_mult_wave_nunmbery<T[2]>(tmp,A_hat, N,c_comm,xyz);
+  grad_mult_wave_numbery<T[2]>(tmp,A_hat, N,c_comm,xyz);
   MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_t<Tc,T>(plan,tmp,tmp2,timings,xyz);
@@ -409,7 +409,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
   xyz[2]=0;
   accfft_execute_r2c_t<T,Tc>(plan,A_z,A_hat,timings,xyz);
   /* Multiply z Wave Numbers */
-  grad_mult_wave_nunmberz<T[2]>(tmp,A_hat, N,c_comm,xyz);
+  grad_mult_wave_numberz<T[2]>(tmp,A_hat, N,c_comm,xyz);
   MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_t<Tc,T>(plan,tmp,tmp2,timings,xyz);
