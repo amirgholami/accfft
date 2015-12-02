@@ -1,7 +1,3 @@
-/**
- * @file
- * CPU functions of AccFFT operators
- */
 /*
  *  Copyright (c) 2014-2015, Amir Gholami, George Biros
  *  All rights reserved.
@@ -223,6 +219,11 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ, dou
 	int procid;
   MPI_Comm c_comm=plan->c_comm;
   MPI_Comm_rank(c_comm,&procid);
+  if(!plan->r2c_plan_baked){
+    PCOUT<<"Error in accfft_grad! plan is not correctly made."<<std::endl;
+    return;
+  }
+
 
   double * timings;
   if(timer==NULL){
@@ -296,6 +297,10 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer){
 	int procid;
   MPI_Comm c_comm=plan->c_comm;
   MPI_Comm_rank(c_comm,&procid);
+  if(!plan->r2c_plan_baked){
+    PCOUT<<"Error in accfft_grad! plan is not correctly made."<<std::endl;
+    return;
+  }
 
   double * timings;
   if(timer==NULL){
@@ -349,6 +354,10 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
 	int procid;
   MPI_Comm c_comm=plan->c_comm;
   MPI_Comm_rank(c_comm,&procid);
+  if(!plan->r2c_plan_baked){
+    PCOUT<<"Error in accfft_grad! plan is not correctly made."<<std::endl;
+    return;
+  }
 
   double * timings;
   if(timer==NULL){
@@ -389,9 +398,9 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
   memcpy(div_A,tmp2,isize[0]*isize[1]*isize[2]*sizeof(T));
 
   /* Forward transform in y direction*/
-  xyz[0]=1;
+  xyz[0]=0;
   xyz[1]=1;
-  xyz[2]=0;
+  xyz[2]=1;
   accfft_execute_r2c_t<T,Tc>(plan,A_y,A_hat,timings,xyz);
   /* Multiply y Wave Numbers */
   grad_mult_wave_numbery<T[2]>(tmp,A_hat, N,c_comm,xyz);
@@ -404,9 +413,9 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
 
 
   /* Forward transform in z direction*/
-  xyz[0]=1;
+  xyz[0]=0;
   xyz[1]=0;
-  xyz[2]=0;
+  xyz[2]=1;
   accfft_execute_r2c_t<T,Tc>(plan,A_z,A_hat,timings,xyz);
   /* Multiply z Wave Numbers */
   grad_mult_wave_numberz<T[2]>(tmp,A_hat, N,c_comm,xyz);

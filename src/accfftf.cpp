@@ -72,7 +72,7 @@ int dfft_get_local_sizef(int N0, int N1, int N2, int * isize, int * istart,MPI_C
 
 
 /**
- * Get the local sizes of the distributed global data for a R2C transform
+ * Get the local sizes of the distributed global data for a R2C single precision transform
  * @param n Integer array of size 3, corresponding to the global data size
  * @param isize The size of the data that is locally distributed to the calling process
  * @param istart The starting index of the data that locally resides on the calling process
@@ -128,7 +128,7 @@ int accfft_local_size_dft_r2cf( int * n,int * isize, int * istart, int * osize, 
 
 
 /**
- * Creates a 3D R2C parallel FFT plan.If data_out point to the same location as the input
+ * Creates a 3D R2C single precision parallel FFT plan. If data_out point to the same location as the input
  * data, then an inplace plan will be created. Otherwise the plan would be outplace.
  * @param n Integer array of size 3, corresponding to the global data size
  * @param data Input data in spatial domain
@@ -376,7 +376,7 @@ void accfft_executef(accfft_planf* plan, int direction,float * data, float* data
     /**************************************************************/
     // FFT in Z direction
     fft_time-=MPI_Wtime();
-    if(XYZ[0])
+    if(XYZ[2])
       fftwf_execute_dft_r2c(plan->fplan_0,(float*)data,(fftwf_complex*)data_out);
     else
       data_out=data;
@@ -405,13 +405,13 @@ void accfft_executef(accfft_planf* plan, int direction,float * data, float* data
     /*******************  N0 x N1/P0 x N2/P1 **********************/
     /**************************************************************/
     fft_time-=MPI_Wtime();
-    if(XYZ[2])
+    if(XYZ[0])
       fftwf_execute_dft(plan->fplan_2,(fftwf_complex*)data_out,(fftwf_complex*)data_out);
     fft_time+=MPI_Wtime();
   }
   else if (direction==1){
     fft_time-=MPI_Wtime();
-    if(XYZ[2])
+    if(XYZ[0])
       fftwf_execute_dft(plan->iplan_2,(fftwf_complex*)data,(fftwf_complex*)data);
     fft_time+=MPI_Wtime();
 
@@ -442,7 +442,7 @@ void accfft_executef(accfft_planf* plan, int direction,float * data, float* data
     /**************************************************************/
     // IFFT in Z direction
     fft_time-=MPI_Wtime();
-    if(XYZ[0])
+    if(XYZ[2])
       fftwf_execute_dft_c2r(plan->iplan_0,(fftwf_complex*)data,(float*)data_out);
     else
       data_out=data;
@@ -460,7 +460,7 @@ void accfft_executef(accfft_planf* plan, int direction,float * data, float* data
   return;
 }
 /**
- * Get the local sizes of the distributed global data for a C2C transform
+ * Get the local sizes of the distributed global data for a C2C single precision transform
  * @param n Integer array of size 3, corresponding to the global data size
  * @param isize The size of the data that is locally distributed to the calling process
  * @param istart The starting index of the data that locally resides on the calling process
@@ -522,7 +522,7 @@ int accfft_local_size_dft_c2cf( int * n,int * isize, int * istart, int * osize, 
 }
 
 /**
- * Creates a 3D C2C parallel FFT plan. If data_out point to the same location as the input
+ * Creates a 3D C2C single precision parallel FFT plan. If data_out point to the same location as the input
  * data, then an inplace plan will be created. Otherwise the plan would be outplace.
  * @param n Integer array of size 3, corresponding to the global data size
  * @param data Input data in spatial domain
@@ -735,10 +735,10 @@ accfft_planf*  accfft_plan_dft_3d_c2cf(int * n, Complexf * data, Complexf * data
 } // end accfft_plan_dft_3d_c2c
 
 /**
- * Execute R2C plan. This function is blocking and only returns after the transform is completed.
+ * Execute single precision R2C plan. This function is blocking and only returns after the transform is completed.
  * @note For inplace transforms, data_out should point to the same memory address as data, AND
  * the plan must have been created as inplace.
- * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf.
  * @param data Input data in spatial domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
@@ -756,10 +756,10 @@ void accfft_execute_r2cf(accfft_planf* plan, float * data,Complexf * data_out, d
 
 
 /**
- * Execute C2R plan. This function is blocking and only returns after the transform is completed.
+ * Execute single precision C2R plan. This function is blocking and only returns after the transform is completed.
  * @note For inplace transform, data_out should point to the same memory address as data, AND
  * the plan must have been created as inplace.
- * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf.
  * @param data Input data in frequency domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
@@ -777,10 +777,10 @@ void accfft_execute_c2rf(accfft_planf* plan, Complexf * data,float * data_out, d
 
 
 /**
- * Execute C2C plan. This function is blocking and only returns after the transform is completed.
+ * Execute single precision C2C plan. This function is blocking and only returns after the transform is completed.
  * @note For inplace transforms, data_out should point to the same memory address as data, AND
  * the plan must have been created as inplace.
- * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf.
  * @param data Input data in frequency domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
@@ -822,7 +822,7 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction,Complexf * data, Comp
     /**************************************************************/
     // FFT in Z direction
     fft_time-=MPI_Wtime();
-    if(XYZ[0])
+    if(XYZ[2])
       fftwf_execute_dft(plan->fplan_0,data,data_out);
     else
       data_out=data;
@@ -852,13 +852,13 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction,Complexf * data, Comp
     /*******************  N0 x N1/P0 x N2/P1 **********************/
     /**************************************************************/
     fft_time-=MPI_Wtime();
-    if(XYZ[2])
+    if(XYZ[0])
       fftwf_execute_dft(plan->fplan_2,(fftwf_complex*)data_out,(fftwf_complex*)data_out);
     fft_time+=MPI_Wtime();
   }
   else if (direction==1){
     fft_time-=MPI_Wtime();
-    if(XYZ[2])
+    if(XYZ[0])
       fftwf_execute_dft(plan->iplan_2,(fftwf_complex*)data,(fftwf_complex*)data);
     fft_time+=MPI_Wtime();
 
@@ -887,7 +887,7 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction,Complexf * data, Comp
 
     // IFFT in Z direction
     fft_time-=MPI_Wtime();
-    if(XYZ[0])
+    if(XYZ[2])
       fftwf_execute_dft(plan->iplan_0,data,data_out);
     else
       data_out=data;
@@ -905,7 +905,7 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction,Complexf * data, Comp
 }
 
 /**
- * Destroy AccFFT CPU plan.
+ * Destroy single precision AccFFT CPU plan.
  * @param plan Input plan to be destroyed.
  */
 void accfft_destroy_plan(accfft_planf * plan){

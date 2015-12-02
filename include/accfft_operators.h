@@ -35,9 +35,9 @@ template <typename T, typename Tp> void accfft_divergence_t(T* divA, T* A_x, T* 
 
 void accfft_grad      (double* A_x , double* A_y, double* A_z, double* A, accfft_plan *plan, std::bitset<3> XYZ, double* timer);
 void accfft_laplace   (double* LA  , double* A  , accfft_plan* plan, double* timer);
-void accfft_divergence(double* divA, double* A_x, double A_y, double* A_z, accfft_plan* plan, double* timer);
+void accfft_divergence(double* divA, double* A_x, double* A_y, double* A_z, accfft_plan* plan, double* timer);
 
 void accfft_gradf      (float* A_x , float* A_y, float* A_z, float* A, accfft_planf *plan, std::bitset<3> XYZ, double* timer);
 void accfft_laplacef   (float* LA  , float* A  , accfft_planf* plan, double* timer);
-void accfft_divergencef(float* divA, float* A_x, float A_y, float* A_z, accfft_planf* plan, double* timer);
+void accfft_divergencef(float* divA, float* A_x, float* A_y, float* A_z, accfft_planf* plan, double* timer);
 #endif

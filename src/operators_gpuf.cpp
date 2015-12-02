@@ -1,6 +1,6 @@
 /**
  * @file
- * Single Precision CPU functions of AccFFT operators
+ * CPU functions of AccFFT operators
  */
 /*
  *  Copyright (c) 2014-2015, Amir Gholami, George Biros
@@ -27,63 +27,60 @@
 #include <cmath>
 #include <math.h>
 #include <string.h>
-#include <accfftf.h>
-#include <accfft_operators.h>
+#include <cuda_runtime_api.h>
+#include <accfft_gpuf.h>
 
-#include <../src/operators.txx>
+#include <../src/operators_gpu.txx>
 
-template void grad_mult_wave_numberx<Complexf>(Complexf* wA, Complexf* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
-template void grad_mult_wave_numbery<Complexf>(Complexf* wA, Complexf* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
-template void grad_mult_wave_numberz<Complexf>(Complexf* wA, Complexf* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
-template void grad_mult_wave_number_laplace<Complexf>(Complexf* wA, Complexf* A, int* N,MPI_Comm c_comm );
 
-template void accfft_grad_t<float,accfft_planf>(float * A_x, float *A_y, float* A_z, float* A,accfft_planf *plan, std::bitset<3> XYZ, double* timer);
-template void accfft_laplace_t<float,accfft_planf>(float * LA,float *A,accfft_planf *plan, double* timer);
-template void accfft_divergence_t<float,accfft_planf>(float* divA,float* A_x, float* A_y, float*A_z,accfft_planf *plan, double* timer);
-
+/* Single Precision Instantiation */
+template void accfft_grad_gpu_t<float,accfft_plan_gpuf>       (float* A_x , float* A_y, float *A_z, float* A,accfft_plan_gpuf *plan, std::bitset<3> XYZ, double* timer);
+template void accfft_laplace_gpu_t<float,accfft_plan_gpuf>    (float* LA  , float* A  , accfft_plan_gpuf *plan, double* timer);
+template void accfft_divergence_gpu_t<float,accfft_plan_gpuf> (float* divA, float* A_x, float *A_y, float* A_z,accfft_plan_gpuf *plan, double* timer);
 
 /**
  * Computes single precision gradient of its input real data A, and returns the x, y, and z components
  * and writes the output into A_x, A_y, and A_z respectively.
+ * All the arrays must reside in the device (i.e. GPU) and must have been allocated with proper size using cudaMalloc.
  * @param A_x The x component of \f$\nabla A\f$
  * @param A_y The y component of \f$\nabla A\f$
  * @param A_z The z component of \f$\nabla A\f$
- * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf. Must be an outplace plan, otherwise the function will return
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c_gpuf. Must be an outplace plan, otherwise the function will return
  * without computing the gradient.
  * @param XYZ a bit set field of size 3 that determines which gradient components are needed. If XYZ={111} then
  * all the components are computed and if XYZ={100}, then only the x component is computed. This can save the user
  * some time, when just one or two of the gradient components are needed.
  * @param timer See \ref timer for more details.
  */
-void accfft_gradf(float * A_x, float *A_y, float* A_z, float* A,accfft_planf *plan, std::bitset<3> XYZ, double* timer){
-  accfft_grad_t<float,accfft_planf>(A_x, A_y, A_z, A, plan, XYZ, timer);
-
+void accfft_grad_gpuf(float * A_x, float *A_y, float *A_z, float*A,accfft_plan_gpuf *plan, std::bitset<3> XYZ, double* timer){
+  accfft_grad_gpu_t<float,accfft_plan_gpuf>(A_x, A_y, A_z, A, plan, XYZ, timer);
 }
 
 /**
  * Computes single precision Laplacian of its input real data A,
  * and writes the output into LA.
+ * All the arrays must reside in the device (i.e. GPU) and must have been allocated with proper size using cudaMalloc.
  * @param LA  \f$\Delta A\f$
- * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf. Must be an outplace plan, otherwise the function will return
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c_gpuf. Must be an outplace plan, otherwise the function will return
  * without computing the gradient.
  * @param timer See \ref timer for more details.
  */
-void accfft_laplacef(float * LA,float *A,accfft_planf *plan, double* timer){
-  accfft_laplace_t<float,accfft_planf>(LA, A, plan, timer);
+void accfft_laplace_gpuf(float* LA, float* A,accfft_plan_gpuf *plan, double* timer){
+  accfft_laplace_gpu_t<float,accfft_plan_gpuf>(LA,A,plan,timer);
 }
-
 
 /**
  * Computes single precision divergence of its input vector data A_x, A_y, and A_x.
  * The output data is written to divA.
+ * All the arrays must reside in the device (i.e. GPU) and must have been allocated with proper size using cudaMalloc.
  * @param divA  \f$\nabla\cdot(A_x i + A_y j+ A_z k)\f$
  * @param A_x The x component of \f$\nabla A\f$
  * @param A_y The y component of \f$\nabla A\f$
  * @param A_z The z component of \f$\nabla A\f$
- * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf. Must be an outplace plan, otherwise the function will return
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c_gpuf. Must be an outplace plan, otherwise the function will return
  * without computing the gradient.
  * @param timer See \ref timer for more details.
  */
-void accfft_divergencef(float* divA,float* A_x, float* A_y, float*A_z,accfft_planf *plan, double* timer){
-  accfft_divergence_t<float,accfft_planf>(divA, A_x, A_y, A_z, plan, timer);
+void accfft_divergence_gpuf(float* divA, float* A_x, float* A_y, float* A_z,accfft_plan_gpuf *plan, double* timer){
+  accfft_divergence_gpu_t<float,accfft_plan_gpuf>(divA, A_x, A_y, A_z, plan, timer);
 }

@@ -1,5 +1,5 @@
 /*
- * File: operators.cu
+ * File: operators_cuda.cu
  * License: Please see LICENSE file.
  * AccFFT: Massively Parallel FFT Library
  * Created by Amir Gholami on 11/30/2015
@@ -7,7 +7,9 @@
  */
 #include <stdio.h>
 #include <bitset>
-#include <accfft_common.h>
+//#include <accfft_common.h>
+typedef double Complex[2];
+typedef float Complexf[2];
 
 /* Global Functions */
 template <typename Tc>

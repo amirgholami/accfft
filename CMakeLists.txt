@@ -85,13 +85,23 @@ install (DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.h"
   )
 
 
-# ###########
-# UTILS BUILD
-# ###########
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
+#             CPU UTILS BUILD             #
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
 find_package(PNETCDF)
+
 if (PNETCDF_FOUND)
-  set (libaccfft_utils_SRCS ${libaccfft_SRCS} src/pnetcdf_io.cpp)
+  set (libaccfft_utils_SRCS ${libaccfft_SRCS} 
+    src/pnetcdf_io.cpp
+    src/operators.cpp
+    src/operatorsf.cpp
+    )
   include_directories(${PNETCDF_INCLUDE_DIRS})
+else()
+  set (libaccfft_utils_SRCS ${libaccfft_SRCS} 
+    src/operators.cpp
+    src/operatorsf.cpp
+    )
 endif()
 
 # build CPU libaccfft (shared or static ?)
@@ -130,22 +140,47 @@ if(BUILD_GPU)
   else(BUILD_SHARED_LIBS)
     cuda_add_library(accfft_gpu STATIC ${libaccfft_gpu_SRCS} OPTIONS "-DENABLE_GPU")
   endif(BUILD_SHARED_LIBS)
-  
+
   # the following is necessary so that .cpp sources files passed to 
   # cuda_add_library get the right compile flags
   set_target_properties(accfft_gpu PROPERTIES COMPILE_FLAGS "-DENABLE_GPU")
-  
+
   # install
   install(TARGETS accfft_gpu DESTINATION lib)
   install (DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN
     "*gpu*")
   install (DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN
     "*cuda*")
+
+
+  # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
+  #             GPU UTILS BUILD             #
+  # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
+  set (libaccfft_utils_gpu_SRCS ${libaccfft_gpu_SRCS} 
+    src/operators_gpu.cpp
+    src/operators_gpuf.cpp
+    src/operators_cuda.cu
+    )
+  # build CPU libaccfft (shared or static ?)
+  if(BUILD_SHARED_LIBS)
+    cuda_add_library(accfft_utils_gpu SHARED ${libaccfft_utils_gpu_SRCS} OPTIONS "-DENABLE_GPU")
+  else(BUILD_SHARED_LIBS)
+    cuda_add_library(accfft_utils_gpu STATIC ${libaccfft_utils_gpu_SRCS} OPTIONS "-DENABLE_GPU")
+  endif(BUILD_SHARED_LIBS)
+
+  # the following is necessary so that .cpp sources files passed to 
+  # cuda_add_library get the right compile flags
+  set_target_properties(accfft_utils_gpu PROPERTIES COMPILE_FLAGS "-DENABLE_GPU")
+
+  install(TARGETS accfft_utils_gpu DESTINATION lib)
+
+
 endif(BUILD_GPU)
 ####################
 # EXAMPLES / TESTS #
 ####################
 add_subdirectory(steps/step1 )
-add_subdirectory(steps/step2 ) # EXCLUDE_FROM_ALL)
-add_subdirectory(steps/step3 )
-add_subdirectory(steps/step4 )
+add_subdirectory(steps/step2 EXCLUDE_FROM_ALL)
+add_subdirectory(steps/step3 EXCLUDE_FROM_ALL )
+add_subdirectory(steps/step4 EXCLUDE_FROM_ALL )
+add_subdirectory(steps/step5 EXCLUDE_FROM_ALL )

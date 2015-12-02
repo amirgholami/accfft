@@ -416,7 +416,7 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
     // FFT in Z direction
-    if(xyz[0]){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecD2Z(plan->fplan_0,(cufftDoubleReal*)data_d, (cufftDoubleComplex*)data_out_d));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -457,7 +457,7 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
     /**************************************************************/
     /*******************  N0 x N1/P0 x N2/P1 **********************/
     /**************************************************************/
-    if(xyz[2]){
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_out_d, (cufftDoubleComplex*)data_out_d,CUFFT_FORWARD));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -467,7 +467,7 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
     }
   }
   else if (direction==1){
-    if(xyz[2]){
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_d, (cufftDoubleComplex*)data_d,CUFFT_INVERSE));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -510,7 +510,7 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
     /**************************************************************/
 
     // IFFT in Z direction
-    if(xyz[0]){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2D(plan->iplan_0,(cufftDoubleComplex*)data_d,(cufftDoubleReal*)data_out_d));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -922,7 +922,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
     // FFT in Z direction
-    if(xyz[0]){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft(cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_d, (cufftDoubleComplex*)data_out_d,CUFFT_FORWARD));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -966,7 +966,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
     /**************************************************************/
     /*******************  N0 x N1/P0 x N2/P1 **********************/
     /**************************************************************/
-    if(xyz[2]){
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft(cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_out_d, (cufftDoubleComplex*)data_out_d,CUFFT_FORWARD));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -977,7 +977,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
 
   }
   else if (direction==1){
-    if(xyz[2]){
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2Z(plan->fplan_2,(cufftDoubleComplex*)data_d, (cufftDoubleComplex*)data_d,CUFFT_INVERSE));
       checkCuda_accfft (cudaDeviceSynchronize());
@@ -1021,7 +1021,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
 
-    if(xyz[0]){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecZ2Z(plan->fplan_0,(cufftDoubleComplex*)data_d,(cufftDoubleComplex*)data_out_d,CUFFT_INVERSE));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );

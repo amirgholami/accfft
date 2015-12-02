@@ -375,7 +375,7 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
     /**************************************************************/
     // FFT in Z direction
     fft_time-=MPI_Wtime();
-    if(XYZ[0])
+    if(XYZ[2])
       fftw_execute_dft_r2c(plan->fplan_0,(double*)data,(fftw_complex*)data_out);
     else
       data_out=data;
@@ -404,13 +404,13 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
     /*******************  N0 x N1/P0 x N2/P1 **********************/
     /**************************************************************/
     fft_time-=MPI_Wtime();
-    if(XYZ[2])
+    if(XYZ[0])
       fftw_execute_dft(plan->fplan_2,(fftw_complex*)data_out,(fftw_complex*)data_out);
     fft_time+=MPI_Wtime();
   }
   else if (direction==1){
     fft_time-=MPI_Wtime();
-    if(XYZ[2])
+    if(XYZ[0])
       fftw_execute_dft(plan->iplan_2,(fftw_complex*)data,(fftw_complex*)data);
     fft_time+=MPI_Wtime();
 
@@ -441,7 +441,7 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
     /**************************************************************/
     // IFFT in Z direction
     fft_time-=MPI_Wtime();
-    if(XYZ[0])
+    if(XYZ[2])
       fftw_execute_dft_c2r(plan->iplan_0,(fftw_complex*)data,(double*)data_out);
     else
       data_out=data;
@@ -821,7 +821,7 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
     /**************************************************************/
     // FFT in Z direction
     fft_time-=MPI_Wtime();
-    if(XYZ[0])
+    if(XYZ[2])
       fftw_execute_dft(plan->fplan_0,data,data_out);
     else
       data_out=data;
@@ -851,13 +851,13 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
     /*******************  N0 x N1/P0 x N2/P1 **********************/
     /**************************************************************/
     fft_time-=MPI_Wtime();
-    if(XYZ[2])
+    if(XYZ[0])
       fftw_execute_dft(plan->fplan_2,(fftw_complex*)data_out,(fftw_complex*)data_out);
     fft_time+=MPI_Wtime();
   }
   else if (direction==1){
     fft_time-=MPI_Wtime();
-    if(XYZ[2])
+    if(XYZ[0])
       fftw_execute_dft(plan->iplan_2,(fftw_complex*)data,(fftw_complex*)data);
     fft_time+=MPI_Wtime();
 
@@ -886,7 +886,7 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
 
     // IFFT in Z direction
     fft_time-=MPI_Wtime();
-    if(XYZ[0])
+    if(XYZ[2])
       fftw_execute_dft(plan->iplan_0,data,data_out);
     else
       data_out=data;

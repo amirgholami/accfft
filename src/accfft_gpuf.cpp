@@ -80,7 +80,7 @@ int dfft_get_local_size_gpuf(int N0, int N1, int N2, int * isize, int * istart,M
 }
 
 /**
- * Get the local sizes of the distributed global data for a GPU R2C transform
+ * Get the local sizes of the distributed global data for a GPU single precision R2C transform
  * @param n Integer array of size 3, corresponding to the global data size
  * @param isize The size of the data that is locally distributed to the calling process
  * @param istart The starting index of the data that locally resides on the calling process
@@ -136,7 +136,7 @@ int accfft_local_size_dft_r2c_gpuf( int * n,int * isize, int * istart, int * osi
 
 
 /**
- * Creates a 3D R2C parallel FFT plan.If data_out point to the same location as the input
+ * Creates a 3D single precision R2C parallel FFT plan. If data_out point to the same location as the input
  * data, then an inplace plan will be created. Otherwise the plan would be outplace.
  * @param n Integer array of size 3, corresponding to the global data size
  * @param data Input data in spatial domain
@@ -415,7 +415,7 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
     // FFT in Z direction
-    if(xyz[0]){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecR2C(plan->fplan_0,(cufftReal*)data_d, (cufftComplex*)data_out_d));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -456,7 +456,7 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
     /**************************************************************/
     /*******************  N0 x N1/P0 x N2/P1 **********************/
     /**************************************************************/
-    if(xyz[2]){
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecC2C(plan->fplan_2,(cufftComplex*)data_out_d, (cufftComplex*)data_out_d,CUFFT_FORWARD));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -466,7 +466,7 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
     }
   }
   else if (direction==1){
-    if(xyz[2]){
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecC2C(plan->fplan_2,(cufftComplex*)data_d, (cufftComplex*)data_d,CUFFT_INVERSE));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -508,7 +508,7 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
     /**************************************************************/
 
     // IFFT in Z direction
-    if(xyz[0]){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecC2R(plan->iplan_0,(cufftComplex*)data_d,(cufftReal*)data_out_d));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -532,10 +532,10 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
 
 
 /**
- * Execute R2C plan. This function is blocking and only returns after the transform is completed.
+ * Execute single precision R2C plan. This function is blocking and only returns after the transform is completed.
  * @note For inplace transforms, data_out should point to the same memory address as data, AND
  * the plan must have been created as inplace.
- * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf.
  * @param data Input data in spatial domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
@@ -554,10 +554,10 @@ void accfft_execute_r2c_gpuf(accfft_plan_gpuf* plan, float * data,Complexf * dat
 
 
 /**
- * Execute C2R plan. This function is blocking and only returns after the transform is completed.
+ * Execute single precision C2R plan. This function is blocking and only returns after the transform is completed.
  * @note For inplace transforms, data_out should point to the same memory address as data, AND
  * the plan must have been created as inplace.
- * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf.
  * @param data Input data in frequency domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
@@ -576,7 +576,7 @@ void accfft_execute_c2r_gpuf(accfft_plan_gpuf* plan, Complexf * data,float * dat
 
 
 /**
- * Get the local sizes of the distributed global data for a GPU C2C transform
+ * Get the local sizes of the distributed global data for a GPU single precision C2C transform
  * @param n Integer array of size 3, corresponding to the global data size
  * @param isize The size of the data that is locally distributed to the calling process
  * @param istart The starting index of the data that locally resides on the calling process
@@ -632,7 +632,7 @@ int accfft_local_size_dft_c2c_gpuf( int * n,int * isize, int * istart, int * osi
 
 
 /**
- * Creates a 3D C2C parallel FFT plan. If data_out point to the same location as the input
+ * Creates a 3D single precision C2C parallel FFT plan. If data_out point to the same location as the input
  * data, then an inplace plan will be created. Otherwise the plan would be outplace.
  * @param n Integer array of size 3, corresponding to the global data size
  * @param data Input data in spatial domain
@@ -867,10 +867,10 @@ accfft_plan_gpuf*  accfft_plan_dft_3d_c2c_gpuf(int * n, Complexf * data_d, Compl
 
 
 /**
- * Execute C2C plan. This function is blocking and only returns after the transform is completed.
+ * Execute single precision C2C plan. This function is blocking and only returns after the transform is completed.
  * @note For inplace transforms, data_out should point to the same memory address as data, AND
  * the plan must have been created as inplace.
- * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c.
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf.
  * @param data Input data in frequency domain.
  * @param data_out Output data in frequency domain.
  * @param timer See \ref timer for more details.
@@ -920,7 +920,7 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
     // FFT in Z direction
-    if(xyz[0]){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft(cufftExecC2C(plan->fplan_0,(cufftComplex*)data_d, (cufftComplex*)data_out_d,CUFFT_FORWARD));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -965,7 +965,7 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     /**************************************************************/
     /*******************  N0 x N1/P0 x N2/P1 **********************/
     /**************************************************************/
-    if(xyz[2]){
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft(cufftExecC2C(plan->fplan_2,(cufftComplex*)data_out_d, (cufftComplex*)data_out_d,CUFFT_FORWARD));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -976,7 +976,7 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
 
   }
   else if (direction==1){
-    if(xyz[2]){
+    if(xyz[0]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecC2C(plan->fplan_2,(cufftComplex*)data_d, (cufftComplex*)data_d,CUFFT_INVERSE));
       checkCuda_accfft (cudaDeviceSynchronize());
@@ -1020,7 +1020,7 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
 
-    if(xyz[0]){
+    if(xyz[2]){
       checkCuda_accfft( cudaEventRecord(fft_startEvent,0) );
       checkCuda_accfft (cufftExecC2C(plan->fplan_0,(cufftComplex*)data_d,(cufftComplex*)data_out_d,CUFFT_INVERSE));
       checkCuda_accfft( cudaEventRecord(fft_stopEvent,0) );
@@ -1044,7 +1044,7 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
 
 
 /**
- * Destroy AccFFT CPU plan. This function calls \ref accfft_destroy_plan_gpu.
+ * Destroy single precision AccFFT CPU plan. This function calls \ref accfft_destroy_plan_gpu.
  * @param plan Input plan to be destroyed.
  */
 void accfft_destroy_plan(accfft_plan_gpuf * plan){
@@ -1052,7 +1052,7 @@ void accfft_destroy_plan(accfft_plan_gpuf * plan){
 }
 
 /**
- * Destroy AccFFT GPU plan.
+ * Destroy single precision AccFFT GPU plan.
  * @param plan Input plan to be destroyed.
  */
 void accfft_destroy_plan_gpu(accfft_plan_gpuf * plan){
