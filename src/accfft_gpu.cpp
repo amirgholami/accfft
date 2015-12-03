@@ -523,7 +523,7 @@ void accfft_execute_gpu(accfft_plan_gpu* plan, int direction,double * data_d, do
 
   }
 
-  timings[4]=fft_time;
+  timings[4]+=fft_time;
   if(timer==NULL){
     delete [] timings;
   }
@@ -1034,7 +1034,7 @@ void accfft_execute_c2c_gpu(accfft_plan_gpu* plan, int direction,Complex * data_
 
   }
 
-  timings[4]=fft_time;
+  timings[4]+=fft_time;
   if(timer==NULL){
     delete [] timings;
   }

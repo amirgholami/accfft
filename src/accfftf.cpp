@@ -183,6 +183,7 @@ accfft_planf*  accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out, 
 
   int isize[3],osize[3],istart[3],ostart[3];
   alloc_max=accfft_local_size_dft_r2cf(n,isize,istart,osize,ostart,c_comm);
+  plan->alloc_max=alloc_max;
 
   dfft_get_local_sizef(n[0],n[1],n_tuples_o/2,osize_0,ostart_0,c_comm);
   dfft_get_local_sizef(n[0],n_tuples_o/2,n[1],osize_1,ostart_1,c_comm);
@@ -451,7 +452,7 @@ void accfft_executef(accfft_planf* plan, int direction,float * data, float* data
 
   }
 
-  timings[4]=fft_time;
+  timings[4]+=fft_time;
   if(timer==NULL){
     delete [] timings;
   }
@@ -895,7 +896,7 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction,Complexf * data, Comp
 
   }
 
-  timings[4]=fft_time;
+  timings[4]+=fft_time;
   if(timer==NULL){
     delete [] timings;
   }

@@ -521,7 +521,7 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
 
   }
 
-  timings[4]=fft_time;
+  timings[4]+=fft_time;
   if(timer==NULL){
     delete [] timings;
   }
@@ -1033,7 +1033,7 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
 
   }
 
-  timings[4]=fft_time;
+  timings[4]+=fft_time;
   if(timer==NULL){
     delete [] timings;
   }

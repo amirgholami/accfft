@@ -283,7 +283,7 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ, dou
 
 	self_exec_time+= MPI_Wtime();
 
-	timings[0]=self_exec_time;
+	timings[0]+=self_exec_time;
 
   if(timer==NULL){
     delete [] timings;
@@ -339,7 +339,7 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer){
 
   self_exec_time+= MPI_Wtime();
 
-  timings[0]=self_exec_time;
+  timings[0]+=self_exec_time;
 
   if(timer==NULL){
     delete [] timings;
@@ -432,7 +432,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
 
   self_exec_time+= MPI_Wtime();
 
-  timings[0]=self_exec_time;
+  timings[0]+=self_exec_time;
 
   if(timer==NULL){
     delete [] timings;
