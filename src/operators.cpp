@@ -140,8 +140,8 @@ void read_pnetcdf(const std::string &filename,
   int nbVar=1;
   int varIds[nbVar];
   MPI_Info mpi_info_used;
-  
-  /* 
+
+  /*
    * Open NetCDF file
    */
   err = ncmpi_open(MPI_COMM_WORLD, filename.c_str(), 
@@ -179,13 +179,13 @@ void read_pnetcdf(const std::string &filename,
     PNETCDF_HANDLE_ERROR;
   }
 
-  /* 
+  /*
    * Define expected data types (no conversion done here)
    */
   MPI_Datatype mpiDataType = MPI_DOUBLE;
 
-  /* 
-   * Get all the MPI_IO hints used (just in case, we want to print it after 
+  /*
+   * Get all the MPI_IO hints used (just in case, we want to print it after
    * reading data...
    */
   err = ncmpi_get_file_info(ncFileId, &mpi_info_used);
@@ -196,9 +196,9 @@ void read_pnetcdf(const std::string &filename,
    */
   int nItems = counts[IX]*counts[IY]*counts[IZ];
   {
-    
+
     err = ncmpi_get_vara_all(ncFileId,
-			     varIds[0], 
+			     varIds[0],
 			     starts,
 			     counts,
 			     localData,
@@ -207,8 +207,8 @@ void read_pnetcdf(const std::string &filename,
     PNETCDF_HANDLE_ERROR;
   } // end reading heavy data
 
-  /* 
-   * close the file 
+  /*
+   * close the file
    */
   err = ncmpi_close(ncFileId);
   PNETCDF_HANDLE_ERROR;
@@ -247,7 +247,7 @@ void write_pnetcdf(const std::string &filename,
 
   // CDF-5 is almost mandatory for very large files (>= 2x10^9 cells)
   // not useful here
-  bool useCDF5 = false; 
+  bool useCDF5 = false;
   if (useCDF5)
     ncCreationMode = NC_CLOBBER|NC_64BIT_DATA;
   else // use CDF-2 file format
@@ -255,20 +255,20 @@ void write_pnetcdf(const std::string &filename,
 
   // verbose log ?
   //bool pnetcdf_verbose = false;
-  
+
   int nbVar=1;
   int dimIds[3], varIds[nbVar];
   //MPI_Offset write_size, sum_write_size;
   MPI_Info mpi_info_used;
   //char str[512];
-  
+
   // time measurement variables
   //double write_timing, max_write_timing, write_bw;
 
-  /* 
+  /*
    * Create NetCDF file
    */
-  err = ncmpi_create(MPI_COMM_WORLD, filename.c_str(), 
+  err = ncmpi_create(MPI_COMM_WORLD, filename.c_str(),
 		     ncCreationMode,
 		     MPI_INFO_NULL, &ncFileId);
   if (err != NC_NOERR) {
@@ -282,14 +282,14 @@ void write_pnetcdf(const std::string &filename,
    */
   err = ncmpi_def_dim(ncFileId, "x", gsizes[0], &dimIds[0]);
   PNETCDF_HANDLE_ERROR;
-  
+
   err = ncmpi_def_dim(ncFileId, "y", gsizes[1], &dimIds[1]);
   PNETCDF_HANDLE_ERROR;
-  
+
   err = ncmpi_def_dim(ncFileId, "z", gsizes[2], &dimIds[2]);
   PNETCDF_HANDLE_ERROR;
 
-  /* 
+  /*
    * Define variables to write (give a name)
    */
   nc_type       ncDataType =  NC_DOUBLE;
@@ -307,19 +307,19 @@ void write_pnetcdf(const std::string &filename,
     err = ncmpi_put_att_int(ncFileId, NC_GLOBAL, "CDF-5 mode", NC_INT, 1, &useCDF5_int);
     PNETCDF_HANDLE_ERROR;
   }
-  
-  /* 
-   * exit the define mode 
+
+  /*
+   * exit the define mode
    */
   err = ncmpi_enddef(ncFileId);
   PNETCDF_HANDLE_ERROR;
-  
-  /* 
+
+  /*
    * Get all the MPI_IO hints used
    */
   err = ncmpi_get_file_info(ncFileId, &mpi_info_used);
   PNETCDF_HANDLE_ERROR;
-   
+
   // copy data to write in intermediate buffer
   int nItems = counts[IX]*counts[IY]*counts[IZ];
 
@@ -327,12 +327,12 @@ void write_pnetcdf(const std::string &filename,
 
     // debug
     // printf("Pnetcdf [rank=%d] starts=%lld %lld %lld, counts =%lld %lld %lld, gsizes=%d %d %d\n",
-    // 	   myRank,
-    // 	   starts[0],starts[1],starts[2],
-    // 	   counts[0],counts[1],counts[2],
-    // 	   gsizes[0],gsizes[1],gsizes[2]);
-    
-    /* 
+    //	   myRank,
+    //	   starts[0],starts[1],starts[2],
+    //	   counts[0],counts[1],counts[2],
+    //	   gsizes[0],gsizes[1],gsizes[2]);
+
+    /*
      * make sure PNetCDF doesn't complain when starts is outside of global domain
      * bound. When nItems is null, off course we don't write anything, but starts
      * offset have to be inside global domain.
@@ -344,21 +344,21 @@ void write_pnetcdf(const std::string &filename,
       starts[2]=0;
     }
 
-    err = ncmpi_put_vara_all(ncFileId, 
-			     varIds[0], 
-			     starts, 
-			     counts, 
-			     localData, 
-			     nItems, 
+    err = ncmpi_put_vara_all(ncFileId,
+			     varIds[0],
+			     starts,
+			     counts,
+			     localData,
+			     nItems,
 			     mpiDataType);
     PNETCDF_HANDLE_ERROR;
   }
 
 
-  /* 
-   * close the file 
+  /*
+   * close the file
    */
   err = ncmpi_close(ncFileId);
   PNETCDF_HANDLE_ERROR;
-  
+
 } // write_pnetcdf

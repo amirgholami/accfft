@@ -92,7 +92,6 @@ find_package(PNETCDF)
 
 if (PNETCDF_FOUND)
   set (libaccfft_utils_SRCS ${libaccfft_SRCS} 
-    src/pnetcdf_io.cpp
     src/operators.cpp
     src/operatorsf.cpp
     )
