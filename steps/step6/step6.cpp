@@ -149,6 +149,7 @@ void step6(int *n, int nthreads) {
 
   memcpy(u_n,u_0,alloc_max);
 
+  double exec_time=-MPI_Wtime();
   for (int t=0; t<Nt; ++t){
     accfft_laplace(laplace,u_n,plan,timings);
     for(long long int i=0; i<isize[0]*isize[1]*isize[2];++i){
@@ -156,6 +157,7 @@ void step6(int *n, int nthreads) {
     }
   MPI_Barrier(c_comm);
   }
+  exec_time+=MPI_Wtime();
   /* Compute the error between u_n and u_true */
   double err=0,g_err,norm=0,g_norm;
   for(long long int i=0; i<isize[0]*isize[1]*isize[2];++i){
@@ -181,14 +183,15 @@ void step6(int *n, int nthreads) {
   write_pnetcdf(filename,istart_mpi,isize_mpi,n,u_n);
 
   /* Compute some timings statistics */
-  double g_setup_time,g_timings[5];
+  double g_setup_time,g_timings[5],g_exec_time;
 
   MPI_Reduce(timings,g_timings,5, MPI_DOUBLE, MPI_MAX,0, c_comm);
   MPI_Reduce(&setup_time,&g_setup_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
+  MPI_Reduce(&exec_time,&g_exec_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
 
   PCOUT<<"Timing for Laplace Computation for size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
   PCOUT<<"Setup \t\t"<<g_setup_time<<std::endl;
-  PCOUT<<"Evaluation \t"<<g_timings[0]<<std::endl;
+  PCOUT<<"Evaluation \t"<<g_exec_time<<std::endl;
 
   accfft_free(u);
   accfft_free(u_0);
@@ -202,7 +205,7 @@ void step6(int *n, int nthreads) {
   MPI_Comm_free(&c_comm);
   return ;
 
-} // end laplace
+} // end step6
 
 
 int main(int argc, char **argv)

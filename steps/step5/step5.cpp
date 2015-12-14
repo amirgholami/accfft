@@ -91,18 +91,18 @@ void grad(int *n, int nthreads) {
   initialize(data,n,c_comm);
   MPI_Barrier(c_comm);
 
-  /* Perform forward FFT */
   double * gradx=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   double * grady=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   double * gradz=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   double timings[5]={0};
 
-  /* Perform backward FFT */
   std::bitset<3> XYZ=0;
   XYZ[0]=1;
   XYZ[1]=1;
   XYZ[2]=1;
+  double exec_time=-MPI_Wtime();
   accfft_grad(gradx,grady,gradz,data,plan,XYZ,timings);
+  exec_time+=MPI_Wtime();
   /* Check err*/
   PCOUT<<">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"<<std::endl;
   PCOUT<<">>>>>>>>Checking Gradx>>>>>>>>"<<std::endl;
@@ -123,14 +123,15 @@ void grad(int *n, int nthreads) {
   PCOUT<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n"<<std::endl;
 
   /* Compute some timings statistics */
-  double g_setup_time,g_timings[5];
+  double g_setup_time,g_timings[5],g_exec_time;
 
   MPI_Reduce(timings,g_timings,5, MPI_DOUBLE, MPI_MAX,0, c_comm);
   MPI_Reduce(&setup_time,&g_setup_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
+  MPI_Reduce(&exec_time,&g_exec_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
 
   PCOUT<<"Timing for Grad Computation for size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
   PCOUT<<"Setup \t\t"<<g_setup_time<<std::endl;
-  PCOUT<<"Evaluation \t"<<g_timings[0]<<std::endl;
+  PCOUT<<"Evaluation \t"<<g_exec_time<<std::endl;
 
   accfft_free(data);
   accfft_free(data_hat);
@@ -183,12 +184,12 @@ void laplace(int *n, int nthreads) {
   initialize(data,n,c_comm);
   MPI_Barrier(c_comm);
 
-  /* Perform forward FFT */
   double * laplace=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   double timings[5]={0};
 
-  /* Perform backward FFT */
+  double exec_time=-MPI_Wtime();
   accfft_laplace(laplace,data,plan,timings);
+  exec_time+=MPI_Wtime();
   /* Check err*/
   PCOUT<<">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"<<std::endl;
   PCOUT<<">>>>>>>Checking Laplace>>>>>>>"<<std::endl;
@@ -197,14 +198,15 @@ void laplace(int *n, int nthreads) {
   PCOUT<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n"<<std::endl;
 
   /* Compute some timings statistics */
-  double g_setup_time,g_timings[5];
+  double g_setup_time,g_timings[5],g_exec_time;
 
   MPI_Reduce(timings,g_timings,5, MPI_DOUBLE, MPI_MAX,0, c_comm);
   MPI_Reduce(&setup_time,&g_setup_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
+  MPI_Reduce(&exec_time,&g_exec_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
 
   PCOUT<<"Timing for Laplace Computation for size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
   PCOUT<<"Setup \t\t"<<g_setup_time<<std::endl;
-  PCOUT<<"Evaluation \t"<<g_timings[0]<<std::endl;
+  PCOUT<<"Evaluation \t"<<g_exec_time<<std::endl;
 
   accfft_free(data);
   accfft_free(data_hat);
@@ -252,20 +254,20 @@ void divergence(int *n, int nthreads) {
   initialize(data,n,c_comm);
   MPI_Barrier(c_comm);
 
-  /* Perform forward FFT */
   double * gradx=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   double * grady=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   double * gradz=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   double * divergence=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   double timings[5]={0};
 
-  /* Perform backward FFT */
   std::bitset<3> XYZ=0;
   XYZ[0]=1;
   XYZ[1]=1;
   XYZ[2]=1;
+  double exec_time=-MPI_Wtime();
   accfft_grad(gradx,grady,gradz,data,plan,XYZ,timings);
   accfft_divergence(divergence,gradx,grady,gradz,plan,timings);
+  exec_time+=MPI_Wtime();
 
   PCOUT<<">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"<<std::endl;
   PCOUT<<">>>>>Checking Divergence>>>>>>"<<std::endl;
@@ -275,14 +277,15 @@ void divergence(int *n, int nthreads) {
 
 
   /* Compute some timings statistics */
-  double g_setup_time,g_timings[5];
+  double g_setup_time,g_timings[5],g_exec_time;
 
   MPI_Reduce(timings,g_timings,5, MPI_DOUBLE, MPI_MAX,0, c_comm);
   MPI_Reduce(&setup_time,&g_setup_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
+  MPI_Reduce(&exec_time,&g_exec_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
 
   PCOUT<<"Timing for Divergence Computation for size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
   PCOUT<<"Setup \t\t"<<g_setup_time<<std::endl;
-  PCOUT<<"Evaluation \t"<<g_timings[0]<<std::endl;
+  PCOUT<<"Evaluation \t"<<g_exec_time<<std::endl;
 
   accfft_free(data);
   accfft_free(data_hat);
@@ -298,7 +301,7 @@ void divergence(int *n, int nthreads) {
   PCOUT<<"-------------------------------------------------------\n"<<std::endl;
   return ;
 
-} // end grad
+} // end divergence
 
 int main(int argc, char **argv)
 {

@@ -98,19 +98,19 @@ void grad(int *n) {
 
   MPI_Barrier(c_comm);
 
-  /* Perform forward FFT */
   float * gradx,*grady, *gradz;
   cudaMalloc((void**) &gradx    , alloc_max);
   cudaMalloc((void**) &grady    , alloc_max);
   cudaMalloc((void**) &gradz    , alloc_max);
   double timings[5]={0};
 
-  /* Perform backward FFT */
   std::bitset<3> XYZ=0;
   XYZ[0]=1;
   XYZ[1]=1;
   XYZ[2]=1;
+  double exec_time=-MPI_Wtime();
   accfft_grad_gpuf(gradx,grady,gradz,data,plan,XYZ,timings);
+  exec_time+=MPI_Wtime();
   /* Check err*/
   PCOUT<<">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"<<std::endl;
   PCOUT<<">>>>>>>>Checking Gradx>>>>>>>>"<<std::endl;
@@ -134,14 +134,15 @@ void grad(int *n) {
   PCOUT<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n"<<std::endl;
 
   /* Compute some timings statistics */
-  double g_setup_time,g_timings[5];
+  double g_setup_time,g_timings[5],g_exec_time;
 
   MPI_Reduce(timings,g_timings,5, MPI_DOUBLE, MPI_MAX,0, c_comm);
   MPI_Reduce(&setup_time,&g_setup_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
+  MPI_Reduce(&exec_time,&g_exec_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
 
   PCOUT<<"Timing for Grad Computation for size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
   PCOUT<<"Setup \t\t"<<g_setup_time<<std::endl;
-  PCOUT<<"Evaluation \t"<<g_timings[0]<<std::endl;
+  PCOUT<<"Evaluation \t"<<g_exec_time<<std::endl;
 
   accfft_free(data_cpu);
   cudaFree(data);
@@ -199,13 +200,13 @@ void laplace(int *n) {
 
   MPI_Barrier(c_comm);
 
-  /* Perform forward FFT */
   float * laplace;
   cudaMalloc((void**) &laplace    , alloc_max);
   double timings[5]={0};
 
-  /* Perform backward FFT */
+  double exec_time=-MPI_Wtime();
   accfft_laplace_gpuf(laplace,data,plan,timings);
+  exec_time+=MPI_Wtime();
   /* Check err*/
   PCOUT<<">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"<<std::endl;
   PCOUT<<">>>>>>>Checking Laplace>>>>>>>"<<std::endl;
@@ -215,14 +216,15 @@ void laplace(int *n) {
   PCOUT<<"<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n"<<std::endl;
 
   /* Compute some timings statistics */
-  double g_setup_time,g_timings[5];
+  double g_setup_time,g_timings[5],g_exec_time;
 
   MPI_Reduce(timings,g_timings,5, MPI_DOUBLE, MPI_MAX,0, c_comm);
   MPI_Reduce(&setup_time,&g_setup_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
+  MPI_Reduce(&exec_time,&g_exec_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
 
   PCOUT<<"Timing for Grad Computation for size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
   PCOUT<<"Setup \t\t"<<g_setup_time<<std::endl;
-  PCOUT<<"Evaluation \t"<<g_timings[0]<<std::endl;
+  PCOUT<<"Evaluation \t"<<g_exec_time<<std::endl;
 
   accfft_free(data_cpu);
   cudaFree(data);
@@ -278,7 +280,6 @@ void divergence(int *n) {
 
   MPI_Barrier(c_comm);
 
-  /* Perform forward FFT */
   float * gradx,*grady, *gradz, *divergence;
   cudaMalloc((void**) &gradx     , alloc_max);
   cudaMalloc((void**) &grady     , alloc_max);
@@ -287,13 +288,14 @@ void divergence(int *n) {
   double timings[5]={0};
 
 
-  /* Perform backward FFT */
   std::bitset<3> XYZ=0;
   XYZ[0]=1;
   XYZ[1]=1;
   XYZ[2]=1;
+  double exec_time=-MPI_Wtime();
   accfft_grad_gpuf(gradx,grady,gradz,data,plan,XYZ,timings);
   accfft_divergence_gpuf(divergence,gradx,grady,gradz,plan,timings);
+  exec_time+=MPI_Wtime();
 
   PCOUT<<">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"<<std::endl;
   PCOUT<<">>>>>Checking Divergence>>>>>>"<<std::endl;
@@ -304,14 +306,15 @@ void divergence(int *n) {
 
 
   /* Compute some timings statistics */
-  double g_setup_time,g_timings[5];
+  double g_setup_time,g_timings[5],g_exec_time;
 
   MPI_Reduce(timings,g_timings,5, MPI_DOUBLE, MPI_MAX,0, c_comm);
   MPI_Reduce(&setup_time,&g_setup_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
+  MPI_Reduce(&exec_time,&g_exec_time,1, MPI_DOUBLE, MPI_MAX,0, c_comm);
 
   PCOUT<<"Timing for Grad Computation for size "<<n[0]<<"*"<<n[1]<<"*"<<n[2]<<std::endl;
   PCOUT<<"Setup \t\t"<<g_setup_time<<std::endl;
-  PCOUT<<"Evaluation \t"<<g_timings[0]<<std::endl;
+  PCOUT<<"Evaluation \t"<<g_exec_time<<std::endl;
 
   accfft_free(data_cpu);
   cudaFree(data);
@@ -328,7 +331,7 @@ void divergence(int *n) {
   PCOUT<<"-------------------------------------------------------\n"<<std::endl;
   return ;
 
-} // end grad
+} // end divergence
 
 int main(int argc, char **argv)
 {
