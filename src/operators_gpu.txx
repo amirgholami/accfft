@@ -153,8 +153,6 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ,
 
 	self_exec_time+= MPI_Wtime();
 
-	timings[0]+=self_exec_time;
-
   if(timer==NULL){
     delete [] timings;
   }
@@ -209,8 +207,6 @@ void accfft_laplace_gpu_t(T* LA, T* A, Tp* plan, double* timer){
   cudaFree(tmp);
 
   self_exec_time+= MPI_Wtime();
-
-  timings[0]+=self_exec_time;
 
   if(timer==NULL){
     delete [] timings;
@@ -313,8 +309,6 @@ void accfft_divergence_gpu_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double*
 	cudaFree(tmp2);
 
 	self_exec_time+= MPI_Wtime();
-
-	timings[0]+=self_exec_time;
 
   if(timer==NULL){
     delete [] timings;

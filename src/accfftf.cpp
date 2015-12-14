@@ -354,14 +354,7 @@ void accfft_executef(accfft_planf* plan, int direction,float * data, float* data
   int * coords=plan->coord;
   int procid=plan->procid;
   double fft_time=0;
-  double * timings;
-  if(timer==NULL){
-    timings=new double[5];
-    memset(timings,0,sizeof(double)*5);
-  }
-  else{
-    timings=timer;
-  }
+  double timings[5]={0};
 
 
   // 1D Decomposition
@@ -454,7 +447,14 @@ void accfft_executef(accfft_planf* plan, int direction,float * data, float* data
 
   timings[4]+=fft_time;
   if(timer==NULL){
-    delete [] timings;
+    //delete [] timings;
+  }
+  else{
+    timer[0]+=timings[0];
+    timer[1]+=timings[1];
+    timer[2]+=timings[2];
+    timer[3]+=timings[3];
+    timer[4]+=timings[4];
   }
   MPI_Barrier(plan->c_comm);
 
@@ -800,14 +800,7 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction,Complexf * data, Comp
   int * coords=plan->coord;
   int procid=plan->procid;
   double fft_time=0;
-  double * timings;
-  if(timer==NULL){
-    timings=new double[5];
-    memset(timings,0,sizeof(double)*5);
-  }
-  else{
-    timings=timer;
-  }
+  double timings[5]={0};
 
 
 
@@ -898,7 +891,14 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction,Complexf * data, Comp
 
   timings[4]+=fft_time;
   if(timer==NULL){
-    delete [] timings;
+    //delete [] timings;
+  }
+  else{
+    timer[0]+=timings[0];
+    timer[1]+=timings[1];
+    timer[2]+=timings[2];
+    timer[3]+=timings[3];
+    timer[4]+=timings[4];
   }
   MPI_Barrier(plan->c_comm);
 

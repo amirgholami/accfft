@@ -762,7 +762,6 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -989,7 +988,6 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -1188,7 +1186,6 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -1389,7 +1386,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -1638,7 +1634,6 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -1867,7 +1862,6 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -2102,7 +2096,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   }
   if(nprocs==1){ // Transpose is done!
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -2340,7 +2333,6 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   }
   if(nprocs==1){ // Transpose is done!
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -2553,7 +2545,6 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings,int kway, unsigne
 
   if(nprocs==1){ // Transpose is done!
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -2721,7 +2712,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;

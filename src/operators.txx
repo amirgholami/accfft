@@ -225,14 +225,7 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ, dou
   }
 
 
-  double * timings;
-  if(timer==NULL){
-    timings=new double[5];
-    memset(timings,0,sizeof(double)*5);
-  }
-  else{
-    timings=timer;
-  }
+  double timings[5]={0};
 
 	double self_exec_time= - MPI_Wtime();
   int *N=plan->N;
@@ -283,18 +276,23 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ, dou
 
 	self_exec_time+= MPI_Wtime();
 
-	timings[0]+=self_exec_time;
-
   if(timer==NULL){
-    delete [] timings;
+    //delete [] timings;
   }
-	return;
+  else{
+    timer[0]+=timings[0];
+    timer[1]+=timings[1];
+    timer[2]+=timings[2];
+    timer[3]+=timings[3];
+    timer[4]+=timings[4];
+  }
+  return;
 }
 
 template <typename T,typename Tp>
 void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer){
   typedef T Tc[2];
-	int procid;
+  int procid;
   MPI_Comm c_comm=plan->c_comm;
   MPI_Comm_rank(c_comm,&procid);
   if(!plan->r2c_plan_baked){
@@ -302,16 +300,9 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer){
     return;
   }
 
-  double * timings;
-  if(timer==NULL){
-    timings=new double[5];
-    memset(timings,0,sizeof(double)*5);
-  }
-  else{
-    timings=timer;
-  }
+  double timings[5]={0};
 
-	double self_exec_time= - MPI_Wtime();
+  double self_exec_time= - MPI_Wtime();
   int *N=plan->N;
 
   int isize[3],osize[3],istart[3],ostart[3];
@@ -322,9 +313,9 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer){
   Tc* A_hat=(Tc*) accfft_alloc(alloc_max);
   Tc* tmp  =(Tc*) accfft_alloc(alloc_max);
 
-	MPI_Barrier(c_comm);
+  MPI_Barrier(c_comm);
 
-	/* Forward transform */
+  /* Forward transform */
   accfft_execute_r2c_t<T,Tc>(plan,A,A_hat,timings);
 
   /* Multiply x Wave Numbers */
@@ -339,10 +330,15 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer){
 
   self_exec_time+= MPI_Wtime();
 
-  timings[0]+=self_exec_time;
-
   if(timer==NULL){
-    delete [] timings;
+    //delete [] timings;
+  }
+  else{
+    timer[0]+=timings[0];
+    timer[1]+=timings[1];
+    timer[2]+=timings[2];
+    timer[3]+=timings[3];
+    timer[4]+=timings[4];
   }
   return;
 }
@@ -351,7 +347,7 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer){
 template <typename T,typename Tp>
 void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* timer){
   typedef T Tc[2];
-	int procid;
+  int procid;
   MPI_Comm c_comm=plan->c_comm;
   MPI_Comm_rank(c_comm,&procid);
   if(!plan->r2c_plan_baked){
@@ -359,16 +355,9 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
     return;
   }
 
-  double * timings;
-  if(timer==NULL){
-    timings=new double[5];
-    memset(timings,0,sizeof(double)*5);
-  }
-  else{
-    timings=timer;
-  }
+  double timings[5]={0};
 
-	double self_exec_time= - MPI_Wtime();
+  double self_exec_time= - MPI_Wtime();
   int *N=plan->N;
 
   int isize[3],osize[3],istart[3],ostart[3];
@@ -432,10 +421,15 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
 
   self_exec_time+= MPI_Wtime();
 
-  timings[0]+=self_exec_time;
-
   if(timer==NULL){
-    delete [] timings;
+    //delete [] timings;
+  }
+  else{
+    timer[0]+=timings[0];
+    timer[1]+=timings[1];
+    timer[2]+=timings[2];
+    timer[3]+=timings[3];
+    timer[4]+=timings[4];
   }
   return;
 }

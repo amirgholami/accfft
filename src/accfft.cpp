@@ -353,16 +353,7 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
   int * coords=plan->coord;
   int procid=plan->procid;
   double fft_time=0;
-  double * timings;
-  if(timer==NULL){
-    timings=new double[5];
-    memset(timings,0,sizeof(double)*5);
-  }
-  else{
-    timings=timer;
-  }
-
-
+  double timings[5]={0};
   // 1D Decomposition
   int *osize_0 =plan->osize_0, *ostart_0 =plan->ostart_0;
   int *osize_1 =plan->osize_1, *ostart_1 =plan->ostart_1;
@@ -451,11 +442,18 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
 
   }
 
+  MPI_Barrier(plan->c_comm);
   timings[4]+=fft_time;
   if(timer==NULL){
-    delete [] timings;
+    //delete [] timings;
   }
-  MPI_Barrier(plan->c_comm);
+  else{
+    timer[0]+=timings[0];
+    timer[1]+=timings[1];
+    timer[2]+=timings[2];
+    timer[3]+=timings[3];
+    timer[4]+=timings[4];
+  }
 
   return;
 }
@@ -799,14 +797,7 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
   int * coords=plan->coord;
   int procid=plan->procid;
   double fft_time=0;
-  double * timings;
-  if(timer==NULL){
-    timings=new double[5];
-    memset(timings,0,sizeof(double)*5);
-  }
-  else{
-    timings=timer;
-  }
+  double timings[5]={0};
 
 
 
@@ -897,7 +888,14 @@ void accfft_execute_c2c(accfft_plan* plan, int direction,Complex * data, Complex
 
   timings[4]+=fft_time;
   if(timer==NULL){
-    delete [] timings;
+    //delete [] timings;
+  }
+  else{
+    timer[0]+=timings[0];
+    timer[1]+=timings[1];
+    timer[2]+=timings[2];
+    timer[3]+=timings[3];
+    timer[4]+=timings[4];
   }
   MPI_Barrier(plan->c_comm);
 

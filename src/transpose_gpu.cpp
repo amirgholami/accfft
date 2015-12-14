@@ -1425,7 +1425,6 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan,T * data, double *timings,
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -1697,7 +1696,6 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings, un
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -1926,7 +1924,6 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -2181,7 +2178,6 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -2421,7 +2417,6 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings, un
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -2636,7 +2631,6 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,int
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -2852,7 +2846,6 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -3069,7 +3062,6 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
@@ -3331,7 +3323,6 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
   if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
     timings[0]+=MPI_Wtime();
-    timings[0]+=shuffle_time;
     timings[1]+=shuffle_time;
     timings[2]+=0;
     timings[3]+=0;
