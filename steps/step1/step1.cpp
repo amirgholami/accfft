@@ -107,15 +107,6 @@ void step1(int *n, int nthreads) {
 
   accfft_free(data);
   MPI_Barrier(c_comm);
-  if(procid==4){
-    std::cout<<"alloc_max="<<alloc_max<<std::endl;
-    std::cout<<"isize[0]="<<isize[0]<<std::endl;
-    std::cout<<"isize[1]="<<isize[1]<<std::endl;
-    std::cout<<"isize[2]="<<isize[2]<<std::endl;
-    std::cout<<"osize[0]="<<osize[0]<<std::endl;
-    std::cout<<"osize[1]="<<osize[1]<<std::endl;
-    std::cout<<"osize[2]="<<osize[2]<<std::endl;
-  }
   accfft_free(data_hat);
   accfft_free(data2);
   accfft_destroy_plan(plan);
