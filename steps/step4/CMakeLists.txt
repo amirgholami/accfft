@@ -20,7 +20,8 @@ add_executable(step4 ${step4_SRCS})
 target_link_libraries(step4
   accfft
   accfft_utils
-  ${FFTW_LIBRARIES}
+  ${FFTW_LIB}
+  ${FFTW_THREADS_LIB}
 )
 if (PNETCDF_FOUND)
   target_link_libraries(step4 ${PNETCDF_LIBRARIES})
@@ -39,7 +40,8 @@ if(BUILD_GPU)
   target_link_libraries(step4_gpu
     accfft_gpu
     accfft_utils
-    ${FFTW_LIBRARIES}
+    ${FFTW_LIB}
+    ${FFTW_THREADS_LIB}
     ${CUDA_LIBRARIES}
   )
 

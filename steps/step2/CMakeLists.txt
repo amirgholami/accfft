@@ -21,7 +21,10 @@ add_executable(step2f ${step2f_SRCS})
 target_link_libraries(step2f
   accfft
   accfft_utils
-  ${FFTW_LIBRARIES}
+  ${FFTW_LIB}
+  ${FFTW_THREADS_LIB}
+  ${FFTWF_LIB}
+  ${FFTWF_THREADS_LIB}
 )
 if (PNETCDF_FOUND)
   target_link_libraries(step2f ${PNETCDF_LIBRARIES})
@@ -40,7 +43,8 @@ add_executable(step2 ${step2_SRCS})
 target_link_libraries(step2
   accfft
   accfft_utils
-  ${FFTW_LIBRARIES}
+  ${FFTW_LIB}
+  ${FFTW_THREADS_LIB}
 )
 if (PNETCDF_FOUND)
   target_link_libraries(step2 ${PNETCDF_LIBRARIES})
@@ -59,7 +63,8 @@ if(BUILD_GPU)
   target_link_libraries(step2_gpuf
     accfft_gpu
     accfft_utils
-    ${FFTW_LIBRARIES}
+    ${FFTW_LIB}
+    ${FFTW_THREADS_LIB}
     ${CUDA_LIBRARIES}
   )
 
@@ -82,7 +87,8 @@ if(BUILD_GPU)
   target_link_libraries(step2_gpu
     accfft_gpu
     accfft_utils
-    ${FFTW_LIBRARIES}
+    ${FFTW_LIB}
+    ${FFTW_THREADS_LIB}
     ${CUDA_LIBRARIES}
   )
 

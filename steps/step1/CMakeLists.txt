@@ -22,7 +22,8 @@ add_executable(step1 ${step1_SRCS})
 target_link_libraries(step1
   accfft
   accfft_utils
-  ${FFTW_LIBRARIES}
+  ${FFTW_LIB}
+  ${FFTW_THREADS_LIB}
 )
 if (PNETCDF_FOUND)
   target_link_libraries(step1 ${PNETCDF_LIBRARIES})
@@ -42,7 +43,10 @@ add_executable(step1f ${step1f_SRCS})
 target_link_libraries(step1f
   accfft
   accfft_utils
-  ${FFTW_LIBRARIES}
+  ${FFTW_LIB}
+  ${FFTW_THREADS_LIB}
+  ${FFTWF_LIB}
+  ${FFTWF_THREADS_LIB}
 )
 if (PNETCDF_FOUND)
   target_link_libraries(step1f ${PNETCDF_LIBRARIES})
@@ -64,9 +68,10 @@ if(BUILD_GPU)
   target_link_libraries(step1_gpu
     accfft_gpu
     accfft_utils
-    ${FFTW_LIBRARIES}
+    ${FFTW_LIB}
+    ${FFTW_THREADS_LIB}
     ${CUDA_LIBRARIES}
-  )
+    )
 
   if (PNETCDF_FOUND)
     target_link_libraries(step1_gpu ${PNETCDF_LIBRARIES})
@@ -81,15 +86,16 @@ if(BUILD_GPU)
   set(step1_gpuf_SRCS
     step1_gpuf.cpp kernelsf.cu
     )
-  
+
   cuda_add_executable(step1_gpuf ${step1_gpuf_SRCS})
   set_target_properties(step1_gpuf PROPERTIES COMPILE_FLAGS "-DENABLE_GPU")
   target_link_libraries(step1_gpuf
     accfft_gpu
     accfft_utils
-    ${FFTW_LIBRARIES}
+    ${FFTW_LIB}
+    ${FFTW_THREADS_LIB}
     ${CUDA_LIBRARIES}
-  )
+    )
 
   if (PNETCDF_FOUND)
     target_link_libraries(step1_gpuf ${PNETCDF_LIBRARIES})
