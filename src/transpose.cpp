@@ -39,6 +39,15 @@ static bool IsPowerOfTwo(ulong x)
 {
       return (x & (x - 1)) == 0;
 }
+static bool IsPowerOfN(ulong x,int n)
+{
+  if(x==0) return false;
+  while (x % n == 0) {
+    x /= n;
+  }
+  return x == 1;
+}
+
 static int intpow(int a,int b){
   return ((int)std::pow((double)a,b));
 }
@@ -60,7 +69,7 @@ Mem_Mgr<T>::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int s
     {
       ptrdiff_t * local_n0_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
       ptrdiff_t * local_n1_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-//#pragma omp parallel for
+      //#pragma omp parallel for
       for (int proc=0;proc<nprocs;++proc){
         local_n0_proc[proc]=ceil(N[0]/(double)nprocs);
         local_n1_proc[proc]=ceil(N[1]/(double)nprocs);
@@ -432,45 +441,67 @@ void T_Plan<T>::which_method(T* data){
   return;
 }
 
+#include <vector>
+static struct sort_pred {
+  bool operator()(const std::pair<int,double> &left, const std::pair<int,double> &right) {
+    return left.second < right.second;
+  }
+};
 template <typename T>
 void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
 
-  double dummy[4]={0};
-  double * time= (double*) malloc(sizeof(double)*(2*(int)log2(nprocs)+3));
-  double * g_time= (double*) malloc(sizeof(double)*(2*(int)log2(nprocs)+3));
-  for (int i=0;i<2*(int)log2(nprocs)+3;i++)
-    time[i]=1000;
+  double dummy[5]={0};
+  std::vector< std::pair<int,double> > t_time;
+
+
+  double tmp;
+  int factor;
+  if(IsPowerOfTwo(nprocs))
+    factor=2;
+  else if (IsPowerOfN(nprocs,3))
+    factor=3;
+  else if (IsPowerOfN(nprocs,5))
+    factor=5;
+  else
+    factor=0;
 
   fast_transpose_v1(T_plan,(T*)data,dummy,2,howmany);  // Warmup
-  time[0]=-MPI_Wtime();
+  tmp=-MPI_Wtime();
   fast_transpose_v1(T_plan,(T*)data,dummy,2,howmany);
-  time[0]+=MPI_Wtime();
+  tmp+=MPI_Wtime();
+  t_time.push_back(std::make_pair(nprocs,tmp));
 
   fast_transpose_v2(T_plan,(T*)data,dummy,2,howmany);  // Warmup
-  time[1]=-MPI_Wtime();
+  tmp=-MPI_Wtime();
   fast_transpose_v2(T_plan,(T*)data,dummy,2,howmany);
-  time[1]+=MPI_Wtime();
+  tmp+=MPI_Wtime();
+  t_time.push_back(std::make_pair(factor,tmp));
 
-  if(IsPowerOfTwo(nprocs) && nprocs>511){
+
+  if(factor>0 && nprocs>31){
     kway_async=true;
-    for (int i=0;i<6;i++){
-      kway=nprocs/intpow(2,i);
+    kway=nprocs/factor;
+    do{
       MPI_Barrier(T_plan->comm);
       fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);  // Warmup
-      time[2+i]=-MPI_Wtime();
+      tmp=-MPI_Wtime();
       fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);
-      time[2+i]+=MPI_Wtime();
-    }
+      tmp+=MPI_Wtime();
+      t_time.push_back(std::make_pair(kway,tmp));
+      kway=kway/factor;
+    }while(kway>7);
 
     kway_async=false;
-    for (int i=0;i<6;i++){
-      kway=nprocs/intpow(2,i);
+    kway=nprocs/factor;
+    do{
+      fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);  // Warmup
       MPI_Barrier(T_plan->comm);
-      fast_transpose_v3(T_plan,(T*)data,dummy,kway,howmany);  // Warmup
-      time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_v3(T_plan,(T*)data,dummy,kway,howmany);
-      time[2+(int)log2(nprocs)+i]+=MPI_Wtime();
-    }
+      tmp=-MPI_Wtime();
+      fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);
+      tmp+=MPI_Wtime();
+      t_time.push_back(std::make_pair(-kway,tmp));
+      kway=kway/factor;
+    }while(kway>7);
   }
 
   //transpose_v8(T_plan,(T*)data,dummy);  // Warmup
@@ -478,51 +509,37 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
   //transpose_v8(T_plan,(T*)data,dummy);
   //time[2*(int)log2(nprocs)+2]+=MPI_Wtime();
 
-  MPI_Allreduce(time,g_time,(2*(int)log2(nprocs)+3),MPI_DOUBLE,MPI_MAX, T_plan->comm);
-  if(VERBOSE>=1){
-    if(T_plan->procid==0){
-      for(int i=0;i<2*(int)log2(nprocs)+3;++i)
-        std::cout<<" time["<<i<<"]= "<<g_time[i]<<" , ";
-      std::cout<<'\n';
-    }
+  for(std::vector< std::pair<int,double> >::iterator it = t_time.begin(); it != t_time.end(); ++it) {
+    MPI_Allreduce(&it->second,&tmp,1,MPI_DOUBLE,MPI_MAX, T_plan->comm);
+    it->second=tmp;
   }
 
-  double smallest=1000;
-  for (int i=0;i<2*(int)log2(nprocs)+3;i++)
-    smallest=std::min(smallest,g_time[i]);
-
-  if(g_time[0]==smallest){
+  std::sort(t_time.begin(), t_time.end(), sort_pred());
+  double min_time=t_time.front().second;
+  if(t_time.front().first==nprocs){
     T_plan->method=1;
+    T_plan->kway=nprocs;
+    T_plan->kway_async=1;
   }
-  else if(g_time[1]==smallest){
+  else if(t_time.front().first==nprocs){
     T_plan->method=2;
-  }
-  else if(g_time[2*(int)log2(nprocs)+2]==smallest){
-    T_plan->method=8;
+    T_plan->kway=factor;
+    T_plan->kway_async=0;
   }
   else{
-    for (int i=0;i<(int)log2(nprocs);i++)
-      if(g_time[2+i]==smallest){
-        T_plan->method=3;
-        T_plan->kway=nprocs/intpow(2,i);
-        T_plan->kway_async=true;
-        break;
-      }
-    for (int i=0;i<(int)log2(nprocs);i++)
-      if(g_time[2+(int)log2(nprocs)+i]==smallest){
-        T_plan->method=3;
-        T_plan->kway=nprocs/intpow(2,i);
-        T_plan->kway_async=false;
-        break;
-      }
+    T_plan->method=3;
+    T_plan->kway=std::abs(t_time.front().first);
+    T_plan->kway_async=(t_time.front().first>0);
   }
 
   if(VERBOSE>=1){
-    PCOUT<<"smallest= "<<smallest<<std::endl;
+    std::sort(t_time.begin(), t_time.end());
+    for(std::vector< std::pair<int,double> >::iterator it = t_time.begin(); it != t_time.end(); ++it) {
+      PCOUT<<it->first<<'\t'<<it->second<<std::endl;
+    }
+    PCOUT<<"Min time= "<<min_time<<std::endl;
     PCOUT<<"Using transpose v"<<method<<" kway= "<<T_plan->kway<<" kway_async="<<T_plan->kway_async<<std::endl;
   }
-  free(time);
-  free(g_time);
   MPI_Barrier(T_plan->comm);
 
   return;
@@ -1170,6 +1187,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
   //PCOUT<<" ==============   Local Transpose============= "<<std::endl;
   //PCOUT<<" ============================================= "<<std::endl;
   int ptr=0;
+  if(VERBOSE>=1)  PCOUT<<"Performing shuffle ....";
   shuffle_time-=MPI_Wtime();
 
 
@@ -1205,6 +1223,8 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
   }
 
   shuffle_time+=MPI_Wtime();
+  MPI_Barrier(T_plan->comm);
+  if(VERBOSE>=1)  PCOUT<<" done\n";
   ptr=0;
   if(VERBOSE>=2) PCOUT<<"Local Transpose:"<<std::endl;
   if(VERBOSE>=2)
@@ -1244,6 +1264,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
     s_buf=buffer_2; r_buf=send_recv;
   }
   //PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
+  if(VERBOSE>=1)  PCOUT<<"Performing alltoall ....";
   comm_time-=MPI_Wtime();
   if(T_plan->kway_async)
     par::Mpi_Alltoallv_dense<T,true>(s_buf     , scount_proc_f, soffset_proc_f,
@@ -1253,6 +1274,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
         r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
 
   comm_time+=MPI_Wtime();
+  if(VERBOSE>=1)  PCOUT<<"done\n";
 
   ptr=0;
   if(VERBOSE>=2) PCOUT<<"MPIAlltoAll:"<<std::endl;
@@ -1274,6 +1296,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
   //PCOUT<<" ============================================= "<<std::endl;
   //PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
   //PCOUT<<" ============================================= "<<std::endl;
+  if(VERBOSE>=1)  PCOUT<<"Performing reshuffle ....";
   reshuffle_time-=MPI_Wtime();
   ptr=0;
   if(Flags[1]==0)
@@ -1299,6 +1322,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
 
 
   reshuffle_time+=MPI_Wtime();
+  if(VERBOSE>=1)  PCOUT<<" done\n";
   MPI_Barrier(T_plan->comm);
 
 

@@ -44,6 +44,14 @@ static bool IsPowerOfTwo(ulong x)
 {
       return (x & (x - 1)) == 0;
 }
+static bool IsPowerOfN(ulong x,int n)
+{
+  if(x==0) return false;
+  while (x % n == 0) {
+    x /= n;
+  }
+  return x == 1;
+}
 
 static int intpow(int a,int b){
   return ((int)std::pow((double)a,b));
@@ -603,148 +611,121 @@ void T_Plan_gpu<T>::execute_gpu(T_Plan_gpu* T_plan,T* data_d,double *timings, un
   return;
 }
 
+#include <vector>
+static struct sort_pred {
+  bool operator()(const std::pair<int,double> &left, const std::pair<int,double> &right) {
+    return left.second < right.second;
+  }
+};
+
 template <typename T>
 void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, int howmany){
 
   double dummy[4]={0};
-  double * time= (double*) malloc(sizeof(double)*(4*(int)log2(nprocs)+4));
-  double * g_time= (double*) malloc(sizeof(double)*(4*(int)log2(nprocs)+4));
-  for (int i=0;i<4*(int)log2(nprocs)+4;i++)
-    time[i]=1000;
+  std::vector< std::pair<int,double> > t_time;
+  double tmp;
+  int factor;
+  if(IsPowerOfTwo(nprocs))
+    factor=2;
+  else if (IsPowerOfN(nprocs,3))
+    factor=3;
+  else if (IsPowerOfN(nprocs,5))
+    factor=5;
+  else
+    factor=0;
 
   fast_transpose_cuda_v1(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
-  time[0]=-MPI_Wtime();
+  tmp=-MPI_Wtime();
   fast_transpose_cuda_v1(T_plan,(T*)data_d,dummy,2,howmany);
-  time[0]+=MPI_Wtime();
+  tmp+=MPI_Wtime();
+  t_time.push_back(std::make_pair(nprocs,tmp));
 
   fast_transpose_cuda_v2(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
-  time[1]=-MPI_Wtime();
+  tmp=-MPI_Wtime();
   fast_transpose_cuda_v2(T_plan,(T*)data_d,dummy,2,howmany);
-  time[1]+=MPI_Wtime();
+  tmp+=MPI_Wtime();
+  t_time.push_back(std::make_pair(factor,tmp));
 
-  if(IsPowerOfTwo(nprocs) && nprocs>511){
+  if(factor>0 && nprocs>31){
     kway_async=true;
-#ifndef TORUS_TOPOL
-    for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/intpow(2,i);
+    kway=nprocs/factor;
+    do{
       MPI_Barrier(T_plan->comm);
       fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
-      time[2+i]=-MPI_Wtime();
+      tmp=-MPI_Wtime();
       fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);
-      time[2+i]+=MPI_Wtime();
-    }
-#endif
+      tmp+=MPI_Wtime();
+      t_time.push_back(std::make_pair(kway,tmp));
+      kway=kway/factor;
+    }while(kway>7);
 
     kway_async=false;
-#ifdef TORUS_TOPOL
     for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/intpow(2,i);
       MPI_Barrier(T_plan->comm);
       fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
-      time[2+(int)log2(nprocs)+i]=-MPI_Wtime();
+      tmp=-MPI_Wtime();
       fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);
-      time[2+(int)log2(nprocs)+i]+=MPI_Wtime();
-    }
-#endif
+      tmp+=MPI_Wtime();
+      t_time.push_back(std::make_pair(kway,tmp));
+      kway=kway/factor;
+    }while(kway>7);
 
-#ifndef TORUS_TOPOL
-    kway_async=true;
-    for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/intpow(2,i);
-      MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3_2(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
-      time[2+2*(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3_2(T_plan,(T*)data_d,dummy,kway,2,howmany);
-      time[2+2*(int)log2(nprocs)+i]+=MPI_Wtime();
-    }
-#endif
-
-#ifdef TORUS_TOPOL
-    kway_async=false;
-    for (int i=0;i<(int)log2(nprocs)-4;i++){
-      kway=nprocs/intpow(2,i);
-      MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3_2(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
-      time[2+3*(int)log2(nprocs)+i]=-MPI_Wtime();
-      fast_transpose_cuda_v3_2(T_plan,(T*)data_d,dummy,kway,2,howmany);
-      time[2+3*(int)log2(nprocs)+i]+=MPI_Wtime();
-    }
-#endif
   }
 
   fast_transpose_cuda_v1_2(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
-  time[4*(int)log2(nprocs)+2]=-MPI_Wtime();
+  tmp=-MPI_Wtime();
   fast_transpose_cuda_v1_2(T_plan,(T*)data_d,dummy,2,howmany);
-  time[4*(int)log2(nprocs)+2]+=MPI_Wtime();
+  tmp+=MPI_Wtime();
+  t_time.push_back(std::make_pair(nprocs+2,tmp));//SNAFU
 
   fast_transpose_cuda_v1_3(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
-  time[4*(int)log2(nprocs)+3]=-MPI_Wtime();
+  tmp=-MPI_Wtime();
   fast_transpose_cuda_v1_3(T_plan,(T*)data_d,dummy,2,howmany);
-  time[4*(int)log2(nprocs)+3]+=MPI_Wtime();
+  tmp+=MPI_Wtime();
+  t_time.push_back(std::make_pair(nprocs+3,tmp));//SNAFU
 
-  MPI_Allreduce(time,g_time,(4*(int)log2(nprocs)+4),MPI_DOUBLE,MPI_MAX, T_plan->comm);
-  if(VERBOSE>=1)
-  if(T_plan->procid==0){
-    for(int i=0;i<4*(int)log2(nprocs)+4;++i)
-      std::cout<<" time["<<i<<"]= "<<g_time[i]<<" , ";
-    std::cout<<'\n';
+  for(std::vector< std::pair<int,double> >::iterator it = t_time.begin(); it != t_time.end(); ++it) {
+    MPI_Allreduce(&it->second,&tmp,1,MPI_DOUBLE,MPI_MAX, T_plan->comm);
+    it->second=tmp;
   }
 
-  double smallest=1000;
-  for (int i=0;i<4*(int)log2(nprocs)+4;i++)
-    smallest=std::min(smallest,g_time[i]);
+  std::sort(t_time.begin(), t_time.end(), sort_pred());
+  double min_time=t_time.front().second;
 
-  if(g_time[0]==smallest){
+  if(t_time.front().first==nprocs){
     T_plan->method=1;
+    T_plan->kway=nprocs;
+    T_plan->kway_async=1;
   }
-  else if(g_time[1]==smallest){
-    T_plan->method=2;
-  }
-  else if(g_time[4*(int)log2(nprocs)+2]==smallest){
+  else if(t_time.front().first+2==nprocs){
     T_plan->method=12;
+    T_plan->kway=nprocs;
+    T_plan->kway_async=1;
   }
-  else if(g_time[4*(int)log2(nprocs)+3]==smallest){
+  else if(t_time.front().first+3==nprocs){
     T_plan->method=13;
+    T_plan->kway=nprocs;
+    T_plan->kway_async=1;
+  }
+  else if(t_time.front().first==nprocs){
+    T_plan->method=2;
+    T_plan->kway=factor;
+    T_plan->kway_async=0;
   }
   else{
-    for (int i=0;i<(int)log2(nprocs);i++)
-      if(g_time[2+i]==smallest){
-        T_plan->method=3;
-        T_plan->kway=nprocs/intpow(2,i);
-        T_plan->kway_async=true;
-        break;
-      }
-    for (int i=0;i<(int)log2(nprocs);i++)
-      if(g_time[2+(int)log2(nprocs)+i]==smallest){
-        T_plan->method=3;
-        T_plan->kway=nprocs/intpow(2,i);
-        T_plan->kway_async=false;
-        break;
-      }
-
-    for (int i=0;i<(int)log2(nprocs);i++)
-      if(g_time[2+2*(int)log2(nprocs)+i]==smallest){
-        T_plan->method=32;
-        T_plan->kway=nprocs/intpow(2,i);
-        T_plan->kway_async=true;
-        break;
-      }
-
-    for (int i=0;i<(int)log2(nprocs);i++)
-      if(g_time[2+3*(int)log2(nprocs)+i]==smallest){
-        T_plan->method=32;
-        T_plan->kway=nprocs/intpow(2,i);
-        T_plan->kway_async=false;
-        break;
-      }
+    T_plan->method=3;
+    T_plan->kway=std::abs(t_time.front().first);
+    T_plan->kway_async=(t_time.front().first>0);
   }
 
   if(VERBOSE>=1){
-  PCOUT<<"smallest= "<<smallest<<std::endl;
-  PCOUT<<"Using transpose v"<<method<<" kway= "<<T_plan->kway<<" kway_async="<<T_plan->kway_async<<std::endl;
+    std::sort(t_time.begin(), t_time.end());
+    for(std::vector< std::pair<int,double> >::iterator it = t_time.begin(); it != t_time.end(); ++it) {
+      PCOUT<<it->first<<'\t'<<it->second<<std::endl;
+    }
+    PCOUT<<"Min time= "<<min_time<<std::endl;
+    PCOUT<<"Using transpose v"<<method<<" kway= "<<T_plan->kway<<" kway_async="<<T_plan->kway_async<<std::endl;
   }
-  free(time);
-  free(g_time);
   MPI_Barrier(T_plan->comm);
 
   return;
@@ -978,7 +959,7 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   //      //}
   //    }
   //  }
- //memcpy_v1_h2(nprocs_0,howmany,local_0_start_proc,local_n0_proc,data,odist,local_n1,n_tuples,send_recv_cpu);
+  //memcpy_v1_h2(nprocs_0,howmany,local_0_start_proc,local_n0_proc,data,odist,local_n1,n_tuples,send_recv_cpu);
   memcpy_v1_h2(nprocs_0,howmany,local_0_start_proc,local_n0_proc,data,odist,local_n1,n_tuples,send_recv_d);
   cudaDeviceSynchronize();
 
@@ -1285,7 +1266,7 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings
   //      //}
   //    }
   //  }
- //memcpy_v1_h2(nprocs_0,howmany,local_0_start_proc,local_n0_proc,data,odist,local_n1,n_tuples,send_recv_cpu);
+  //memcpy_v1_h2(nprocs_0,howmany,local_0_start_proc,local_n0_proc,data,odist,local_n1,n_tuples,send_recv_cpu);
   memcpy_v1_h2(nprocs_0,howmany,local_0_start_proc,local_n0_proc,data,odist,local_n1,n_tuples,send_recv_d);
   cudaDeviceSynchronize();
 
@@ -1563,7 +1544,7 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan,T * data, double *timings,
   //      //}
   //    }
   //  }
- //memcpy_v1_h2(nprocs_0,howmany,local_0_start_proc,local_n0_proc,data,odist,local_n1,n_tuples,send_recv_cpu);
+  //memcpy_v1_h2(nprocs_0,howmany,local_0_start_proc,local_n0_proc,data,odist,local_n1,n_tuples,send_recv_cpu);
   memcpy_v1_h2(nprocs_0,howmany,local_0_start_proc,local_n0_proc,data,odist,local_n1,n_tuples,send_recv_d);
   cudaDeviceSynchronize();
 
@@ -3614,7 +3595,7 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigne
   int soffset=0,roffset=0;
   MPI_Status ierr;
   MPI_Request request[nprocs], s_request[nprocs];
-//#pragma omp parallel for
+  //#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
