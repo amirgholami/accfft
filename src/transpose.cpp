@@ -138,6 +138,11 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
   local_0_start_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
   local_1_start_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
 
+  memset(local_n0_proc,0,sizeof(int)*nprocs);
+  memset(local_n1_proc,0,sizeof(int)*nprocs);
+  memset(local_0_start_proc,0,sizeof(int)*nprocs);
+  memset(local_1_start_proc,0,sizeof(int)*nprocs);
+
   // Determine local_n0/n1 of each processor
 
   local_0_start_proc[0]=0;local_1_start_proc[0]=0;
@@ -190,14 +195,20 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
   soffset_proc_w=(int*) malloc(sizeof(int)*nprocs);
   roffset_proc_w=(int*) malloc(sizeof(int)*nprocs);
 
-  //scount_proc_v8=(int*) malloc(sizeof(int)*nprocs);
-  //rcount_proc_v8=(int*) malloc(sizeof(int)*nprocs);
-  //soffset_proc_v8=(int*) malloc(sizeof(int)*nprocs);
-  //roffset_proc_v8=(int*) malloc(sizeof(int)*nprocs);
-  //memset(scount_proc_v8,0,sizeof(int)*nprocs);
-  //memset(rcount_proc_v8,0,sizeof(int)*nprocs);
-  //memset(soffset_proc_v8,0,sizeof(int)*nprocs);
-  //memset(roffset_proc_v8,0,sizeof(int)*nprocs);
+  memset(scount_proc,0,sizeof(int)*nprocs);
+  memset(rcount_proc,0,sizeof(int)*nprocs);
+  memset(soffset_proc,0,sizeof(int)*nprocs);
+  memset(roffset_proc,0,sizeof(int)*nprocs);
+
+  memset(scount_proc_f,0,sizeof(int)*nprocs);
+  memset(rcount_proc_f,0,sizeof(int)*nprocs);
+  memset(soffset_proc_f,0,sizeof(int)*nprocs);
+  memset(roffset_proc_f,0,sizeof(int)*nprocs);
+
+  memset(scount_proc_w,0,sizeof(int)*nprocs);
+  memset(rcount_proc_w,0,sizeof(int)*nprocs);
+  memset(soffset_proc_w,0,sizeof(int)*nprocs);
+  memset(roffset_proc_w,0,sizeof(int)*nprocs);
 
   last_recv_count=0; // Will store the n_tuples of the last received data. In general ~=n_tuples
   if(nprocs_1>nprocs_0)
@@ -206,7 +217,7 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
       scount_proc[proc]=local_n1_proc[proc]*local_n0*n_tuples;
 
       if(scount_proc[proc]!=0)
-        rcount_proc[proc]=local_n1_proc[proc]*local_n0_proc[proc]*n_tuples;//scount_proc[proc]; 
+        rcount_proc[proc]=local_n1_proc[proc]*local_n0_proc[proc]*n_tuples;//scount_proc[proc];
       else
         rcount_proc[proc]=local_n1*local_n0_proc[proc]*n_tuples;//local_n0_proc[proc]*n_tuples; //
 
@@ -442,13 +453,13 @@ void T_Plan<T>::which_method(T* data){
 }
 
 #include <vector>
-static struct sort_pred {
+struct accfft_sort_pred {
   bool operator()(const std::pair<int,double> &left, const std::pair<int,double> &right) {
     return left.second < right.second;
   }
 };
 template <typename T>
-void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
+void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, unsigned flags, int howmany, int tag){
 
   double dummy[5]={0};
   std::vector< std::pair<int,double> > t_time;
@@ -459,23 +470,23 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
   if(IsPowerOfTwo(nprocs))
     factor=2;
   else if (IsPowerOfN(nprocs,3))
-    factor=3;
+    factor=0; // support will be added in near future
   else if (IsPowerOfN(nprocs,5))
-    factor=5;
+    factor=0; // support will be added in near future
   else
     factor=0;
 
-  fast_transpose_v1(T_plan,(T*)data,dummy,2,howmany);  // Warmup
+  fast_transpose_v1_h(T_plan,(T*)data,dummy,flags,howmany,tag);  // Warmup
   tmp=-MPI_Wtime();
-  fast_transpose_v1(T_plan,(T*)data,dummy,2,howmany);
+  fast_transpose_v1_h(T_plan,(T*)data,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
   t_time.push_back(std::make_pair(nprocs,tmp));
 
-  fast_transpose_v2(T_plan,(T*)data,dummy,2,howmany);  // Warmup
+  fast_transpose_v2_h(T_plan,(T*)data,dummy,flags,howmany,tag);  // Warmup
   tmp=-MPI_Wtime();
-  fast_transpose_v2(T_plan,(T*)data,dummy,2,howmany);
+  fast_transpose_v2_h(T_plan,(T*)data,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
-  t_time.push_back(std::make_pair(factor,tmp));
+  t_time.push_back(std::make_pair(2,tmp));
 
 
   if(factor>0 && nprocs>31){
@@ -483,9 +494,9 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
     kway=nprocs/factor;
     do{
       MPI_Barrier(T_plan->comm);
-      fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);  // Warmup
+      fast_transpose_v3_h(T_plan,(T*)data,dummy,kway,flags,howmany,tag);  // Warmup
       tmp=-MPI_Wtime();
-      fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);
+      fast_transpose_v3_h(T_plan,(T*)data,dummy,kway,flags,howmany,tag);
       tmp+=MPI_Wtime();
       t_time.push_back(std::make_pair(kway,tmp));
       kway=kway/factor;
@@ -494,10 +505,10 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
     kway_async=false;
     kway=nprocs/factor;
     do{
-      fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);  // Warmup
+      fast_transpose_v3_h(T_plan,(T*)data,dummy,kway,flags,howmany,tag);  // Warmup
       MPI_Barrier(T_plan->comm);
       tmp=-MPI_Wtime();
-      fast_transpose_v3(T_plan,(T*)data,dummy,kway,2,howmany);
+      fast_transpose_v3_h(T_plan,(T*)data,dummy,kway,flags,howmany,tag);
       tmp+=MPI_Wtime();
       t_time.push_back(std::make_pair(-kway,tmp));
       kway=kway/factor;
@@ -514,16 +525,16 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan,T* data, int howmany){
     it->second=tmp;
   }
 
-  std::sort(t_time.begin(), t_time.end(), sort_pred());
+  std::sort(t_time.begin(), t_time.end(), accfft_sort_pred());
   double min_time=t_time.front().second;
   if(t_time.front().first==nprocs){
     T_plan->method=1;
     T_plan->kway=nprocs;
     T_plan->kway_async=1;
   }
-  else if(t_time.front().first==nprocs){
+  else if(t_time.front().first==2){
     T_plan->method=2;
-    T_plan->kway=factor;
+    T_plan->kway=2;
     T_plan->kway_async=0;
   }
   else{
@@ -715,6 +726,9 @@ void local_transpose(int r, int c, int n_tuples, T* A){
 template <typename T>
 void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  if(howmany>1){
+    return fast_transpose_v1_h(T_plan,data,timings,flags,howmany,tag); 
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -941,6 +955,9 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
 template <typename T>
 void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  if(howmany>1){
+    return fast_transpose_v2_h(T_plan,data,timings,flags,howmany,tag);
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -1139,6 +1156,9 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
 template <typename T>
 void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, unsigned flags, int howmany, int tag ){
 
+  if(howmany>1){
+    return fast_transpose_v3_h(T_plan,data,timings,flags,howmany,tag);
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -1351,6 +1371,9 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
     transpose_v5(T_plan,(T*)data,timings,flags,howmany,tag);
     MPI_Barrier(T_plan->comm);
     return;
+  }
+  if(howmany==1){
+    return fast_transpose_v1(T_plan,data,timings,flags,howmany,tag);
   }
   timings[0]-=MPI_Wtime();
   int nprocs, procid;
@@ -1600,6 +1623,9 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
     MPI_Barrier(T_plan->comm);
     return;
   }
+  if(howmany==1){
+    return fast_transpose_v2(T_plan,data,timings,flags,howmany,tag);
+  }
   timings[0]-=MPI_Wtime();
   int nprocs, procid;
   int nprocs_0, nprocs_1;
@@ -1827,6 +1853,9 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
     transpose_v7(T_plan,(T*)data,timings,kway,flags,howmany);
     MPI_Barrier(T_plan->comm);
     return;
+  }
+  if(howmany==1){
+    return fast_transpose_v3(T_plan,data,timings,flags,howmany,tag);
   }
   timings[0]-=MPI_Wtime();
   int nprocs, procid;

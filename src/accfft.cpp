@@ -281,7 +281,7 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     plan->T_plan_2i->alloc_local=alloc_max;
 
     if(flags==ACCFFT_MEASURE){
-      plan->T_plan_2->which_fast_method(plan->T_plan_2,data_out);
+      plan->T_plan_2->which_fast_method(plan->T_plan_2,data_out,2);
     }
     else{
       plan->T_plan_2->method=2;
@@ -309,31 +309,20 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     plan->T_plan_2i->alloc_local=plan->alloc_max;
     plan->T_plan_1i->alloc_local=plan->alloc_max;
 
-
     if(flags==ACCFFT_MEASURE){
-      if(coord[0]==0){
-        plan->T_plan_1->which_fast_method(plan->T_plan_1,data_out,osize_0[0]);
-      }
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out,2,osize_0[0],coord[0]);
+        plan->T_plan_2->which_fast_method(plan->T_plan_2,(double*)data_out,2,1,coord[1]);
     }
     else{
-      if(coord[0]==0){
         plan->T_plan_1->method=2;
         plan->T_plan_1->kway=2;
-      }
+        plan->T_plan_2->method=2;
+        plan->T_plan_2->kway=2;
     }
-
-    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
-    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
-
-    plan->T_plan_1->method =plan->T_plan_1->method;
-    plan->T_plan_2->method =plan->T_plan_1->method;
-    plan->T_plan_2i->method=plan->T_plan_1->method;
     plan->T_plan_1i->method=plan->T_plan_1->method;
-
-    plan->T_plan_1->kway =plan->T_plan_1->kway;
-    plan->T_plan_2->kway =plan->T_plan_1->kway;
-    plan->T_plan_2i->kway=plan->T_plan_1->kway;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
+    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
     plan->data=data;
   } // end 2D r2c
@@ -675,7 +664,7 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
 
 
     if(flags==ACCFFT_MEASURE){
-      plan->T_plan_2->which_fast_method(plan->T_plan_2,(double*)data_out);
+      plan->T_plan_2->which_fast_method(plan->T_plan_2,(double*)data_out,2);
     }
     else{
       plan->T_plan_2->method=2;
@@ -703,28 +692,20 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
 
 
     if(flags==ACCFFT_MEASURE){
-      if(coord[0]==0){
-        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out,osize_0[0]);
-      }
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out,2,osize_0[0],coord[0]);
+        plan->T_plan_2->which_fast_method(plan->T_plan_2,(double*)data_out,2,1,coord[1]);
     }
     else{
-      if(coord[0]==0){
         plan->T_plan_1->method=2;
         plan->T_plan_1->kway=2;
-      }
+        plan->T_plan_2->method=2;
+        plan->T_plan_2->kway=2;
     }
 
-    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
-    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
-
-    plan->T_plan_1->method =plan->T_plan_1->method;
-    plan->T_plan_2->method =plan->T_plan_1->method;
-    plan->T_plan_2i->method=plan->T_plan_1->method;
     plan->T_plan_1i->method=plan->T_plan_1->method;
-    plan->T_plan_1->kway =plan->T_plan_1->kway;
-    plan->T_plan_2->kway =plan->T_plan_1->kway;
-    plan->T_plan_2i->kway=plan->T_plan_1->kway;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
+    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->kway=plan->T_plan_2->kway;
   } // end 2D Decomp c2c
 
   plan->c2c_plan_baked=true;

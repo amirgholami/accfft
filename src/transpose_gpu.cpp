@@ -174,6 +174,12 @@ T_Plan_gpu<T>::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu<T> * Mem_mgr, M
   local_0_start_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
   local_1_start_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
 
+
+  memset(local_n0_proc,0,sizeof(int)*nprocs);
+  memset(local_n1_proc,0,sizeof(int)*nprocs);
+  memset(local_0_start_proc,0,sizeof(int)*nprocs);
+  memset(local_1_start_proc,0,sizeof(int)*nprocs);
+
   // Determine local_n0/n1 of each processor
 
   local_0_start_proc[0]=0;local_1_start_proc[0]=0;
@@ -226,14 +232,21 @@ T_Plan_gpu<T>::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu<T> * Mem_mgr, M
   soffset_proc_w=(int*) malloc(sizeof(int)*nprocs);
   roffset_proc_w=(int*) malloc(sizeof(int)*nprocs);
 
-  //scount_proc_v8=(int*) malloc(sizeof(int)*nprocs);
-  //rcount_proc_v8=(int*) malloc(sizeof(int)*nprocs);
-  //soffset_proc_v8=(int*) malloc(sizeof(int)*nprocs);
-  //roffset_proc_v8=(int*) malloc(sizeof(int)*nprocs);
-  //memset(scount_proc_v8,0,sizeof(int)*nprocs);
-  //memset(rcount_proc_v8,0,sizeof(int)*nprocs);
-  //memset(soffset_proc_v8,0,sizeof(int)*nprocs);
-  //memset(roffset_proc_v8,0,sizeof(int)*nprocs);
+  memset(scount_proc,0,sizeof(int)*nprocs);
+  memset(rcount_proc,0,sizeof(int)*nprocs);
+  memset(soffset_proc,0,sizeof(int)*nprocs);
+  memset(roffset_proc,0,sizeof(int)*nprocs);
+
+  memset(scount_proc_f,0,sizeof(int)*nprocs);
+  memset(rcount_proc_f,0,sizeof(int)*nprocs);
+  memset(soffset_proc_f,0,sizeof(int)*nprocs);
+  memset(roffset_proc_f,0,sizeof(int)*nprocs);
+
+  memset(scount_proc_w,0,sizeof(int)*nprocs);
+  memset(rcount_proc_w,0,sizeof(int)*nprocs);
+  memset(soffset_proc_w,0,sizeof(int)*nprocs);
+  memset(roffset_proc_w,0,sizeof(int)*nprocs);
+
 
   last_recv_count=0; // Will store the n_tuples of the last received data. In general ~=n_tuples
   if(nprocs_1>nprocs_0)
@@ -338,8 +351,8 @@ T_Plan_gpu<T>::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu<T> * Mem_mgr, M
     MPI_Type_commit(&stype[i]);
     MPI_Type_commit(&rtype[i]);
 
-    soffset_proc_w[i]=soffset_proc[i]*8; //SNAFU in bytes
-    roffset_proc_w[i]=roffset_proc[i]*8;
+    soffset_proc_w[i]=soffset_proc[i]*sizeof(T);
+    roffset_proc_w[i]=roffset_proc[i]*sizeof(T);
     scount_proc_w[i]=1;
     rcount_proc_w[i]=1;
 
@@ -612,14 +625,14 @@ void T_Plan_gpu<T>::execute_gpu(T_Plan_gpu* T_plan,T* data_d,double *timings, un
 }
 
 #include <vector>
-static struct sort_pred {
+struct accfft_sort_pred_gpu {
   bool operator()(const std::pair<int,double> &left, const std::pair<int,double> &right) {
     return left.second < right.second;
   }
 };
 
 template <typename T>
-void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, int howmany){
+void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, unsigned flags, int howmany,int tag){
 
   double dummy[4]={0};
   std::vector< std::pair<int,double> > t_time;
@@ -628,43 +641,44 @@ void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, int howm
   if(IsPowerOfTwo(nprocs))
     factor=2;
   else if (IsPowerOfN(nprocs,3))
-    factor=3;
+    factor=0; // support will be added in near future
   else if (IsPowerOfN(nprocs,5))
-    factor=5;
+    factor=0; // support will be added in near future
   else
     factor=0;
 
-  fast_transpose_cuda_v1(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
+  fast_transpose_cuda_v1_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);  // Warmup
   tmp=-MPI_Wtime();
-  fast_transpose_cuda_v1(T_plan,(T*)data_d,dummy,2,howmany);
+  fast_transpose_cuda_v1_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
   t_time.push_back(std::make_pair(nprocs,tmp));
 
-  fast_transpose_cuda_v2(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
+  fast_transpose_cuda_v2_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);  // Warmup
   tmp=-MPI_Wtime();
-  fast_transpose_cuda_v2(T_plan,(T*)data_d,dummy,2,howmany);
+  fast_transpose_cuda_v2_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
-  t_time.push_back(std::make_pair(factor,tmp));
+  t_time.push_back(std::make_pair(2,tmp));
 
   if(factor>0 && nprocs>31){
     kway_async=true;
     kway=nprocs/factor;
     do{
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
+      fast_transpose_cuda_v3_h(T_plan,(T*)data_d,dummy,kway,flags,howmany,tag);  // Warmup
       tmp=-MPI_Wtime();
-      fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);
+      fast_transpose_cuda_v3_h(T_plan,(T*)data_d,dummy,kway,flags,howmany,tag);
       tmp+=MPI_Wtime();
       t_time.push_back(std::make_pair(kway,tmp));
       kway=kway/factor;
     }while(kway>7);
 
     kway_async=false;
-    for (int i=0;i<(int)log2(nprocs)-4;i++){
+    kway=nprocs/factor;
+    do{
       MPI_Barrier(T_plan->comm);
-      fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);  // Warmup
+      fast_transpose_cuda_v3_h(T_plan,(T*)data_d,dummy,kway,flags,howmany,tag);  // Warmup
       tmp=-MPI_Wtime();
-      fast_transpose_cuda_v3(T_plan,(T*)data_d,dummy,kway,2,howmany);
+      fast_transpose_cuda_v3_h(T_plan,(T*)data_d,dummy,kway,flags,howmany,tag);
       tmp+=MPI_Wtime();
       t_time.push_back(std::make_pair(kway,tmp));
       kway=kway/factor;
@@ -672,24 +686,24 @@ void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, int howm
 
   }
 
-  fast_transpose_cuda_v1_2(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
+  fast_transpose_cuda_v1_2_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);  // Warmup
   tmp=-MPI_Wtime();
-  fast_transpose_cuda_v1_2(T_plan,(T*)data_d,dummy,2,howmany);
+  fast_transpose_cuda_v1_2_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
-  t_time.push_back(std::make_pair(nprocs+2,tmp));//SNAFU
+  t_time.push_back(std::make_pair(nprocs+2,tmp));
 
-  fast_transpose_cuda_v1_3(T_plan,(T*)data_d,dummy,2,howmany);  // Warmup
+  fast_transpose_cuda_v1_3_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);  // Warmup
   tmp=-MPI_Wtime();
-  fast_transpose_cuda_v1_3(T_plan,(T*)data_d,dummy,2,howmany);
+  fast_transpose_cuda_v1_3_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
-  t_time.push_back(std::make_pair(nprocs+3,tmp));//SNAFU
+  t_time.push_back(std::make_pair(nprocs+3,tmp));
 
   for(std::vector< std::pair<int,double> >::iterator it = t_time.begin(); it != t_time.end(); ++it) {
     MPI_Allreduce(&it->second,&tmp,1,MPI_DOUBLE,MPI_MAX, T_plan->comm);
     it->second=tmp;
   }
 
-  std::sort(t_time.begin(), t_time.end(), sort_pred());
+  std::sort(t_time.begin(), t_time.end(), accfft_sort_pred_gpu());
   double min_time=t_time.front().second;
 
   if(t_time.front().first==nprocs){
@@ -697,19 +711,19 @@ void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, int howm
     T_plan->kway=nprocs;
     T_plan->kway_async=1;
   }
-  else if(t_time.front().first+2==nprocs){
+  else if(t_time.front().first-2==nprocs){
     T_plan->method=12;
     T_plan->kway=nprocs;
     T_plan->kway_async=1;
   }
-  else if(t_time.front().first+3==nprocs){
+  else if(t_time.front().first-3==nprocs){
     T_plan->method=13;
     T_plan->kway=nprocs;
     T_plan->kway_async=1;
   }
-  else if(t_time.front().first==nprocs){
+  else if(t_time.front().first==2){
     T_plan->method=2;
-    T_plan->kway=factor;
+    T_plan->kway=2;
     T_plan->kway_async=0;
   }
   else{
@@ -738,6 +752,9 @@ void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, int howm
 template <typename T>
 void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  if(howmany==1){
+    return fast_transpose_cuda_v1(T_plan,data,timings,flags,howmany,tag);
+  }
   int nprocs, procid;
   nprocs=T_plan->nprocs;
   procid=T_plan->procid;
@@ -1028,6 +1045,9 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
 template <typename T>
 void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  if(howmany==1){
+    return fast_transpose_cuda_v1_2(T_plan,data,timings,flags,howmany,tag);
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -1335,6 +1355,9 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings
 template <typename T>
 void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan,T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  if(howmany==1){
+    return fast_transpose_cuda_v1_3(T_plan,data,timings,flags,howmany,tag);
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -1610,6 +1633,9 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan,T * data, double *timings,
 template <typename T>
 void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  if(howmany>1){
+    return fast_transpose_cuda_v1_h(T_plan,data,timings,flags,howmany,tag);
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -1838,6 +1864,9 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings, un
 template <typename T>
 void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  if(howmany>1){
+    return fast_transpose_cuda_v1_2_h(T_plan,data,timings,flags,howmany,tag);
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -2092,6 +2121,9 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
 template <typename T>
 void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  if(howmany>1){
+    return fast_transpose_cuda_v1_3_h(T_plan,data,timings,flags,howmany,tag);
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -2330,6 +2362,9 @@ template <typename T>
 void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
   // This function handles cases where howmany=1 (it is more optimal)
 
+  if(howmany>1){
+    return fast_transpose_cuda_v2_h(T_plan,data,timings,flags,howmany,tag);
+  }
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -2544,6 +2579,9 @@ template <typename T>
 void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
   // This function handles cases where howmany=1 (it is more optimal)
 
+  if(howmany>1){
+    return fast_transpose_cuda_v3_h(T_plan,data,timings,flags,howmany,tag);
+  }
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
@@ -2753,6 +2791,10 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,int
 template <typename T>
 void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
   // This function handles cases where howmany=1 (it is more optimal)
+  if(howmany>1){
+    std::cout<<"Error in fast_transpose_cuda_v3_2 howmany>1\n";
+    return;
+  }
 
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -2972,6 +3014,9 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
 template <typename T>
 void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
+  if(howmany==1){
+    return fast_transpose_cuda_v2(T_plan,data,timings,flags,howmany,tag);
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -3233,6 +3278,9 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
 template <typename T>
 void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany , int tag){
 
+  if(howmany==1){
+    return fast_transpose_cuda_v3(T_plan,data,timings,flags,howmany,tag);
+  }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
     MPI_Barrier(T_plan->comm);
@@ -4213,7 +4261,6 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigne
   }
   //PCOUT<<" ============================================= "<<std::endl;
   //PCOUT<<" ==============   Local Transpose============= "<<std::endl;
-  //PCOUT<<" ============================================= "<<std::endl;
   shuffle_time-=MPI_Wtime();
 
   if(Flags[0]==0){

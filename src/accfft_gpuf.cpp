@@ -305,7 +305,7 @@ accfft_plan_gpuf*  accfft_plan_dft_3d_r2c_gpuf(int * n, float * data_d,float * d
 
 
     if(flags==ACCFFT_MEASURE){
-      plan->T_plan_2->which_fast_method_gpu(plan->T_plan_2,data_out_d);
+      plan->T_plan_2->which_fast_method_gpu(plan->T_plan_2,data_out_d,2);
     }
     else{
       plan->T_plan_2->method=2;
@@ -339,40 +339,29 @@ accfft_plan_gpuf*  accfft_plan_dft_3d_r2c_gpuf(int * n, float * data_d,float * d
     plan->T_plan_1i->alloc_local=plan->alloc_max;
 
 
-
     if(flags==ACCFFT_MEASURE){
-      if(coord[0]==0){
-        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,data_out_d,osize_0[0]);
-      }
+        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(float*)data_out_d,2,osize_0[0],coord[0]);
+        plan->T_plan_2->which_fast_method_gpu(plan->T_plan_2,(float*)data_out_d,2,1,coord[1]);
     }
     else{
-      plan->T_plan_1->method=2;
-      plan->T_plan_1->kway=2;
+        plan->T_plan_1->method=2;
+        plan->T_plan_1->kway=2;
+        plan->T_plan_2->method=2;
+        plan->T_plan_2->kway=2;
     }
-
-    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
-    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
-
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
-    plan->T_plan_1->method =plan->T_plan_1->method;
-    plan->T_plan_2->method =plan->T_plan_1->method;
-    plan->T_plan_2i->method=plan->T_plan_1->method;
     plan->T_plan_1i->method=plan->T_plan_1->method;
-    plan->T_plan_1->kway =plan->T_plan_1->kway;
-    plan->T_plan_2->kway =plan->T_plan_1->kway;
-    plan->T_plan_2i->kway=plan->T_plan_1->kway;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
-
-    plan->iplan_1=-1;
-    plan->iplan_2=-1;
+    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
   }
 
   plan->r2c_plan_baked=true;
   return plan;
 
-}
+} //end accfft_plan_dft_3d_r2c_gpuf
 
 
 void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, float * data_out_d, double * timer,std::bitset<3> xyz){
@@ -792,7 +781,7 @@ accfft_plan_gpuf*  accfft_plan_dft_3d_c2c_gpuf(int * n, Complexf * data_d, Compl
 
 
     if(flags==ACCFFT_MEASURE){
-      plan->T_plan_2->which_fast_method_gpu(plan->T_plan_2,(float*)data_out_d);
+      plan->T_plan_2->which_fast_method_gpu(plan->T_plan_2,(float*)data_out_d,2);
     }
     else{
       plan->T_plan_2->method=2;
@@ -826,37 +815,27 @@ accfft_plan_gpuf*  accfft_plan_dft_3d_c2c_gpuf(int * n, Complexf * data_d, Compl
 
 
     plan->iplan_0=NULL;
-    plan->iplan_1=NULL;
-    plan->iplan_2=NULL;
 
     int coords[2],np[2],periods[2];
     MPI_Cart_get(c_comm,2,np,periods,coords);
-
     if(flags==ACCFFT_MEASURE){
-      if(coords[0]==0){
-        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(float*)data_out_d,osize_0[0]);
-      }
+        plan->T_plan_1->which_fast_method_gpu(plan->T_plan_1,(float*)data_out_d,2,osize_0[0],coord[0]);
+        plan->T_plan_2->which_fast_method_gpu(plan->T_plan_2,(float*)data_out_d,2,1,coord[1]);
     }
     else{
-      plan->T_plan_1->method=2;
-      plan->T_plan_1->kway=2;
+        plan->T_plan_1->method=2;
+        plan->T_plan_1->kway=2;
+        plan->T_plan_2->method=2;
+        plan->T_plan_2->kway=2;
     }
 
-    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
-    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
-
-
-    plan->T_plan_1->method =plan->T_plan_1->method;
-    plan->T_plan_2->method =plan->T_plan_1->method;
-    plan->T_plan_2i->method=plan->T_plan_1->method;
     plan->T_plan_1i->method=plan->T_plan_1->method;
-
-    plan->T_plan_1->kway =plan->T_plan_1->kway;
-    plan->T_plan_2->kway =plan->T_plan_1->kway;
-    plan->T_plan_2i->kway=plan->T_plan_1->kway;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
+    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->kway=plan->T_plan_2->kway;
+
 
 
   }
@@ -981,6 +960,7 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     }
 
 
+    PCOUT<<"before T_plan2i"<<std::endl;
     if(plan->oneD){
       plan->T_plan_2i->execute_gpu(plan->T_plan_2i,(float*)data_d,timings,1);
     }
@@ -989,6 +969,7 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     }
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
+    PCOUT<<"after T_plan2i"<<std::endl;
     /**************************************************************/
     /*******************  N0/P0 x N1 x N2/P1 **********************/
     /**************************************************************/
@@ -1004,11 +985,13 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     }
     MPI_Barrier(plan->c_comm);
 
+    PCOUT<<"before T_plan1i"<<std::endl;
     if(!plan->oneD){
       plan->T_plan_1i->execute_gpu(plan->T_plan_1i,(float*)data_d,timings,1,osize_1i[0],coords[0]);
     }
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
+    PCOUT<<"after T_plan1i"<<std::endl;
     /**************************************************************/
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
@@ -1068,8 +1051,8 @@ void accfft_destroy_plan_gpu(accfft_plan_gpuf * plan){
   if(plan->fplan_2!=-1)cufftDestroy(plan->fplan_2);
 
   if(plan->iplan_0!=-1)cufftDestroy(plan->iplan_0);
-  if(plan->iplan_1!=-1)cufftDestroy(plan->iplan_1);
-  if(plan->iplan_2!=-1)cufftDestroy(plan->iplan_2);
+  //if(plan->iplan_1!=-1)cufftDestroy(plan->iplan_1);
+  //if(plan->iplan_2!=-1)cufftDestroy(plan->iplan_2);
 
   MPI_Comm_free(&plan->row_comm);
   MPI_Comm_free(&plan->col_comm);

@@ -53,7 +53,7 @@ class T_Plan_gpu{
 	public:
 		T_Plan_gpu(int N0, int N1, int n_tuples,Mem_Mgr_gpu<T> * Mem_mgr,MPI_Comm, int howmany=1);
     void which_method_gpu(T_Plan_gpu<T>*,T*);
-    void which_fast_method_gpu(T_Plan_gpu<T>*,T*, int howmany=1);
+    void which_fast_method_gpu(T_Plan_gpu<T>*,T*, unsigned flags=2, int howmany=1, int tag=0);
     void execute_gpu(T_Plan_gpu<T>*,T*,double*, unsigned flags=0, int howmany=1, int tag=0);
 
     ptrdiff_t N[2];

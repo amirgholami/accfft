@@ -51,12 +51,8 @@ class T_Plan{
 		T_Plan(){};
 		T_Plan(int N0, int N1, int n_tuples,Mem_Mgr<T> * Mem_mgr,MPI_Comm, int howmany=1);
     void which_method(T*);
-    void which_fast_method(T_Plan<T>*,T*,int howmany=1);
+    void which_fast_method(T_Plan<T>*,T*,unsigned flags=2, int howmany=1,int tag=0);
     void execute(T_Plan<T>*,T*,double*, unsigned flags=0, int howmany=1, int tag=0);
-
-    void which_method_gpu(T_Plan<T>*,double*);
-    void which_fast_method_gpu(T_Plan<T>*,double*);
-    void execute_gpu(T_Plan<T>*,double*,double*, unsigned flags=0, int howmany=1, int tag=0);
 
     ptrdiff_t N[2];
     ptrdiff_t n_tuples;
@@ -93,18 +89,18 @@ class T_Plan{
     int last_recv_count;
     int last_local_n1; //the last non zero local_n1
 
-    int procid,nprocs;
+    int procid,nprocs;// note that nprocs is for col or row comms
     int nprocs_0; // number of effective processes involved in the starting phase
     int nprocs_1; // number of effective processes involved in the transposed phase
     int method;   // Transpose method
-    int kway;   //   Transpose_v7
-    bool kway_async;   //   Transpose_v7
+    int kway;
+    bool kway_async;
 
     ptrdiff_t alloc_local;
     bool PINNED;
     bool is_evenly_distributed;
 
-    MPI_Comm comm;
+    MPI_Comm comm; // this is either row or column communicator
     MPI_Datatype MPI_T;
     MPI_Datatype *stype;
     MPI_Datatype *rtype;
@@ -123,7 +119,9 @@ class T_Plan{
 void mytestfunctiondouble();
 template<typename T> void transpose_v5        (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void transpose_v6        (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1 ); // INPLACE local transpose + alltoallv+local transpose
+                                                                                                                                // note that tag is not needed here as the plan comm with mpialltoall is used
 template<typename T> void transpose_v7        (T_Plan<T>* T_plan, T * inout, double *timings , int kway, unsigned flags=0, int howmany=1); // INPLACE local transpose + paralltoallv+local transpose
+                                                                                                                                // note that tag is not needed here as the plan comm with mpialltoall is used
 template<typename T> void transpose_v8        (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v1   (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v2   (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
