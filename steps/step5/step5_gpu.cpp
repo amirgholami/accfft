@@ -109,7 +109,7 @@ void grad(int *n) {
   XYZ[1]=1;
   XYZ[2]=1;
   double exec_time=-MPI_Wtime();
-  accfft_grad_gpu(gradx,grady,gradz,data,plan,XYZ,timings);
+  accfft_grad_gpu(gradx,grady,gradz,data,plan,&XYZ,timings);
   exec_time+=MPI_Wtime();
   /* Check err*/
   PCOUT<<">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"<<std::endl;
@@ -293,7 +293,7 @@ void divergence(int *n) {
   XYZ[1]=1;
   XYZ[2]=1;
   double exec_time=-MPI_Wtime();
-  accfft_grad_gpu(gradx,grady,gradz,data,plan,XYZ,timings);
+  accfft_grad_gpu(gradx,grady,gradz,data,plan,&XYZ,timings);
   accfft_divergence_gpu(divergence,gradx,grady,gradz,plan,timings);
   exec_time+=MPI_Wtime();
 

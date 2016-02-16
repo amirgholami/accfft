@@ -214,7 +214,7 @@ static void grad_mult_wave_number_laplace(Tc* wA, Tc* A, int* N,MPI_Comm c_comm 
 }
 
 template <typename T, typename Tp>
-void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ, double* timer){
+void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3>* pXYZ, double* timer){
   typedef T Tc[2];
 	int procid;
   MPI_Comm c_comm=plan->c_comm;
@@ -223,8 +223,13 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ, dou
     PCOUT<<"Error in accfft_grad! plan is not correctly made."<<std::endl;
     return;
   }
-
-
+  std::bitset<3> XYZ;
+  if(pXYZ!=NULL){
+    XYZ=*pXYZ;
+  }
+  else{
+    XYZ[0]=1; XYZ[1]=1; XYZ[2]=1;
+  }
   double timings[5]={0};
 
 	double self_exec_time= - MPI_Wtime();

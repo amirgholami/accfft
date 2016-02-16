@@ -101,7 +101,7 @@ void grad(int *n, int nthreads) {
   XYZ[1]=1;
   XYZ[2]=1;
   double exec_time=-MPI_Wtime();
-  accfft_grad(gradx,grady,gradz,data,plan,XYZ,timings);
+  accfft_grad(gradx,grady,gradz,data,plan,&XYZ,timings);
   exec_time+=MPI_Wtime();
   /* Check err*/
   PCOUT<<">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"<<std::endl;
@@ -265,7 +265,7 @@ void divergence(int *n, int nthreads) {
   XYZ[1]=1;
   XYZ[2]=1;
   double exec_time=-MPI_Wtime();
-  accfft_grad(gradx,grady,gradz,data,plan,XYZ,timings);
+  accfft_grad(gradx,grady,gradz,data,plan,&XYZ,timings);
   accfft_divergence(divergence,gradx,grady,gradz,plan,timings);
   exec_time+=MPI_Wtime();
 

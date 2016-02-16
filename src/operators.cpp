@@ -37,7 +37,7 @@ template void grad_mult_wave_numbery<Complex>(Complex* wA, Complex* A, int* N,MP
 template void grad_mult_wave_numberz<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
 template void grad_mult_wave_number_laplace<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm );
 
-template void accfft_grad_t<double,accfft_plan>(double * A_x, double *A_y, double *A_z,double *A,accfft_plan *plan, std::bitset<3> XYZ, double* timer);
+template void accfft_grad_t<double,accfft_plan>(double * A_x, double *A_y, double *A_z,double *A,accfft_plan *plan, std::bitset<3>* pXYZ, double* timer);
 template void accfft_laplace_t<double,accfft_plan>(double * LA,double *A,accfft_plan *plan, double* timer);
 template void accfft_divergence_t<double,accfft_plan>(double* divA, double * A_x, double *A_y, double *A_z,accfft_plan *plan, double* timer);
 
@@ -50,13 +50,13 @@ template void accfft_divergence_t<double,accfft_plan>(double* divA, double * A_x
  * @param A_z The z component of \f$\nabla A\f$
  * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c. Must be an outplace plan, otherwise the function will return
  * without computing the gradient.
- * @param XYZ a bit set field of size 3 that determines which gradient components are needed. If XYZ={111} then
+ * @param pXYZ a bit set pointer field of size 3 that determines which gradient components are needed. If XYZ={111} then
  * all the components are computed and if XYZ={100}, then only the x component is computed. This can save the user
  * some time, when just one or two of the gradient components are needed.
  * @param timer See \ref timer for more details.
  */
-void accfft_grad(double * A_x, double *A_y, double *A_z,double *A,accfft_plan *plan, std::bitset<3> XYZ, double* timer){
-  accfft_grad_t<double,accfft_plan>(A_x, A_y, A_z, A, plan, XYZ, timer);
+void accfft_grad(double * A_x, double *A_y, double *A_z,double *A,accfft_plan *plan, std::bitset<3>* pXYZ, double* timer){
+  accfft_grad_t<double,accfft_plan>(A_x, A_y, A_z, A, plan, pXYZ, timer);
 }
 
 /**

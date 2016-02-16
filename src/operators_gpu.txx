@@ -83,7 +83,7 @@ template <> void daxpy_gpu<float>(const long long int n, const float alpha, floa
 
 
 template <typename T, typename Tp>
-void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ, double* timer){
+void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> *pXYZ, double* timer){
   typedef T Tc[2];
 	int procid;
   MPI_Comm c_comm=plan->c_comm;
@@ -100,6 +100,14 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> XYZ,
   }
   else{
     timings=timer;
+  }
+
+  std::bitset<3> XYZ;
+  if(pXYZ!=NULL){
+    XYZ=*pXYZ;
+  }
+  else{
+    XYZ[0]=1; XYZ[1]=1; XYZ[2]=1;
   }
 
 	double self_exec_time= - MPI_Wtime();

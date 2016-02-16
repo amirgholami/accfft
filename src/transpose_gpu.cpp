@@ -204,8 +204,6 @@ T_Plan_gpu<T>::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu<T> * Mem_mgr, M
   local_1_start=local_1_start_proc[procid];
 
 
-  alloc_local=Mem_mgr->alloc_local;
-  // Determine effective processors taking part in each transpose phase
   nprocs_0=0; nprocs_1=0;
   for (int proc=0;proc<nprocs;++proc){
     if(local_n0_proc[proc]!=0)

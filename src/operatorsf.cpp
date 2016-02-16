@@ -43,7 +43,7 @@ template void grad_mult_wave_numbery<Complexf>(Complexf* wA, Complexf* A, int* N
 template void grad_mult_wave_numberz<Complexf>(Complexf* wA, Complexf* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
 template void grad_mult_wave_number_laplace<Complexf>(Complexf* wA, Complexf* A, int* N,MPI_Comm c_comm );
 
-template void accfft_grad_t<float,accfft_planf>(float * A_x, float *A_y, float* A_z, float* A,accfft_planf *plan, std::bitset<3> XYZ, double* timer);
+template void accfft_grad_t<float,accfft_planf>(float * A_x, float *A_y, float* A_z, float* A,accfft_planf *plan, std::bitset<3>* pXYZ, double* timer);
 template void accfft_laplace_t<float,accfft_planf>(float * LA,float *A,accfft_planf *plan, double* timer);
 template void accfft_divergence_t<float,accfft_planf>(float* divA,float* A_x, float* A_y, float*A_z,accfft_planf *plan, double* timer);
 
@@ -56,13 +56,13 @@ template void accfft_divergence_t<float,accfft_planf>(float* divA,float* A_x, fl
  * @param A_z The z component of \f$\nabla A\f$
  * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2cf. Must be an outplace plan, otherwise the function will return
  * without computing the gradient.
- * @param XYZ a bit set field of size 3 that determines which gradient components are needed. If XYZ={111} then
+ * @param pXYZ a bit set pointer field of size 3 that determines which gradient components are needed. If XYZ={111} then
  * all the components are computed and if XYZ={100}, then only the x component is computed. This can save the user
  * some time, when just one or two of the gradient components are needed.
  * @param timer See \ref timer for more details.
  */
-void accfft_gradf(float * A_x, float *A_y, float* A_z, float* A,accfft_planf *plan, std::bitset<3> XYZ, double* timer){
-  accfft_grad_t<float,accfft_planf>(A_x, A_y, A_z, A, plan, XYZ, timer);
+void accfft_gradf(float * A_x, float *A_y, float* A_z, float* A,accfft_planf *plan, std::bitset<3> *pXYZ, double* timer){
+  accfft_grad_t<float,accfft_planf>(A_x, A_y, A_z, A, plan, pXYZ, timer);
 
 }
 
