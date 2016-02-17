@@ -23,6 +23,7 @@
 
 //#include "transpose.h"
 #include <cuda.h>
+#include <vector>
 
 template <typename T>
 class Mem_Mgr_gpu{
@@ -101,6 +102,8 @@ class T_Plan_gpu{
     ptrdiff_t alloc_local;
     bool PINNED;
     bool is_evenly_distributed;
+
+    std::vector< std::pair<int,double> >* pwhich_f_time;
 
     MPI_Comm comm;
     MPI_Datatype MPI_T;

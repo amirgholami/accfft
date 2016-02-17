@@ -333,6 +333,7 @@ T_Plan_gpu<T>::T_Plan_gpu(int N0, int N1,int tuples, Mem_Mgr_gpu<T> * Mem_mgr, M
   kway_async=true;
 
 
+  this->pwhich_f_time=new std::vector< std::pair<int,double> >;
   MPI_Type_contiguous(sizeof(T), MPI_BYTE, &MPI_T);
   MPI_Type_commit(&MPI_T);
 
@@ -633,7 +634,6 @@ template <typename T>
 void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, unsigned flags, int howmany,int tag){
 
   double dummy[4]={0};
-  std::vector< std::pair<int,double> > t_time;
   double tmp;
   int factor;
   if(IsPowerOfTwo(nprocs))
@@ -649,15 +649,15 @@ void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, unsigned
   tmp=-MPI_Wtime();
   fast_transpose_cuda_v1_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
-  t_time.push_back(std::make_pair(nprocs,tmp));
+  pwhich_f_time->push_back(std::make_pair(nprocs,tmp));
 
   fast_transpose_cuda_v2_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);  // Warmup
   tmp=-MPI_Wtime();
   fast_transpose_cuda_v2_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
-  t_time.push_back(std::make_pair(2,tmp));
+  pwhich_f_time->push_back(std::make_pair(2,tmp));
 
-  if(factor>0 && nprocs>31){
+  if(factor>0 && nprocs>7){
     kway_async=true;
     kway=nprocs/factor;
     do{
@@ -666,9 +666,9 @@ void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, unsigned
       tmp=-MPI_Wtime();
       fast_transpose_cuda_v3_h(T_plan,(T*)data_d,dummy,kway,flags,howmany,tag);
       tmp+=MPI_Wtime();
-      t_time.push_back(std::make_pair(kway,tmp));
+      pwhich_f_time->push_back(std::make_pair(kway,tmp));
       kway=kway/factor;
-    }while(kway>7);
+    }while(kway>3);
 
     kway_async=false;
     kway=nprocs/factor;
@@ -678,9 +678,9 @@ void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, unsigned
       tmp=-MPI_Wtime();
       fast_transpose_cuda_v3_h(T_plan,(T*)data_d,dummy,kway,flags,howmany,tag);
       tmp+=MPI_Wtime();
-      t_time.push_back(std::make_pair(kway,tmp));
+      pwhich_f_time->push_back(std::make_pair(kway,tmp));
       kway=kway/factor;
-    }while(kway>7);
+    }while(kway>3);
 
   }
 
@@ -688,51 +688,51 @@ void T_Plan_gpu<T>::which_fast_method_gpu(T_Plan_gpu* T_plan,T* data_d, unsigned
   tmp=-MPI_Wtime();
   fast_transpose_cuda_v1_2_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
-  t_time.push_back(std::make_pair(nprocs+2,tmp));
+  pwhich_f_time->push_back(std::make_pair(nprocs+2,tmp));
 
   fast_transpose_cuda_v1_3_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);  // Warmup
   tmp=-MPI_Wtime();
   fast_transpose_cuda_v1_3_h(T_plan,(T*)data_d,dummy,flags,howmany,tag);
   tmp+=MPI_Wtime();
-  t_time.push_back(std::make_pair(nprocs+3,tmp));
+  pwhich_f_time->push_back(std::make_pair(nprocs+3,tmp));
 
-  for(std::vector< std::pair<int,double> >::iterator it = t_time.begin(); it != t_time.end(); ++it) {
+  for(std::vector< std::pair<int,double> >::iterator it = pwhich_f_time->begin(); it != pwhich_f_time->end(); ++it) {
     MPI_Allreduce(&it->second,&tmp,1,MPI_DOUBLE,MPI_MAX, T_plan->comm);
     it->second=tmp;
   }
 
-  std::sort(t_time.begin(), t_time.end(), accfft_sort_pred_gpu());
-  double min_time=t_time.front().second;
+  std::sort(pwhich_f_time->begin(), pwhich_f_time->end(), accfft_sort_pred_gpu());
+  double min_time=pwhich_f_time->front().second;
 
-  if(t_time.front().first==nprocs){
+  if(pwhich_f_time->front().first==nprocs){
     T_plan->method=1;
     T_plan->kway=nprocs;
     T_plan->kway_async=1;
   }
-  else if(t_time.front().first-2==nprocs){
+  else if(pwhich_f_time->front().first-2==nprocs){
     T_plan->method=12;
     T_plan->kway=nprocs;
     T_plan->kway_async=1;
   }
-  else if(t_time.front().first-3==nprocs){
+  else if(pwhich_f_time->front().first-3==nprocs){
     T_plan->method=13;
     T_plan->kway=nprocs;
     T_plan->kway_async=1;
   }
-  else if(t_time.front().first==2){
+  else if(pwhich_f_time->front().first==2){
     T_plan->method=2;
     T_plan->kway=2;
     T_plan->kway_async=0;
   }
   else{
     T_plan->method=3;
-    T_plan->kway=std::abs(t_time.front().first);
-    T_plan->kway_async=(t_time.front().first>0);
+    T_plan->kway=std::abs(pwhich_f_time->front().first);
+    T_plan->kway_async=(pwhich_f_time->front().first>0);
   }
 
   if(VERBOSE>=1){
-    std::sort(t_time.begin(), t_time.end());
-    for(std::vector< std::pair<int,double> >::iterator it = t_time.begin(); it != t_time.end(); ++it) {
+    std::sort(pwhich_f_time->begin(), pwhich_f_time->end());
+    for(std::vector< std::pair<int,double> >::iterator it = pwhich_f_time->begin(); it != pwhich_f_time->end(); ++it) {
       PCOUT<<it->first<<'\t'<<it->second<<std::endl;
     }
     PCOUT<<"Min time= "<<min_time<<std::endl;
@@ -2578,7 +2578,7 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,int
   // This function handles cases where howmany=1 (it is more optimal)
 
   if(howmany>1){
-    return fast_transpose_cuda_v3_h(T_plan,data,timings,flags,howmany,tag);
+    return fast_transpose_cuda_v3_h(T_plan,data,timings,kway,flags,howmany,tag);
   }
 
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -3277,7 +3277,7 @@ template <typename T>
 void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany , int tag){
 
   if(howmany==1){
-    return fast_transpose_cuda_v3(T_plan,data,timings,flags,howmany,tag);
+    return fast_transpose_cuda_v3(T_plan,data,timings,kway,flags,howmany,tag);
   }
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
   if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If nprocs==1 and Flags==Transposed_Out return
@@ -3285,7 +3285,7 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
     return;
   }
   if(Flags[0]==1){ // If Flags==Transposed_In This function can not handle it, call other versions
-    transpose_cuda_v6(T_plan,(T*)data,timings,flags,howmany,tag);
+    transpose_cuda_v6(T_plan,(T*)data,timings,flags,howmany,tag); //snafu
     MPI_Barrier(T_plan->comm);
     return;
   }

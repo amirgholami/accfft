@@ -20,6 +20,7 @@
 
 #ifndef _TRANSPOSE_
 #define _TRANSPOSE_
+#include <vector>
 template <typename T>
 class Mem_Mgr{
 	public:
@@ -96,6 +97,8 @@ class T_Plan{
     int kway;
     bool kway_async;
 
+    std::vector< std::pair<int,double> > *pwhich_f_time;
+
     ptrdiff_t alloc_local;
     bool PINNED;
     bool is_evenly_distributed;
@@ -119,9 +122,9 @@ class T_Plan{
 void mytestfunctiondouble();
 template<typename T> void transpose_v5        (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void transpose_v6        (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1 ); // INPLACE local transpose + alltoallv+local transpose
-                                                                                                                                // note that tag is not needed here as the plan comm with mpialltoall is used
+// note that tag is not needed here as the plan comm with mpialltoall is used
 template<typename T> void transpose_v7        (T_Plan<T>* T_plan, T * inout, double *timings , int kway, unsigned flags=0, int howmany=1); // INPLACE local transpose + paralltoallv+local transpose
-                                                                                                                                // note that tag is not needed here as the plan comm with mpialltoall is used
+// note that tag is not needed here as the plan comm with mpialltoall is used
 template<typename T> void transpose_v8        (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v1   (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v2   (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
