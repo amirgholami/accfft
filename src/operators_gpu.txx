@@ -124,7 +124,7 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3> *pXY
   Tc* tmp  ;//=(Tc*) accfft_alloc(alloc_max);
   cudaMalloc((void**) &A_hat, alloc_max);
   cudaMalloc((void**) &tmp, alloc_max);
-  std::bitset<3> scale_xyz={0};
+  std::bitset<3> scale_xyz(0);
   scale_xyz[0]=1;
   scale_xyz[1]=1;
   scale_xyz[2]=1;
@@ -258,7 +258,8 @@ void accfft_divergence_gpu_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double*
   cudaMalloc((void**) &A_hat, alloc_max);
   cudaMalloc((void**) &tmp, alloc_max);
   cudaMalloc((void**) &tmp2, alloc_max);
-  std::bitset<3> scale_xyz={0},xyz={0};
+  std::bitset<3> scale_xyz(0);
+  std::bitset<3> xyz=(0);
   scale_xyz[0]=1;
   scale_xyz[1]=1;
   scale_xyz[2]=1;

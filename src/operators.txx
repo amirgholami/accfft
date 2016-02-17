@@ -244,7 +244,7 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3>* pXYZ, d
 
   Tc* A_hat=(Tc*) accfft_alloc(alloc_max);
   Tc* tmp  =(Tc*) accfft_alloc(alloc_max);
-  std::bitset<3> scale_xyz={0};
+  std::bitset<3> scale_xyz(0);
   scale_xyz[0]=1;
   scale_xyz[1]=1;
   scale_xyz[2]=1;
@@ -373,7 +373,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
   Tc* A_hat=(Tc*) accfft_alloc(alloc_max);
   Tc* tmp  =(Tc*) accfft_alloc(alloc_max);
   T* tmp2 =(T*)  accfft_alloc(alloc_max);
-  std::bitset<3> xyz={0};
+  std::bitset<3> xyz(0);
 
   MPI_Barrier(c_comm);
 
