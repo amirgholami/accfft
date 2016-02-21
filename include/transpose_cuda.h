@@ -90,6 +90,7 @@ class T_Plan_gpu{
     int* roffset_proc_v8;
 
     int last_recv_count;
+    int last_local_n0; //the last non zero local_n0
     int last_local_n1; //the last non zero local_n1
 
     int procid,nprocs;
@@ -149,6 +150,10 @@ template<typename T> void          transpose_cuda_v7(T_Plan_gpu<T>* T_plan, T * 
 template<typename T> void        transpose_cuda_v7_2(T_Plan_gpu<T>* T_plan, T * inout, double *timings, int kway , unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + paralltoallv+local transpose
 
 
+template<typename T> void     fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags=0, int howmany=1, int tag=0 );  // handles only the cases where Flag=1
+template<typename T> void     fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags=0, int howmany=1, int tag=0 );  // handles only the cases where Flag=1
+template<typename T> void     fast_transpose_cuda_v1_2i(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags=0, int howmany=1, int tag=0 );  // handles only the cases where Flag=1
+template<typename T> void     fast_transpose_cuda_v1_3i(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags=0, int howmany=1, int tag=0 );  // handles only the cases where Flag=1
 
 // outplace local transpose multiple n_tuples for the last col
 template <typename T>

@@ -246,6 +246,8 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
         last_recv_count=rcount_proc[proc];
       if(local_n1_proc[proc]!=0)
         last_local_n1=local_n1_proc[proc];
+      if(local_n0_proc[proc]!=0)
+        last_local_n0=local_n0_proc[proc];
     }
   else if(nprocs_1<=nprocs_0)
     for (int proc=0;proc<nprocs;++proc){
@@ -284,6 +286,8 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
 
       if(local_n1_proc[proc]!=0)
         last_local_n1=local_n1_proc[proc];
+      if(local_n0_proc[proc]!=0)
+        last_local_n0=local_n0_proc[proc];
     }
 
 
@@ -318,7 +322,7 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
     scount_proc_w[i]=1;
     rcount_proc_w[i]=1;
 
-    soffset_proc_f[i]=soffset_proc[i]*howmany; //SNAFU in bytes
+    soffset_proc_f[i]=soffset_proc[i]*howmany;
     roffset_proc_f[i]=roffset_proc[i]*howmany;
     scount_proc_f[i]= scount_proc[i]*howmany;
     rcount_proc_f[i]= rcount_proc[i]*howmany;
@@ -567,6 +571,8 @@ void T_Plan<T>::execute(T_Plan* T_plan,T* data,double *timings, unsigned flags, 
       fast_transpose_v2(T_plan,(T*)data,timings,flags,howmany,tag);
     if(method==3)
       fast_transpose_v3(T_plan,(T*)data,timings,kway,flags,howmany,tag);
+    if(method==-1 || method==-2 || method==-3)
+      fast_transpose_vi(T_plan,(T*)data,timings,kway,flags,howmany,tag,method);
   }
   else
   {
@@ -576,6 +582,8 @@ void T_Plan<T>::execute(T_Plan* T_plan,T* data,double *timings, unsigned flags, 
       fast_transpose_v2_h(T_plan,(T*)data,timings,flags,howmany,tag);
     if(method==3)
       fast_transpose_v3_h(T_plan,(T*)data,timings,kway,flags,howmany,tag);
+    if(method==-1 || method==-2 || method==-3)
+      fast_transpose_v_hi(T_plan,(T*)data,timings,kway,flags,howmany,tag,method);
   }
   if(method==5)
     transpose_v5(T_plan,(T*)data,timings,flags,howmany,tag);
@@ -620,7 +628,7 @@ T_Plan<T>::~T_Plan(){
     MPI_Type_free(&rtype[i]);
   }
 
- //std::vector< std::pair<int,double> >temp().swap(*pwhich_f_time);
+  //std::vector< std::pair<int,double> >temp().swap(*pwhich_f_time);
 
   delete [] stype;
   delete [] rtype;
@@ -726,6 +734,454 @@ void local_transpose(int r, int c, int n_tuples, T* A){
     free(buff);
   }
 }
+
+template <typename T>
+void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany, int tag,int method ){
+
+  std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
+  if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
+    MPI_Barrier(T_plan->comm);
+    return;
+  }
+  timings[0]-=MPI_Wtime();
+  int nprocs, procid;
+  int nprocs_0, nprocs_1;
+  nprocs=T_plan->nprocs;
+  procid=T_plan->procid;
+  nprocs_0=T_plan->nprocs_0;
+  nprocs_1=T_plan->nprocs_1;
+  ptrdiff_t  *N=T_plan->N;
+  T * send_recv = T_plan->buffer;
+  T * buffer_2= T_plan->buffer_2;
+  ptrdiff_t local_n0=T_plan->local_n0;
+  ptrdiff_t local_n1=T_plan->local_n1;
+  ptrdiff_t n_tuples=T_plan->n_tuples;
+
+  int idist=N[1]*local_n0*n_tuples;
+  int odist=N[0]*local_n1*n_tuples;
+
+  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+
+  if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
+  if(VERBOSE>=2)
+    for(int h=0;h<howmany;h++)
+      for(int id=0;id<nprocs;++id){
+        if(procid==id)
+          for(int i=0;i<N[1];i++){
+            std::cout<<std::endl;
+            for(int j=0;j<local_n0;j++){
+              std::cout<<'\t'<<data[h*idist+(i*local_n0+j)*n_tuples];
+            }
+          }
+        std::cout<<'\n';
+        MPI_Barrier(T_plan->comm);
+      }
+
+  //PCOUT<<" ============================================= "<<std::endl;
+  //PCOUT<<" ==============   Local Transpose============= "<<std::endl;
+  //PCOUT<<" ============================================= "<<std::endl;
+  int ptr=0;
+  shuffle_time-=MPI_Wtime();
+
+
+  if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
+    local_transpose(local_n1,N[0],n_tuples,data );
+  }
+  if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
+    local_transpose(N[0],N[1],n_tuples,data );
+  }
+  if(nprocs==1){ // Transpose is done!
+    shuffle_time+=MPI_Wtime();
+    timings[0]+=MPI_Wtime();
+    timings[1]+=shuffle_time;
+    timings[2]+=0;
+    timings[3]+=0;
+    MPI_Barrier(T_plan->comm);
+    return;
+  }
+
+  // The idea is this: If The Output is to be transposed, then only one buffer is needed. The algorithm would be:
+  // data --T-> buffer_2    ...  buffer_2 --alltoall--> send_recv ... send_recv -T-> data
+  ptr=0;
+  for (int proc=0;proc<nprocs_1;++proc)
+    for(int h=0;h<howmany;++h){
+      memcpy(&buffer_2[ptr],&data[h*idist+T_plan->soffset_proc[proc]],sizeof(T)*T_plan->scount_proc[proc]);// scount_proc[proc]=local_n1_proc[proc]*local_n0*n_tuples;
+      ptr+=T_plan->scount_proc[proc]; // pointer is going contiguous along buffer_2
+    }
+  shuffle_time+=MPI_Wtime();
+
+  PCOUT<<"nprocs_0="<<nprocs_0<<std::endl;
+  ptr=0;
+  if(VERBOSE>=2) PCOUT<<"Local Transpose:"<<std::endl;
+  if(VERBOSE>=2)
+      for(int id=0;id<nprocs;++id){
+        if(procid==id)
+          for(int i=0;i<N[1];i++){
+            for(int h=0;h<howmany;h++){
+              std::cout<<std::endl;
+              for(int j=0;j<local_n0;j++){
+                std::cout<<'\t'<<buffer_2[ptr];//data[h*idist+(i*local_n0+j)*n_tuples];
+                ptr+=n_tuples;
+              }
+            }
+          }
+        std::cout<<'\n';
+        MPI_Barrier(T_plan->comm);
+      }
+
+  //PCOUT<<" ============================================= "<<std::endl;
+  //PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
+  //PCOUT<<" ============================================= "<<std::endl;
+
+  int* scount_proc=  T_plan->scount_proc;
+  int* rcount_proc=  T_plan->rcount_proc;
+  int* soffset_proc= T_plan->soffset_proc;
+  int* roffset_proc= T_plan->roffset_proc;
+
+  MPI_Barrier(T_plan->comm);
+
+  //PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
+  comm_time-=MPI_Wtime();
+
+  int soffset=0,roffset=0;
+  MPI_Status ierr;
+  MPI_Request * s_request= new MPI_Request[nprocs];
+  MPI_Request * request= new MPI_Request[nprocs];
+  int counter=1;
+
+  T *s_buf=buffer_2, *r_buf=send_recv;
+  if(method==-1){
+    // SEND
+    for (int proc=0;proc<nprocs;++proc){
+      if(proc!=procid){
+        soffset=soffset_proc[proc]*howmany;
+        roffset=roffset_proc[proc]*howmany;
+        MPI_Isend(&s_buf[soffset],scount_proc[proc]*howmany,T_plan->MPI_T,proc, tag,
+            T_plan->comm, &s_request[proc]);
+        MPI_Irecv(&r_buf[roffset],rcount_proc[proc]*howmany,T_plan->MPI_T, proc,
+            tag, T_plan->comm, &request[proc]);
+      }
+    }
+    // Copy Your own part. See the note below for the if condition
+    soffset=soffset_proc[procid]*howmany;//aoffset_proc[proc];//proc*count_proc[proc];
+    roffset=roffset_proc[procid]*howmany;
+    memcpy(&r_buf[roffset],&s_buf[soffset],sizeof(T)*scount_proc[procid]*howmany);
+
+    for (int proc=0;proc<nprocs;++proc){
+      if(proc!=procid){
+        MPI_Wait(&request[proc], &ierr);
+        MPI_Wait(&s_request[proc], &ierr);
+      }
+    }
+
+    MPI_Barrier(T_plan->comm);
+  }
+  else if(method==-2){
+    if(T_plan->is_evenly_distributed==0)
+      MPI_Alltoallv(s_buf,T_plan->scount_proc_f,
+          T_plan->soffset_proc_f, T_plan->MPI_T,r_buf,
+          T_plan->rcount_proc_f,T_plan->roffset_proc_f, T_plan->MPI_T,
+          T_plan->comm);
+    else
+      MPI_Alltoall(s_buf, T_plan->scount_proc_f[0], T_plan->MPI_T,
+          r_buf, T_plan->rcount_proc_f[0], T_plan->MPI_T,
+          T_plan->comm);
+  }
+  else if(method==-3){
+    if(T_plan->kway_async)
+      par::Mpi_Alltoallv_dense<T,true>(s_buf     , T_plan->scount_proc_f, T_plan->soffset_proc_f,
+          r_buf, T_plan->rcount_proc_f, T_plan->roffset_proc_f, T_plan->comm,kway);
+    else
+      par::Mpi_Alltoallv_dense<T,false>(s_buf     , T_plan->scount_proc_f, T_plan->soffset_proc_f,
+          r_buf, T_plan->rcount_proc_f, T_plan->roffset_proc_f, T_plan->comm,kway);
+
+  }
+
+  comm_time+=MPI_Wtime();
+
+  ptr=0;
+  if(VERBOSE>=2) PCOUT<<"MPIAlltoAll:"<<std::endl;
+  if(VERBOSE>=2)
+    for(int id=0;id<nprocs;++id){
+      if(procid==id)
+        for(int i=0;i<local_n1;i++){
+          for(int h=0;h<howmany;h++){
+            std::cout<<std::endl;
+            for(int j=0;j<N[0];j++){
+              std::cout<<'\t'<<send_recv[ptr]<<","<<send_recv[ptr+1];
+              ptr+=n_tuples;
+            }
+          }
+        }
+      std::cout<<'\n';
+      MPI_Barrier(T_plan->comm);
+    }
+
+  //PCOUT<<" ============================================= "<<std::endl;
+  //PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
+  //PCOUT<<" ============================================= "<<std::endl;
+  reshuffle_time-=MPI_Wtime();
+  ptr=0;
+  for(int h=0;h<howmany;++h){
+    for (int proc=0;proc<nprocs_0;++proc){
+      memcpy(&buffer_2[ptr],&send_recv[h*T_plan->rcount_proc[proc]+T_plan->roffset_proc[proc]*howmany],sizeof(T)*T_plan->rcount_proc[proc]);// scount_proc[proc]=local_n1_proc[proc]*local_n0*n_tuples;
+      ptr+=T_plan->rcount_proc[proc]; // pointer is going contiguous along buffer_2
+    }
+    local_transpose(nprocs_0,local_n1,n_tuples*T_plan->local_n0_proc[0], n_tuples*T_plan->last_local_n0,&buffer_2[h*odist],&data[h*odist] );
+  }
+
+
+  if(VERBOSE>=2) PCOUT<<"2nd Transpose"<<std::endl;
+  if(VERBOSE>=2)
+    for(int id=0;id<nprocs_1;++id){
+      if(procid==id)
+        for(int h=0;h<howmany;h++)
+          for(int i=0;i<N[0];i++){
+            std::cout<<std::endl;
+            for(int j=0;j<local_n1;j++){
+              ptr=h*odist+(i*local_n1+j)*n_tuples;
+              std::cout<<'\t'<<data[ptr]<<","<<data[ptr+1];
+            }
+          }
+      std::cout<<'\n';
+      MPI_Barrier(T_plan->comm);
+    }
+
+  reshuffle_time+=MPI_Wtime();
+  MPI_Barrier(T_plan->comm);
+  delete [] request;
+  delete [] s_request;
+
+
+  if(VERBOSE>=1){
+    PCOUT<<"Shuffle Time= "<<shuffle_time<<std::endl;
+    PCOUT<<"Alltoall Time= "<<comm_time<<std::endl;
+    PCOUT<<"Reshuffle Time= "<<reshuffle_time<<std::endl;
+    PCOUT<<"Total Time= "<<(shuffle_time+comm_time+reshuffle_time)<<std::endl;
+  }
+  timings[0]+=MPI_Wtime();//timings[0]+=shuffle_time+comm_time+reshuffle_time;
+  timings[1]+=shuffle_time;
+  timings[2]+=comm_time;
+  timings[3]+=reshuffle_time;
+  return;
+} // end fast_transpose_v1
+
+template <typename T>
+void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany, int tag,int method ){
+
+  if(howmany>1){
+    return fast_transpose_v_hi(T_plan,data,timings,kway,flags,howmany,tag,method);
+  }
+  std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
+  if(Flags[1]==1 && Flags[0]==0 && T_plan->nprocs==1){ // If Flags==Transposed_Out return
+    MPI_Barrier(T_plan->comm);
+    return;
+  }
+  timings[0]-=MPI_Wtime();
+  int nprocs, procid;
+  int nprocs_0, nprocs_1;
+  nprocs=T_plan->nprocs;
+  procid=T_plan->procid;
+  nprocs_0=T_plan->nprocs_0;
+  nprocs_1=T_plan->nprocs_1;
+  ptrdiff_t  *N=T_plan->N;
+  T * send_recv = T_plan->buffer;
+  T * buffer_2= T_plan->buffer_2;
+  ptrdiff_t local_n0=T_plan->local_n0;
+  ptrdiff_t local_n1=T_plan->local_n1;
+  ptrdiff_t n_tuples=T_plan->n_tuples;
+
+  int idist=N[1]*local_n0*n_tuples;
+  int odist=N[0]*local_n1*n_tuples;
+
+  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+
+  if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
+  if(VERBOSE>=2)
+    for(int h=0;h<howmany;h++)
+      for(int id=0;id<nprocs;++id){
+        if(procid==id)
+          for(int i=0;i<N[1];i++){
+            std::cout<<std::endl;
+            for(int j=0;j<local_n0;j++){
+              std::cout<<'\t'<<data[h*idist+(i*local_n0+j)*n_tuples];
+            }
+          }
+        std::cout<<'\n';
+        MPI_Barrier(T_plan->comm);
+      }
+
+  //PCOUT<<" ============================================= "<<std::endl;
+  //PCOUT<<" ==============   Local Transpose============= "<<std::endl;
+  //PCOUT<<" ============================================= "<<std::endl;
+  int ptr=0;
+  shuffle_time-=MPI_Wtime();
+
+
+  if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
+    local_transpose(local_n1,N[0],n_tuples,data );
+  }
+  if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
+    local_transpose(N[0],N[1],n_tuples,data );
+  }
+  if(nprocs==1){ // Transpose is done!
+    shuffle_time+=MPI_Wtime();
+    timings[0]+=MPI_Wtime();
+    timings[1]+=shuffle_time;
+    timings[2]+=0;
+    timings[3]+=0;
+    MPI_Barrier(T_plan->comm);
+    return;
+  }
+
+  shuffle_time+=MPI_Wtime();
+  ptr=0;
+  if(VERBOSE>=2) PCOUT<<"Local Transpose:"<<std::endl;
+  if(VERBOSE>=2)
+    for(int h=0;h<howmany;h++)
+      for(int id=0;id<nprocs;++id){
+        if(procid==id)
+          for(int i=0;i<N[1];i++){
+            std::cout<<std::endl;
+            for(int j=0;j<local_n0;j++){
+              std::cout<<'\t'<<T_plan->buffer_2[ptr];//data[h*idist+(i*local_n0+j)*n_tuples];
+              ptr+=n_tuples;
+            }
+          }
+        std::cout<<'\n';
+        MPI_Barrier(T_plan->comm);
+      }
+
+
+  //PCOUT<<" ============================================= "<<std::endl;
+  //PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
+  //PCOUT<<" ============================================= "<<std::endl;
+
+  int* scount_proc=  T_plan->scount_proc;
+  int* rcount_proc=  T_plan->rcount_proc;
+  int* soffset_proc= T_plan->soffset_proc;
+  int* roffset_proc= T_plan->roffset_proc;
+
+  MPI_Barrier(T_plan->comm);
+
+  //PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
+  comm_time-=MPI_Wtime();
+
+  int soffset=0,roffset=0;
+  MPI_Status ierr;
+  MPI_Request * s_request= new MPI_Request[nprocs];
+  MPI_Request * request= new MPI_Request[nprocs];
+  int counter=1;
+
+  T *s_buf=data, *r_buf=send_recv;
+  // SEND
+  if(method==-1){
+    for (int proc=0;proc<nprocs;++proc){
+      if(proc!=procid){
+        soffset=soffset_proc[proc];
+        roffset=roffset_proc[proc];
+        MPI_Isend(&s_buf[soffset],scount_proc[proc],T_plan->MPI_T,proc, tag,
+            T_plan->comm, &s_request[proc]);
+        MPI_Irecv(&r_buf[roffset],rcount_proc[proc],T_plan->MPI_T, proc,
+            tag, T_plan->comm, &request[proc]);
+      }
+    }
+    // Copy Your own part. See the note below for the if condition
+    soffset=soffset_proc[procid];//aoffset_proc[proc];//proc*count_proc[proc];
+    roffset=roffset_proc[procid];
+    memcpy(&r_buf[roffset],&s_buf[soffset],sizeof(T)*scount_proc[procid]);
+    for (int proc=0;proc<nprocs;++proc){
+      if(proc!=procid){
+        MPI_Wait(&request[proc], &ierr);
+        MPI_Wait(&s_request[proc], &ierr);
+      }
+    }
+    MPI_Barrier(T_plan->comm);
+  }
+  else if(method==-2){
+    if(T_plan->is_evenly_distributed==0)
+      MPI_Alltoallv(s_buf,T_plan->scount_proc_f,
+          T_plan->soffset_proc_f, T_plan->MPI_T,r_buf,
+          T_plan->rcount_proc_f,T_plan->roffset_proc_f, T_plan->MPI_T,
+          T_plan->comm);
+    else
+      MPI_Alltoall(s_buf, T_plan->scount_proc_f[0], T_plan->MPI_T,
+          r_buf, T_plan->rcount_proc_f[0], T_plan->MPI_T,
+          T_plan->comm);
+
+  }
+  else if(method==-3){
+    if(T_plan->kway_async)
+      par::Mpi_Alltoallv_dense<T,true>(s_buf     , T_plan->scount_proc_f, T_plan->soffset_proc_f,
+          r_buf, T_plan->rcount_proc_f, T_plan->roffset_proc_f, T_plan->comm,kway);
+    else
+      par::Mpi_Alltoallv_dense<T,false>(s_buf     , T_plan->scount_proc_f, T_plan->soffset_proc_f,
+          r_buf, T_plan->rcount_proc_f, T_plan->roffset_proc_f, T_plan->comm,kway);
+
+  }
+
+  comm_time+=MPI_Wtime();
+
+  ptr=0;
+  if(VERBOSE>=2) PCOUT<<"MPIAlltoAll:"<<std::endl;
+  if(VERBOSE>=2)
+    for(int h=0;h<howmany;h++)
+      for(int id=0;id<nprocs;++id){
+        if(procid==id)
+          for(int i=0;i<local_n1;i++){
+            std::cout<<std::endl;
+            for(int j=0;j<N[0];j++){
+              std::cout<<'\t'<<send_recv[ptr];//send_recv[h*odist+(i*N[0]+j)*n_tuples];//<<","<<send_recv[(i*N[0]+j)*n_tuples+1];
+              ptr+=n_tuples;
+            }
+          }
+        std::cout<<'\n';
+        MPI_Barrier(T_plan->comm);
+      }
+
+  //PCOUT<<" ============================================= "<<std::endl;
+  //PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
+  //PCOUT<<" ============================================= "<<std::endl;
+  reshuffle_time-=MPI_Wtime();
+  ptr=0;
+  //local_transpose(nprocs_1,local_n0,n_tuples*T_plan->local_n0_proc[0], n_tuples*T_plan->last_local_n0,send_recv,data );
+  local_transpose(nprocs_0,local_n1,n_tuples*T_plan->local_n0_proc[0], n_tuples*T_plan->last_local_n0,send_recv,data );
+
+
+  if(VERBOSE>=2) PCOUT<<"2nd Transpose"<<std::endl;
+  if(VERBOSE>=2)
+    for(int h=0;h<howmany;h++)
+      for(int id=0;id<nprocs_1;++id){
+        if(procid==id)
+          for(int i=0;i<local_n1;i++){
+            std::cout<<std::endl;
+            for(int j=0;j<N[0];j++){
+              std::cout<<'\t'<<data[h*odist+(i*N[0]+j)*n_tuples];
+            }
+          }
+        std::cout<<'\n';
+        MPI_Barrier(T_plan->comm);
+      }
+
+
+  reshuffle_time+=MPI_Wtime();
+  MPI_Barrier(T_plan->comm);
+  delete [] request;
+  delete [] s_request;
+
+
+  if(VERBOSE>=1){
+    PCOUT<<"Shuffle Time= "<<shuffle_time<<std::endl;
+    PCOUT<<"Alltoall Time= "<<comm_time<<std::endl;
+    PCOUT<<"Reshuffle Time= "<<reshuffle_time<<std::endl;
+    PCOUT<<"Total Time= "<<(shuffle_time+comm_time+reshuffle_time)<<std::endl;
+  }
+  timings[0]+=MPI_Wtime();//timings[0]+=shuffle_time+comm_time+reshuffle_time;
+  timings[1]+=shuffle_time;
+  timings[2]+=comm_time;
+  timings[3]+=reshuffle_time;
+  return;
+} // end fast_transpose_v1
 
 
 template <typename T>
@@ -844,8 +1300,6 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   int* soffset_proc= T_plan->soffset_proc;
   int* roffset_proc= T_plan->roffset_proc;
 
-  MPI_Datatype *stype=T_plan->stype;
-  MPI_Datatype *rtype=T_plan->rtype;
   MPI_Barrier(T_plan->comm);
 
   //PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
@@ -855,13 +1309,10 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   MPI_Status ierr;
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
-  for (int proc=0;proc<nprocs;++proc){
-    request[proc]=MPI_REQUEST_NULL;
-    s_request[proc]=MPI_REQUEST_NULL;
-  }
   int counter=1;
 
+  s_request[procid]=MPI_REQUEST_NULL;
+  r_request[procid]=MPI_REQUEST_NULL;
   T *s_buf, *r_buf;
   if(Flags[1]==1){
     s_buf=send_recv; r_buf=data;
@@ -885,14 +1336,13 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   roffset=roffset_proc[procid];
   for(int h=0;h<howmany;h++)
     memcpy(&r_buf[h*odist+roffset],&s_buf[h*idist+soffset],sizeof(T)*scount_proc[procid]);
-
-
-  // If the output is to be transposed locally, then everything is done in sendrecv. just copy it
-  // Otherwise you have to perform the copy via the multiple stride transpose
   for (int proc=0;proc<nprocs;++proc){
     MPI_Wait(&request[proc], &ierr);
     MPI_Wait(&s_request[proc], &ierr);
   }
+
+  MPI_Barrier(T_plan->comm);
+
   comm_time+=MPI_Wtime();
 
   ptr=0;
@@ -956,7 +1406,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   timings[2]+=comm_time;
   timings[3]+=reshuffle_time;
   return;
-}
+} // end fast_transpose_v1
 template <typename T>
 void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
@@ -1073,8 +1523,6 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   int* soffset_proc_f= T_plan->soffset_proc_f;
   int* roffset_proc_f= T_plan->roffset_proc_f;
 
-  MPI_Datatype *stype=T_plan->stype;
-  MPI_Datatype *rtype=T_plan->rtype;
   MPI_Barrier(T_plan->comm);
 
   T *s_buf, *r_buf;
@@ -1157,7 +1605,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   timings[2]+=comm_time;
   timings[3]+=reshuffle_time;
   return;
-}
+}// end fast_transpose_v2
 template <typename T>
 void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, unsigned flags, int howmany, int tag ){
 
@@ -1215,150 +1663,145 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
   if(VERBOSE>=1)  PCOUT<<"Performing shuffle ....";
   shuffle_time-=MPI_Wtime();
 
-    if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-      for(int h=0;h<howmany;h++)
-        local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
-    }
-    if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-      for(int h=0;h<howmany;h++)
-        local_transpose(N[0],N[1],n_tuples,&data[h*idist] );
-    }
-    if(nprocs==1){ // Transpose is done!
-      shuffle_time+=MPI_Wtime();
-      timings[0]+=MPI_Wtime();
-      timings[1]+=shuffle_time;
-      timings[2]+=0;
-      timings[3]+=0;
-      MPI_Barrier(T_plan->comm);
-      return;
-    }
-
-    // The idea is this: If The Output is to be transposed, then only one buffer is needed. The algorithm would be:
-    // data --T-> send_recv   ...  send_recv --alltoall--> data
-    // Otherwise buffer2 needs to be used as well:
-    // data --T-> buffer_2    ...  buffer_2 --alltoall--> send_recv ... send_recv -T-> data
-    if(Flags[1]==1){
-      local_transpose_col(local_n0,nprocs_1,n_tuples*T_plan->local_n1_proc[0], n_tuples*T_plan->last_local_n1,data,send_recv );
-    }
-    else if(Flags[0]==0 && Flags[1]==0){
-      local_transpose_col(local_n0,nprocs_1,n_tuples*T_plan->local_n1_proc[0], n_tuples*T_plan->last_local_n1,data,T_plan->buffer_2 );
-    }
-
+  if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
+    for(int h=0;h<howmany;h++)
+      local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
+  }
+  if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
+    for(int h=0;h<howmany;h++)
+      local_transpose(N[0],N[1],n_tuples,&data[h*idist] );
+  }
+  if(nprocs==1){ // Transpose is done!
     shuffle_time+=MPI_Wtime();
-    if(VERBOSE>=1)  PCOUT<<" done\n";
-    ptr=0;
-    if(VERBOSE>=2) PCOUT<<"Local Transpose:"<<std::endl;
-    if(VERBOSE>=2)
-      for(int h=0;h<howmany;h++)
-        for(int id=0;id<nprocs;++id){
-          if(procid==id)
-            for(int i=0;i<N[1];i++){
-              std::cout<<std::endl;
-              for(int j=0;j<local_n0;j++){
-                std::cout<<'\t'<<T_plan->buffer_2[ptr];//data[h*idist+(i*local_n0+j)*n_tuples];
-                ptr+=n_tuples;
-              }
-            }
-          std::cout<<'\n';
-          MPI_Barrier(T_plan->comm);
-        }
-
-    //PCOUT<<" ============================================= "<<std::endl;
-    //PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
-    //PCOUT<<" ============================================= "<<std::endl;
-    int* scount_proc_f=  T_plan->scount_proc_f;
-    int* rcount_proc_f=  T_plan->rcount_proc_f;
-    int* soffset_proc_f= T_plan->soffset_proc_f;
-    int* roffset_proc_f= T_plan->roffset_proc_f;
-
-    MPI_Datatype *stype=T_plan->stype;
-    MPI_Datatype *rtype=T_plan->rtype;
-
-    MPI_Barrier(T_plan->comm);
-    T *s_buf, *r_buf;
-    if(Flags[1]==1){
-      s_buf=send_recv; r_buf=data;
-    }
-    else if(Flags[0]==0 && Flags[1]==0){
-      s_buf=buffer_2; r_buf=send_recv;
-    }
-    //PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
-    if(VERBOSE>=1)  PCOUT<<"Performing alltoall ....";
-    comm_time-=MPI_Wtime();
-    if(1){
-      if(T_plan->kway_async)
-        par::Mpi_Alltoallv_dense<T,true>(s_buf     , scount_proc_f, soffset_proc_f,
-            r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
-      else
-        par::Mpi_Alltoallv_dense<T,false>(s_buf     , scount_proc_f, soffset_proc_f,
-            r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
-
-    }
-    comm_time+=MPI_Wtime();
-    if(VERBOSE>=1)  PCOUT<<"done\n";
-
-    ptr=0;
-    if(VERBOSE>=2) PCOUT<<"MPIAlltoAll:"<<std::endl;
-    if(VERBOSE>=2)
-      for(int h=0;h<howmany;h++)
-        for(int id=0;id<nprocs;++id){
-          if(procid==id)
-            for(int i=0;i<local_n1;i++){
-              std::cout<<std::endl;
-              for(int j=0;j<N[0];j++){
-                std::cout<<'\t'<<send_recv[ptr];//send_recv[h*odist+(i*N[0]+j)*n_tuples];//<<","<<send_recv[(i*N[0]+j)*n_tuples+1];
-                ptr+=n_tuples;
-              }
-            }
-          std::cout<<'\n';
-          MPI_Barrier(T_plan->comm);
-        }
-
-    //PCOUT<<" ============================================= "<<std::endl;
-    //PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
-    //PCOUT<<" ============================================= "<<std::endl;
-    if(VERBOSE>=1)  PCOUT<<"Performing reshuffle ....";
-    reshuffle_time-=MPI_Wtime();
-    ptr=0;
-    if(Flags[1]==0)
-      local_transpose(N[0],local_n1,n_tuples,send_recv,data );
-
-
-
-
-    if(VERBOSE>=2) PCOUT<<"2nd Transpose"<<std::endl;
-    if(VERBOSE>=2)
-      for(int h=0;h<howmany;h++)
-        for(int id=0;id<nprocs_1;++id){
-          if(procid==id)
-            for(int i=0;i<local_n1;i++){
-              std::cout<<std::endl;
-              for(int j=0;j<N[0];j++){
-                std::cout<<'\t'<<data[h*odist+(i*N[0]+j)*n_tuples];
-              }
-            }
-          std::cout<<'\n';
-          MPI_Barrier(T_plan->comm);
-        }
-
-
-    reshuffle_time+=MPI_Wtime();
-    if(VERBOSE>=1)  PCOUT<<" done\n";
-    MPI_Barrier(T_plan->comm);
-
-
-    if(VERBOSE>=1){
-      PCOUT<<"Shuffle Time= "<<shuffle_time<<std::endl;
-      PCOUT<<"Alltoall Time= "<<comm_time<<std::endl;
-      PCOUT<<"Reshuffle Time= "<<reshuffle_time<<std::endl;
-      PCOUT<<"Total Time= "<<(shuffle_time+comm_time+reshuffle_time)<<std::endl;
-    }
-    timings[0]+=MPI_Wtime();//timings[0]+=shuffle_time+comm_time+reshuffle_time;
+    timings[0]+=MPI_Wtime();
     timings[1]+=shuffle_time;
-    timings[2]+=comm_time;
-    timings[3]+=reshuffle_time;
+    timings[2]+=0;
+    timings[3]+=0;
+    MPI_Barrier(T_plan->comm);
     return;
-}
+  }
+
+  // The idea is this: If The Output is to be transposed, then only one buffer is needed. The algorithm would be:
+  // data --T-> send_recv   ...  send_recv --alltoall--> data
+  // Otherwise buffer2 needs to be used as well:
+  // data --T-> buffer_2    ...  buffer_2 --alltoall--> send_recv ... send_recv -T-> data
+  if(Flags[1]==1){
+    local_transpose_col(local_n0,nprocs_1,n_tuples*T_plan->local_n1_proc[0], n_tuples*T_plan->last_local_n1,data,send_recv );
+  }
+  else if(Flags[0]==0 && Flags[1]==0){
+    local_transpose_col(local_n0,nprocs_1,n_tuples*T_plan->local_n1_proc[0], n_tuples*T_plan->last_local_n1,data,T_plan->buffer_2 );
+  }
+
+  shuffle_time+=MPI_Wtime();
+  if(VERBOSE>=1)  PCOUT<<" done\n";
+  ptr=0;
+  if(VERBOSE>=2) PCOUT<<"Local Transpose:"<<std::endl;
+  if(VERBOSE>=2)
+    for(int h=0;h<howmany;h++)
+      for(int id=0;id<nprocs;++id){
+        if(procid==id)
+          for(int i=0;i<N[1];i++){
+            std::cout<<std::endl;
+            for(int j=0;j<local_n0;j++){
+              std::cout<<'\t'<<T_plan->buffer_2[ptr];//data[h*idist+(i*local_n0+j)*n_tuples];
+              ptr+=n_tuples;
+            }
+          }
+        std::cout<<'\n';
+        MPI_Barrier(T_plan->comm);
+      }
+
+  //PCOUT<<" ============================================= "<<std::endl;
+  //PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
+  //PCOUT<<" ============================================= "<<std::endl;
+  int* scount_proc_f=  T_plan->scount_proc_f;
+  int* rcount_proc_f=  T_plan->rcount_proc_f;
+  int* soffset_proc_f= T_plan->soffset_proc_f;
+  int* roffset_proc_f= T_plan->roffset_proc_f;
+
+
+  MPI_Barrier(T_plan->comm);
+  T *s_buf, *r_buf;
+  if(Flags[1]==1){
+    s_buf=send_recv; r_buf=data;
+  }
+  else if(Flags[0]==0 && Flags[1]==0){
+    s_buf=buffer_2; r_buf=send_recv;
+  }
+  //PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
+  if(VERBOSE>=1)  PCOUT<<"Performing alltoall ....";
+  comm_time-=MPI_Wtime();
+  if(T_plan->kway_async)
+    par::Mpi_Alltoallv_dense<T,true>(s_buf     , scount_proc_f, soffset_proc_f,
+        r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
+  else
+    par::Mpi_Alltoallv_dense<T,false>(s_buf     , scount_proc_f, soffset_proc_f,
+        r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm,kway);
+  comm_time+=MPI_Wtime();
+  if(VERBOSE>=1)  PCOUT<<"done\n";
+
+  ptr=0;
+  if(VERBOSE>=2) PCOUT<<"MPIAlltoAll:"<<std::endl;
+  if(VERBOSE>=2)
+    for(int h=0;h<howmany;h++)
+      for(int id=0;id<nprocs;++id){
+        if(procid==id)
+          for(int i=0;i<local_n1;i++){
+            std::cout<<std::endl;
+            for(int j=0;j<N[0];j++){
+              std::cout<<'\t'<<send_recv[ptr];//send_recv[h*odist+(i*N[0]+j)*n_tuples];//<<","<<send_recv[(i*N[0]+j)*n_tuples+1];
+              ptr+=n_tuples;
+            }
+          }
+        std::cout<<'\n';
+        MPI_Barrier(T_plan->comm);
+      }
+
+  //PCOUT<<" ============================================= "<<std::endl;
+  //PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
+  //PCOUT<<" ============================================= "<<std::endl;
+  if(VERBOSE>=1)  PCOUT<<"Performing reshuffle ....";
+  reshuffle_time-=MPI_Wtime();
+  ptr=0;
+  if(Flags[1]==0)
+    local_transpose(N[0],local_n1,n_tuples,send_recv,data );
+
+
+
+
+  if(VERBOSE>=2) PCOUT<<"2nd Transpose"<<std::endl;
+  if(VERBOSE>=2)
+    for(int h=0;h<howmany;h++)
+      for(int id=0;id<nprocs_1;++id){
+        if(procid==id)
+          for(int i=0;i<local_n1;i++){
+            std::cout<<std::endl;
+            for(int j=0;j<N[0];j++){
+              std::cout<<'\t'<<data[h*odist+(i*N[0]+j)*n_tuples];
+            }
+          }
+        std::cout<<'\n';
+        MPI_Barrier(T_plan->comm);
+      }
+
+
+  reshuffle_time+=MPI_Wtime();
+  if(VERBOSE>=1)  PCOUT<<" done\n";
+  MPI_Barrier(T_plan->comm);
+
+
+  if(VERBOSE>=1){
+    PCOUT<<"Shuffle Time= "<<shuffle_time<<std::endl;
+    PCOUT<<"Alltoall Time= "<<comm_time<<std::endl;
+    PCOUT<<"Reshuffle Time= "<<reshuffle_time<<std::endl;
+    PCOUT<<"Total Time= "<<(shuffle_time+comm_time+reshuffle_time)<<std::endl;
+  }
+  timings[0]+=MPI_Wtime();//timings[0]+=shuffle_time+comm_time+reshuffle_time;
+  timings[1]+=shuffle_time;
+  timings[2]+=comm_time;
+  timings[3]+=reshuffle_time;
+  return;
+}// end fast_transpose_v3
 
 template <typename T>
 void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
@@ -1456,7 +1899,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
         //  ptr+=n_tuples;
         //}
         memcpy(&buffer_2[ptr],&data[h*idist+(i*N[1]+local_1_start_proc[proc])*n_tuples],sizeof(T)*n_tuples*local_n1_proc[proc]);
-        ptr+=n_tuples*local_n1_proc[proc];
+        ptr+=n_tuples*local_n1_proc[proc]; // pointer is going contiguous along buffer_2
       }
     }
 
@@ -1498,11 +1941,8 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   MPI_Status ierr;
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
-  for (int proc=0;proc<nprocs;++proc){
-    request[proc]=MPI_REQUEST_NULL;
-    s_request[proc]=MPI_REQUEST_NULL;
-  }
+  s_request[procid]=MPI_REQUEST_NULL;
+  r_request[procid]=MPI_REQUEST_NULL;
   int counter=1;
 
   T *s_buf, *r_buf;
@@ -1523,8 +1963,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   memcpy(&r_buf[roffset*howmany],&s_buf[soffset*howmany],howmany*sizeof(T)*scount_proc[procid]);
 
 
-  // If the output is to be transposed locally, then everything is done in sendrecv. just copy it
-  // Otherwise you have to perform the copy via the multiple stride transpose
   for (int proc=0;proc<nprocs;++proc){
     MPI_Wait(&request[proc], &ierr);
     MPI_Wait(&s_request[proc], &ierr);
@@ -1556,16 +1994,19 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   //memset(data,0,T_plan->alloc_local);
   for (int proc=0;proc<nprocs_0;++proc)
     for(int h=0;h<howmany;++h){
-      for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-        memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
-        //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
-        ptr+=n_tuples*local_n1;
-        //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-        //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
-        //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
-        //  ptr+=n_tuples;
-        //}
-      }
+      //for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
+      //  memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
+      //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
+      //  ptr+=n_tuples*local_n1;
+      //  //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
+      //  //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
+      //  //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
+      //  //  ptr+=n_tuples;
+      //  //}
+      //}
+      memcpy(&data[h*odist+local_0_start_proc[proc]*local_n1*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples*local_n0_proc[proc]);
+      ptr+=n_tuples*local_n1*local_n0_proc[proc];
+
     }
 
   // Right now the data is in transposed out format.
@@ -1610,7 +2051,8 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   timings[2]+=comm_time;
   timings[3]+=reshuffle_time;
   return;
-}
+}// end fast_transpose_v1_h
+
 template <typename T>
 void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
@@ -1789,15 +2231,17 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   ptr=0;
   for (int proc=0;proc<nprocs_0;++proc)
     for(int h=0;h<howmany;++h){
-      for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-        memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
-        ptr+=n_tuples*local_n1;
-        //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-        //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
-        //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
-        //  ptr+=n_tuples;
-        //}
-      }
+      //for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
+      //  memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
+      //  ptr+=n_tuples*local_n1;
+      //  //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
+      //  //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
+      //  //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
+      //  //  ptr+=n_tuples;
+      //  //}
+      //}
+      memcpy(&data[h*odist+local_0_start_proc[proc]*local_n1*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples*local_n0_proc[proc]);
+      ptr+=n_tuples*local_n1*local_n0_proc[proc];
     }
 
   // Right now the data is in transposed out format.
@@ -1841,7 +2285,8 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   timings[2]+=comm_time;
   timings[3]+=reshuffle_time;
   return;
-}
+}// end fast_transpose_v2_h
+
 template <typename T>
 void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany, int tag ){
 
@@ -2018,15 +2463,17 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   ptr=0;
   for (int proc=0;proc<nprocs_0;++proc)
     for(int h=0;h<howmany;++h){
-      for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-        memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
-        ptr+=n_tuples*local_n1;
-        //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-        //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
-        //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
-        //  ptr+=n_tuples;
-        //}
-      }
+      //for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
+      //  memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
+      //  ptr+=n_tuples*local_n1;
+      //  //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
+      //  //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
+      //  //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
+      //  //  ptr+=n_tuples;
+      //  //}
+      //}
+      memcpy(&data[h*odist+local_0_start_proc[proc]*local_n1*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples*local_n0_proc[proc]);
+      ptr+=n_tuples*local_n1*local_n0_proc[proc];
     }
 
   // Right now the data is in transposed out format.
@@ -2070,7 +2517,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   timings[2]+=comm_time;
   timings[3]+=reshuffle_time;
   return;
-}
+}// end fast_transpose_v3_h
 
 template <typename T>
 void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
@@ -2178,11 +2625,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   MPI_Status ierr;
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
-  for (int proc=0;proc<nprocs;++proc){
-    request[proc]=MPI_REQUEST_NULL;
-    s_request[proc]=MPI_REQUEST_NULL;
-  }
 
   // SEND
   for (int proc=0;proc<nprocs;++proc){
@@ -2208,8 +2650,10 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   }
 
   for (int proc=0;proc<nprocs;++proc){
-    MPI_Wait(&request[proc], &ierr);
-    MPI_Wait(&s_request[proc], &ierr);
+    if(proc!=procid){
+      MPI_Wait(&request[proc], &ierr);
+      MPI_Wait(&s_request[proc], &ierr);
+    }
   }
   comm_time+=MPI_Wtime();
 
@@ -2315,7 +2759,8 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   timings[2]+=comm_time;
   timings[3]+=reshuffle_time;
   return;
-}
+}// end fast_transpose_v5
+
 template <typename T>
 void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, int howmany ){
 
@@ -2529,7 +2974,8 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   timings[2]+=comm_time;
   timings[3]+=reshuffle_time;
   return;
-}
+}// end fast_transpose_v6
+
 template <typename T>
 void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings,int kway, unsigned flags, int howmany ){
   std::bitset<8> Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -2705,8 +3151,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings,int kway, unsigne
   timings[2]+=comm_time;
   timings[3]+=reshuffle_time;
   return;
-}
-
+}// end fast_transpose_v7
 template <typename T>
 void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, int howmany, int tag ){
 
@@ -2811,20 +3256,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
 
   MPI_Datatype* stype=T_plan->stype_v8;
   MPI_Datatype* rtype=T_plan->rtype_v8;
-  if(0)
-    for(int proc=0;proc<nprocs;proc++){
-      if(procid==proc){
-        std::cout<<std::endl;
-        std::cout<<"proc= "<<proc<<" l_n0= "<<local_n0<<" l_n1= "<<local_n1<<std::endl;
-        for (int i=0;i<nprocs;i++){
-          std::cout<<" sc["<<i<<"]= "<<scount_proc[i];
-          std::cout<<" so["<<i<<"]= "<<soffset_proc[i]<<std::endl;
-        }
-        std::cout<<std::endl;
-        std::cout<<std::endl;
-      }
-      MPI_Barrier(T_plan->comm);
-    }
   MPI_Barrier(T_plan->comm);
   comm_time-=MPI_Wtime();
 
@@ -2832,11 +3263,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   MPI_Status ierr;
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
-  for (int proc=0;proc<nprocs;++proc){
-    request[proc]=MPI_REQUEST_NULL;
-    s_request[proc]=MPI_REQUEST_NULL;
-  }
 
   // SEND
   for (int proc=0;proc<nprocs;++proc){
@@ -2927,8 +3353,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   timings[2]+=comm_time;
   timings[3]+=reshuffle_time;
   return;
-}
-
+}// end fast_transpose_v8
 
 
 template class T_Plan<double>;

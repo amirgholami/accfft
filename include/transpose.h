@@ -89,6 +89,7 @@ class T_Plan{
 
     int last_recv_count;
     int last_local_n1; //the last non zero local_n1
+    int last_local_n0; //the last non zero local_n0
 
     int procid,nprocs;// note that nprocs is for col or row comms
     int nprocs_0; // number of effective processes involved in the starting phase
@@ -133,4 +134,6 @@ template<typename T> void fast_transpose_v1_h (T_Plan<T>* T_plan, T * inout, dou
 template<typename T> void fast_transpose_v2_h (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v3_h (T_Plan<T>* T_plan, T * inout, double *timings, int kway,unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 
+template<typename T> void fast_transpose_v_i   (T_Plan<T>* T_plan, T * inout, double *timings,int kway=2, unsigned flags=0,int howmany=1, int tag=0, int method=-1 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v_hi   (T_Plan<T>* T_plan, T * inout, double *timings,int kway=2, unsigned flags=0,int howmany=1, int tag=0, int method=-1 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 #endif
