@@ -1312,7 +1312,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   int counter=1;
 
   s_request[procid]=MPI_REQUEST_NULL;
-  r_request[procid]=MPI_REQUEST_NULL;
+  request[procid]=MPI_REQUEST_NULL;
   T *s_buf, *r_buf;
   if(Flags[1]==1){
     s_buf=send_recv; r_buf=data;
@@ -1942,7 +1942,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
   s_request[procid]=MPI_REQUEST_NULL;
-  r_request[procid]=MPI_REQUEST_NULL;
+  request[procid]=MPI_REQUEST_NULL;
   int counter=1;
 
   T *s_buf, *r_buf;
