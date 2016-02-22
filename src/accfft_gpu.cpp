@@ -315,10 +315,7 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
 
-    plan->T_plan_2->method =plan->T_plan_2->method;
-    plan->T_plan_2i->method=plan->T_plan_2->method;
-
-    plan->T_plan_2->kway =plan->T_plan_2->kway;
+    plan->T_plan_2i->method=-plan->T_plan_2->method;
     plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
 
@@ -351,9 +348,9 @@ accfft_plan_gpu*  accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d, double * 
         plan->T_plan_2->method=2;
         plan->T_plan_2->kway=2;
     }
-    plan->T_plan_1i->method=plan->T_plan_1->method;
+    plan->T_plan_1i->method=-plan->T_plan_1->method;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
-    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->method=-plan->T_plan_2->method;
     plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
     plan->iplan_1=-1;
@@ -795,10 +792,7 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
     checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
 
-    plan->T_plan_2->method =plan->T_plan_2->method;
-    plan->T_plan_2i->method=plan->T_plan_2->method;
-
-    plan->T_plan_2->kway =plan->T_plan_2->kway;
+    plan->T_plan_2i->method=-plan->T_plan_2->method;
     plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
 
@@ -835,9 +829,9 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
       plan->T_plan_2->method=2;
       plan->T_plan_2->kway=2;
     }
-    plan->T_plan_1i->method=plan->T_plan_1->method;
+    plan->T_plan_1i->method=-plan->T_plan_1->method;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
-    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->method=-plan->T_plan_2->method;
     plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
   }

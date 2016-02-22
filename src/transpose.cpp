@@ -810,7 +810,6 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
     }
   shuffle_time+=MPI_Wtime();
 
-  PCOUT<<"nprocs_0="<<nprocs_0<<std::endl;
   ptr=0;
   if(VERBOSE>=2) PCOUT<<"Local Transpose:"<<std::endl;
   if(VERBOSE>=2)

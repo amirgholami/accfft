@@ -288,7 +288,7 @@ accfft_planf*  accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out, 
       plan->T_plan_2->method=2;
       plan->T_plan_2->kway=2;
     }
-    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->method=-plan->T_plan_2->method;
     plan->T_plan_2i->kway=plan->T_plan_2->kway;
     plan->data=data;
 
@@ -320,9 +320,9 @@ accfft_planf*  accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out, 
         plan->T_plan_2->method=2;
         plan->T_plan_2->kway=2;
     }
-    plan->T_plan_1i->method=plan->T_plan_1->method;
+    plan->T_plan_1i->method=-plan->T_plan_1->method;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
-    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->method=-plan->T_plan_2->method;
     plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
     plan->data=data;
@@ -703,9 +703,9 @@ accfft_planf*  accfft_plan_dft_3d_c2cf(int * n, Complexf * data, Complexf * data
         plan->T_plan_2->method=2;
         plan->T_plan_2->kway=2;
     }
-    plan->T_plan_1i->method=plan->T_plan_1->method;
+    plan->T_plan_1i->method=-plan->T_plan_1->method;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
-    plan->T_plan_2i->method=plan->T_plan_2->method;
+    plan->T_plan_2i->method=-plan->T_plan_2->method;
     plan->T_plan_2i->kway=plan->T_plan_2->kway;
 
   } // end 2D Decomp c2c
