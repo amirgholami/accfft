@@ -28,6 +28,8 @@ template <typename Tc>
 void grad_mult_wave_numberz_gpu(Tc* wA, Tc* A, int* N, int * osize, int * ostart, std::bitset<3> xyz);
 template <typename Tc>
 void laplace_mult_wave_number_gpu(Tc* wA, Tc* A, int* N, int * osize, int * ostart);
+template <typename Tc>
+void biharmonic_mult_wave_number_gpu(Tc* wA, Tc* A, int* N, int * osize, int * ostart);
 template <typename T>
 void daxpy_gpu(const long long int n, const T alpha, T* x, T* y);
 
@@ -37,12 +39,14 @@ void grad_mult_wave_numberx_gpu_c(Complex* wA, Complex* A, int*n, int * osize, i
 void grad_mult_wave_numbery_gpu_c(Complex* wA, Complex* A, int*n, int * osize, int * ostart, std::bitset<3> xyz);
 void grad_mult_wave_numberz_gpu_c(Complex* wA, Complex* A, int*n, int * osize, int * ostart, std::bitset<3> xyz);
 void laplace_mult_wave_number_gpu_c(Complex* wA, Complex* A, int*n, int * osize, int * ostart);
+void biharmonic_mult_wave_number_gpu_c(Complex* wA, Complex* A, int*n, int * osize, int * ostart);
 void daxpy_gpu_c(const long long int n, const double alpha, double *x, double* y);
 /* Single Precision */
 void grad_mult_wave_numberx_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart, std::bitset<3> xyz);
 void grad_mult_wave_numbery_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart, std::bitset<3> xyz);
 void grad_mult_wave_numberz_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart, std::bitset<3> xyz);
 void laplace_mult_wave_number_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart);
+void biharmonic_mult_wave_number_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart);
 void daxpy_gpu_cf(const long long int n, const float alpha, float *x, float* y);
 }
 
@@ -58,6 +62,9 @@ template <> void grad_mult_wave_numberz_gpu<Complex>(Complex* wA, Complex* A, in
 }
 template <> void laplace_mult_wave_number_gpu<Complex>(Complex* wA, Complex* A, int* N, int * osize, int * ostart){
   laplace_mult_wave_number_gpu_c(wA, A, N, osize,ostart);
+}
+template <> void biharmonic_mult_wave_number_gpu<Complex>(Complex* wA, Complex* A, int* N, int * osize, int * ostart){
+  biharmonic_mult_wave_number_gpu_c(wA, A, N, osize,ostart);
 }
 template <> void daxpy_gpu<double>(const long long int n, const double alpha, double* x, double* y){
   daxpy_gpu_c(n,alpha,x,y);
@@ -75,6 +82,9 @@ template <> void grad_mult_wave_numberz_gpu<Complexf>(Complexf* wA, Complexf* A,
 }
 template <> void laplace_mult_wave_number_gpu<Complexf>(Complexf* wA, Complexf* A, int* N, int * osize, int * ostart){
   laplace_mult_wave_number_gpu_cf(wA, A, N, osize,ostart);
+}
+template <> void biharmonic_mult_wave_number_gpu<Complexf>(Complexf* wA, Complexf* A, int* N, int * osize, int * ostart){
+  biharmonic_mult_wave_number_gpu_cf(wA, A, N, osize,ostart);
 }
 template <> void daxpy_gpu<float>(const long long int n, const float alpha, float* x, float* y){
   daxpy_gpu_cf(n,alpha,x,y);
@@ -325,6 +335,60 @@ void accfft_divergence_gpu_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double*
 	return;
 }
 
+template <typename T,typename Tp>
+void accfft_biharmonic_gpu_t(T* LA, T* A, Tp* plan, double* timer){
+  typedef T Tc[2];
+	int procid;
+  MPI_Comm c_comm=plan->c_comm;
+  MPI_Comm_rank(c_comm,&procid);
+  if(!plan->r2c_plan_baked){
+    PCOUT<<"Error in accfft_grad! plan is not correctly made."<<std::endl;
+    return;
+  }
+
+  double * timings;
+  if(timer==NULL){
+    timings=new double[5];
+    memset(timings,0,sizeof(double)*5);
+  }
+  else{
+    timings=timer;
+  }
+
+	double self_exec_time= - MPI_Wtime();
+  int *N=plan->N;
+
+  int isize[3],osize[3],istart[3],ostart[3];
+  long long int alloc_max;
+  /* Get the local pencil size and the allocation size */
+  alloc_max=accfft_local_size_dft_r2c_gpu_t<T>(N,isize,istart,osize,ostart,c_comm);
+
+  Tc* A_hat;//=(Tc*) accfft_alloc(alloc_max);
+  Tc* tmp  ;//=(Tc*) accfft_alloc(alloc_max);
+  cudaMalloc((void**) &A_hat, alloc_max);
+  cudaMalloc((void**) &tmp, alloc_max);
+	MPI_Barrier(c_comm);
+
+	/* Forward transform */
+  accfft_execute_r2c_gpu_t<T,Tc>(plan,A,A_hat,timings);
+
+  /* Multiply x Wave Numbers */
+  biharmonic_mult_wave_number_gpu<Tc>(tmp,A_hat, N,osize,ostart);
+  MPI_Barrier(c_comm);
+
+  /* Backward transform */
+  accfft_execute_c2r_gpu_t<Tc,T>(plan,tmp,LA,timings);
+
+  cudaFree(A_hat);
+  cudaFree(tmp);
+
+  self_exec_time+= MPI_Wtime();
+
+  if(timer==NULL){
+    delete [] timings;
+  }
+  return;
+}
 
 
 

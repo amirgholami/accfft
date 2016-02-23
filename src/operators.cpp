@@ -36,9 +36,11 @@ template void grad_mult_wave_numberx<Complex>(Complex* wA, Complex* A, int* N,MP
 template void grad_mult_wave_numbery<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
 template void grad_mult_wave_numberz<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
 template void grad_mult_wave_number_laplace<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm );
+template void biharmonic_mult_wave_number<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm );
 
 template void accfft_grad_t<double,accfft_plan>(double * A_x, double *A_y, double *A_z,double *A,accfft_plan *plan, std::bitset<3>* pXYZ, double* timer);
 template void accfft_laplace_t<double,accfft_plan>(double * LA,double *A,accfft_plan *plan, double* timer);
+template void accfft_biharmonic_t<double,accfft_plan>(double * LA,double *A,accfft_plan *plan, double* timer);
 template void accfft_divergence_t<double,accfft_plan>(double* divA, double * A_x, double *A_y, double *A_z,accfft_plan *plan, double* timer);
 
 
@@ -86,6 +88,18 @@ void accfft_divergence(double* divA, double * A_x, double *A_y, double *A_z,accf
   accfft_divergence_t<double,accfft_plan>(divA, A_x, A_y, A_z, plan, timer);
 }
 
+
+/**
+ * Computes double precision biharmonic of its input real data A,
+ * and writes the output into LA.
+ * @param BA  \f$\Delta^2 A\f$
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c. Must be an outplace plan, otherwise the function will return
+ * without computing the gradient.
+ * @param timer See \ref timer for more details.
+ */
+void accfft_biharmonic(double * BA,double *A,accfft_plan *plan, double* timer){
+  accfft_biharmonic_t<double,accfft_plan>(BA,A,plan,timer);
+}
 
 
 #include <pnetcdf.h>

@@ -36,6 +36,7 @@
 template void accfft_grad_gpu_t<double,accfft_plan_gpu>(double * A_x, double *A_y, double *A_z,double *A,accfft_plan_gpu *plan, std::bitset<3>* pXYZ, double* timer);
 template void accfft_laplace_gpu_t<double,accfft_plan_gpu>(double * LA,double *A,accfft_plan_gpu *plan, double* timer);
 template void accfft_divergence_gpu_t<double,accfft_plan_gpu>(double* divA, double * A_x, double *A_y, double *A_z,accfft_plan_gpu *plan, double* timer);
+template void accfft_biharmonic_gpu_t<double,accfft_plan_gpu>(double * LA,double *A,accfft_plan_gpu *plan, double* timer);
 
 
 
@@ -84,4 +85,17 @@ void accfft_laplace_gpu(double * LA,double *A,accfft_plan_gpu *plan, double* tim
  */
 void accfft_divergence_gpu(double* divA, double * A_x, double *A_y, double *A_z,accfft_plan_gpu *plan, double* timer){
   accfft_divergence_gpu_t<double,accfft_plan_gpu>(divA, A_x, A_y, A_z, plan, timer);
+}
+
+/**
+ * Computes double precision Biharmonic of its input real data A,
+ * and writes the output into LA.
+ * All the arrays must reside in the device (i.e. GPU) and must have been allocated with proper size using cudaMalloc.
+ * @param BA  \f$\Delta A\f$
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c_gpu. Must be an outplace plan, otherwise the function will return
+ * without computing the gradient.
+ * @param timer See \ref timer for more details.
+ */
+void accfft_biharmonic_gpu(double * BA,double *A,accfft_plan_gpu *plan, double* timer){
+  accfft_biharmonic_gpu_t<double,accfft_plan_gpu>(BA,A,plan,timer);
 }

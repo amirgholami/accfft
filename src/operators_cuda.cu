@@ -161,6 +161,54 @@ __global__ void laplace_mult_wave_number_cu(Tc* wA, Tc* A, int* N, int* osize, i
   return;
 } // end grad_mult_wave_numberx_cu
 
+template <typename Tc>
+__global__ void biharmonic_mult_wave_number_cu(Tc* wA, Tc* A, int* N, int* osize, int * ostart, double scale ){
+  unsigned int i = blockDim.x * blockIdx.x + threadIdx.x;
+  unsigned int j = blockDim.y * blockIdx.y + threadIdx.y;
+  unsigned int k = blockDim.z * blockIdx.z + threadIdx.z;
+
+  if(i>=osize[0]) return;
+  if(j>=osize[1]) return;
+  if(k>=osize[2]) return;
+
+  {
+    long int X,Y,Z,wx,wy,wz,wave;
+    long int ptr;
+    X=(i+ostart[0]);
+    Y=(j+ostart[1]);
+    Z=(k+ostart[2]);
+
+    wx=X;
+    wy=Y;
+    wz=Z;
+
+    if(X>N[0]/2)
+      wx-=N[0];
+    if(X==N[0]/2)
+      wx=0;
+
+    if(Y>N[1]/2)
+      wy-=N[1];
+    if(Y==N[1]/2)
+      wy=0;
+
+    if(Z>N[2]/2)
+      wz-=N[2];
+    if(Z==N[2]/2)
+      wz=0;
+
+    wave=-wx*wx-wy*wy-wz*wz;
+    wave*=wave;
+
+    ptr=(i*osize[1]+j)*osize[2]+k;
+    wA[ptr][0] = scale*wave*A[ptr][0];
+    wA[ptr][1] = scale*wave*A[ptr][1];
+  }
+
+
+  return;
+} // end grad_mult_wave_numberx_cu
+
 template <typename T>
 __global__ void daxpy_cu(const long long int n,const T  alpha, T* x, T* y){
   // BLAS SAXPY( n, alpha, x, incx, y, incy )
@@ -322,6 +370,43 @@ void laplace_mult_wave_number_gpu_(Tc* wA, Tc* A, int* N, int * osize, int * ost
 } // end grad_mult_wave_numberx_gpu
 //template __global__ void grad_mult_wave_nunmberx_cu<Complex>(Complex* wA, Complex* A, int* N, int* osize, int * ostart, double scale );
 
+template <typename Tc>
+void biharmonic_mult_wave_number_gpu_(Tc* wA, Tc* A, int* N, int * osize, int * ostart) {
+
+  double scale=1;
+  scale*=N[0];
+  scale*=N[1];
+  scale*=N[2];
+  scale=1./scale;
+
+  // corresponding GPU sizes
+  int * n_gpu, *osize_gpu, *ostart_gpu;
+  cudaMalloc((void**) &n_gpu,3*sizeof(int));
+  cudaMalloc((void**) &osize_gpu,3*sizeof(int));
+  cudaMalloc((void**) &ostart_gpu,3*sizeof(int));
+
+  // Copy the sizes to GPU
+  cudaMemcpy(n_gpu, N, 3*sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(osize_gpu, osize, 3*sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(ostart_gpu, ostart, 3*sizeof(int), cudaMemcpyHostToDevice);
+
+
+
+  int blocksInX = std::ceil(N[0]/4.);
+  int blocksInY = std::ceil(N[1]/4.);
+  int blocksInZ = std::ceil(N[2]/4.);
+
+  dim3 Dg(blocksInX, blocksInY, blocksInZ);
+  dim3 Db(4, 4, 4);
+  biharmonic_mult_wave_number_cu<<<Dg, Db>>>(wA, A,n_gpu,osize_gpu,ostart_gpu,scale);
+  cudaDeviceSynchronize();
+
+  cudaFree(n_gpu);
+  cudaFree(osize_gpu);
+  cudaFree(ostart_gpu);
+  return;
+} // end grad_mult_wave_numberx_gpu
+
 template <typename T>
 void daxpy_gpu_(const long long int n, const T alpha, T* x, T* y){
   // corresponding GPU sizes
@@ -355,6 +440,10 @@ void laplace_mult_wave_number_gpu_c(Complex* wA, Complex* A, int*n, int * osize,
   laplace_mult_wave_number_gpu_(wA, A, n, osize,ostart);
   return;
 }
+void biharmonic_mult_wave_number_gpu_c(Complex* wA, Complex* A, int*n, int * osize, int * ostart){
+  biharmonic_mult_wave_number_gpu_(wA, A, n, osize,ostart);
+  return;
+}
 void daxpy_gpu_c(const long long int n, const double alpha, double *x, double* y){
   daxpy_gpu_(n,alpha,x,y);
   return;
@@ -375,6 +464,10 @@ void grad_mult_wave_numberz_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize
 }
 void laplace_mult_wave_number_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart){
   laplace_mult_wave_number_gpu_(wA, A, n, osize,ostart);
+  return;
+}
+void biharmonic_mult_wave_number_gpu_cf(Complexf* wA, Complexf* A, int*n, int * osize, int * ostart){
+  biharmonic_mult_wave_number_gpu_(wA, A, n, osize,ostart);
   return;
 }
 void daxpy_gpu_cf(const long long int n, const float alpha, float* x, float* y){

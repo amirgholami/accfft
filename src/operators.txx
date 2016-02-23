@@ -213,6 +213,61 @@ static void grad_mult_wave_number_laplace(Tc* wA, Tc* A, int* N,MPI_Comm c_comm 
   return;
 }
 
+template <typename Tc>
+static void biharmonic_mult_wave_number(Tc* wA, Tc* A, int* N,MPI_Comm c_comm ){
+
+	int procid;
+	MPI_Comm_rank(c_comm,&procid);
+	const double scale=1./(N[0]*N[1]*N[2]);
+
+  int istart[3], isize[3], osize[3],ostart[3];
+  accfft_local_size_dft_r2c_t<Tc>(N,isize,istart,osize,ostart,c_comm);
+
+#pragma omp parallel
+  {
+    long int X,Y,Z,wx,wy,wz,wave;
+    long int ptr;
+#pragma omp for
+    for (int i=0; i<osize[0]; i++){
+      for (int j=0; j<osize[1]; j++){
+        for (int k=0; k<osize[2]; k++){
+          X=(i+ostart[0]);
+          Y=(j+ostart[1]);
+          Z=(k+ostart[2]);
+
+          wx=X;
+          wy=Y;
+          wz=Z;
+
+          if(X>N[0]/2)
+            wx-=N[0];
+          if(X==N[0]/2)
+            wx=0;
+
+          if(Y>N[1]/2)
+            wy-=N[1];
+          if(Y==N[1]/2)
+            wy=0;
+
+          if(Z>N[2]/2)
+            wz-=N[2];
+          if(Z==N[2]/2)
+            wz=0;
+
+          wave=-wx*wx-wy*wy-wz*wz;
+          wave*=wave;
+
+          ptr=(i*osize[1]+j)*osize[2]+k;
+          wA[ptr][0] = scale*wave*A[ptr][0];
+          wA[ptr][1] = scale*wave*A[ptr][1];
+        }
+      }
+    }
+  }
+
+  return;
+}
+
 template <typename T, typename Tp>
 void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A,Tp* plan, std::bitset<3>* pXYZ, double* timer){
   typedef T Tc[2];
@@ -348,7 +403,6 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer){
   return;
 }
 
-
 template <typename T,typename Tp>
 void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* timer){
   typedef T Tc[2];
@@ -439,4 +493,57 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan, double* tim
   return;
 }
 
+template <typename T,typename Tp>
+void accfft_biharmonic_t(T* LA, T* A, Tp* plan, double* timer){
+  typedef T Tc[2];
+  int procid;
+  MPI_Comm c_comm=plan->c_comm;
+  MPI_Comm_rank(c_comm,&procid);
+  if(!plan->r2c_plan_baked){
+    PCOUT<<"Error in accfft_grad! plan is not correctly made."<<std::endl;
+    return;
+  }
+
+  double timings[5]={0};
+
+  double self_exec_time= - MPI_Wtime();
+  int *N=plan->N;
+
+  int isize[3],osize[3],istart[3],ostart[3];
+  long long int alloc_max;
+  /* Get the local pencil size and the allocation size */
+  alloc_max=accfft_local_size_dft_r2c_t<T>(N,isize,istart,osize,ostart,c_comm);
+
+  Tc* A_hat=(Tc*) accfft_alloc(alloc_max);
+  Tc* tmp  =(Tc*) accfft_alloc(alloc_max);
+
+  MPI_Barrier(c_comm);
+
+  /* Forward transform */
+  accfft_execute_r2c_t<T,Tc>(plan,A,A_hat,timings);
+
+  /* Multiply x Wave Numbers */
+  biharmonic_mult_wave_number<Tc>(tmp,A_hat, N,c_comm);
+  MPI_Barrier(c_comm);
+
+  /* Backward transform */
+  accfft_execute_c2r_t<Tc,T>(plan,tmp,LA,timings);
+
+  accfft_free(A_hat);
+  accfft_free(tmp);
+
+  self_exec_time+= MPI_Wtime();
+
+  if(timer==NULL){
+    //delete [] timings;
+  }
+  else{
+    timer[0]+=timings[0];
+    timer[1]+=timings[1];
+    timer[2]+=timings[2];
+    timer[3]+=timings[3];
+    timer[4]+=timings[4];
+  }
+  return;
+}
 #endif
