@@ -134,6 +134,8 @@ template<typename T> void fast_transpose_v1_h (T_Plan<T>* T_plan, T * inout, dou
 template<typename T> void fast_transpose_v2_h (T_Plan<T>* T_plan, T * inout, double *timings, unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v3_h (T_Plan<T>* T_plan, T * inout, double *timings, int kway,unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 
+template<typename T> void fast_transpose_v     (T_Plan<T>* T_plan, T * inout, double *timings,int kway=2, unsigned flags=0,int howmany=1, int tag=0, int method=1,int comm_test=0 );
+template<typename T> void fast_transpose_v_h   (T_Plan<T>* T_plan, T * inout, double *timings,int kway=2, unsigned flags=0,int howmany=1, int tag=0, int method=1,int comm_test=0 );
 template<typename T> void fast_transpose_v_i   (T_Plan<T>* T_plan, T * inout, double *timings,int kway=2, unsigned flags=0,int howmany=1, int tag=0, int method=-1 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v_hi   (T_Plan<T>* T_plan, T * inout, double *timings,int kway=2, unsigned flags=0,int howmany=1, int tag=0, int method=-1 ); // INPLACE local transpose + mpiIsendIrecv+local transpose
 #endif

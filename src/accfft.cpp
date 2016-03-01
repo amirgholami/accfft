@@ -289,6 +289,7 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     }
     plan->T_plan_2i->method=-plan->T_plan_2->method;
     plan->T_plan_2i->kway=plan->T_plan_2->kway;
+    plan->T_plan_2i->kway_async=plan->T_plan_2->kway_async;
     plan->data=data;
 
 
@@ -309,21 +310,38 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
     plan->T_plan_2i->alloc_local=plan->alloc_max;
     plan->T_plan_1i->alloc_local=plan->alloc_max;
 
+
     if(flags==ACCFFT_MEASURE){
-      plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out,2,osize_0[0],coord[0]);
-      MPI_Barrier(plan->c_comm);
-      plan->T_plan_2->which_fast_method(plan->T_plan_2,(double*)data_out,2,1,coord[1]);
+      if(coord[0]==0){
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out,2,osize_0[0],coord[0]);
+      }
     }
     else{
-      plan->T_plan_1->method=2;
-      plan->T_plan_1->kway=2;
-      plan->T_plan_2->method=2;
-      plan->T_plan_2->kway=2;
+      if(coord[0]==0){
+        plan->T_plan_1->method=2;
+        plan->T_plan_1->kway=2;
+      }
     }
+
+    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
+    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
+    MPI_Bcast(&plan->T_plan_1->kway_async,1, MPI::BOOL,0, c_comm );
+
+    plan->T_plan_1->method =plan->T_plan_1->method;
+    plan->T_plan_2->method =plan->T_plan_1->method;
+    plan->T_plan_2i->method=-plan->T_plan_1->method;
     plan->T_plan_1i->method=-plan->T_plan_1->method;
+
+    plan->T_plan_1->kway =plan->T_plan_1->kway;
+    plan->T_plan_2->kway =plan->T_plan_1->kway;
+    plan->T_plan_2i->kway=plan->T_plan_1->kway;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
-    plan->T_plan_2i->method=-plan->T_plan_2->method;
-    plan->T_plan_2i->kway=plan->T_plan_2->kway;
+
+    plan->T_plan_1->kway_async =plan->T_plan_1->kway_async;
+    plan->T_plan_2->kway_async =plan->T_plan_1->kway_async;
+    plan->T_plan_2i->kway_async=plan->T_plan_1->kway_async;
+    plan->T_plan_1i->kway_async=plan->T_plan_1->kway_async;
+
 
     plan->data=data;
   } // end 2D r2c
@@ -404,7 +422,6 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
       plan->T_plan_2i->execute(plan->T_plan_2i,data,timings,1,1,coords[1]);
     }
 
-    MPI_Barrier(plan->c_comm);
     /**************************************************************/
     /*******************  N0/P0 x N1 x N2/P1 **********************/
     /**************************************************************/
@@ -417,7 +434,6 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
     if(!plan->oneD){
       plan->T_plan_1i->execute(plan->T_plan_1i,data,timings,1,osize_1i[0],coords[0]);
     }
-    MPI_Barrier(plan->c_comm);
     /**************************************************************/
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
@@ -428,7 +444,6 @@ void accfft_execute(accfft_plan* plan, int direction,double * data,double * data
     else
       data_out=data;
     fft_time+=MPI_Wtime();
-    MPI_Barrier(plan->c_comm);
 
   }
 
@@ -673,6 +688,7 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
     }
     plan->T_plan_2i->method=-plan->T_plan_2->method;
     plan->T_plan_2i->kway=plan->T_plan_2->kway;
+    plan->T_plan_2i->kway_async=plan->T_plan_2->kway_async;
 
   } // end 1D decomp c2c
 
@@ -693,20 +709,36 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
 
 
     if(flags==ACCFFT_MEASURE){
-      plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out,2,osize_0[0],coord[0]);
-      plan->T_plan_2->which_fast_method(plan->T_plan_2,(double*)data_out,2,1,coord[1]);
+      if(coord[0]==0){
+        plan->T_plan_1->which_fast_method(plan->T_plan_1,(double*)data_out,2,osize_0[0],coord[0]);
+      }
     }
     else{
-      plan->T_plan_1->method=2;
-      plan->T_plan_1->kway=2;
-      plan->T_plan_2->method=2;
-      plan->T_plan_2->kway=2;
+      if(coord[0]==0){
+        plan->T_plan_1->method=2;
+        plan->T_plan_1->kway=2;
+      }
     }
 
+    MPI_Bcast(&plan->T_plan_1->method,1, MPI_INT,0, c_comm );
+    MPI_Bcast(&plan->T_plan_1->kway,1, MPI_INT,0, c_comm );
+    MPI_Bcast(&plan->T_plan_1->kway_async,1, MPI::BOOL,0, c_comm );
+
+    plan->T_plan_1->method =plan->T_plan_1->method;
+    plan->T_plan_2->method =plan->T_plan_1->method;
+    plan->T_plan_2i->method=-plan->T_plan_1->method;
     plan->T_plan_1i->method=-plan->T_plan_1->method;
+
+    plan->T_plan_1->kway =plan->T_plan_1->kway;
+    plan->T_plan_2->kway =plan->T_plan_1->kway;
+    plan->T_plan_2i->kway=plan->T_plan_1->kway;
     plan->T_plan_1i->kway=plan->T_plan_1->kway;
-    plan->T_plan_2i->method=-plan->T_plan_2->method;
-    plan->T_plan_2i->kway=plan->T_plan_2->kway;
+
+    plan->T_plan_1->kway_async =plan->T_plan_1->kway_async;
+    plan->T_plan_2->kway_async =plan->T_plan_1->kway_async;
+    plan->T_plan_2i->kway_async=plan->T_plan_1->kway_async;
+    plan->T_plan_1i->kway_async=plan->T_plan_1->kway_async;
+
   } // end 2D Decomp c2c
 
   plan->c2c_plan_baked=true;
