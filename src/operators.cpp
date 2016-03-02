@@ -37,11 +37,15 @@ template void grad_mult_wave_numbery<Complex>(Complex* wA, Complex* A, int* N,MP
 template void grad_mult_wave_numberz<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm,std::bitset<3> xyz );
 template void grad_mult_wave_number_laplace<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm );
 template void biharmonic_mult_wave_number<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm );
+template void mult_wave_number_inv_laplace<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm );
+template void mult_wave_number_inv_biharmonic<Complex>(Complex* wA, Complex* A, int* N,MPI_Comm c_comm );
 
 template void accfft_grad_t<double,accfft_plan>(double * A_x, double *A_y, double *A_z,double *A,accfft_plan *plan, std::bitset<3>* pXYZ, double* timer);
 template void accfft_laplace_t<double,accfft_plan>(double * LA,double *A,accfft_plan *plan, double* timer);
 template void accfft_biharmonic_t<double,accfft_plan>(double * LA,double *A,accfft_plan *plan, double* timer);
 template void accfft_divergence_t<double,accfft_plan>(double* divA, double * A_x, double *A_y, double *A_z,accfft_plan *plan, double* timer);
+template void accfft_inv_laplace_t<double,accfft_plan>(double * invLA,double *A,accfft_plan *plan, double* timer);
+template void accfft_inv_biharmonic_t<double,accfft_plan>(double * invBA,double *A,accfft_plan *plan, double* timer);
 
 
 /**
@@ -99,6 +103,33 @@ void accfft_divergence(double* divA, double * A_x, double *A_y, double *A_z,accf
  */
 void accfft_biharmonic(double * BA,double *A,accfft_plan *plan, double* timer){
   accfft_biharmonic_t<double,accfft_plan>(BA,A,plan,timer);
+}
+
+
+
+/**
+ * Computes double precision inverse Laplacian of its input real data A,
+ * and writes the output into invLA.
+ * @param invLA  \f$\Delta^{-1} A\f$
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c. Must be an outplace plan, otherwise the function will return
+ * without computing the gradient.
+ * @param timer See \ref timer for more details.
+ */
+void accfft_inv_laplace(double * invLA,double *A,accfft_plan *plan, double* timer){
+  accfft_inv_laplace_t<double,accfft_plan>(invLA,A,plan,timer);
+}
+
+
+/**
+ * Computes double precision inverse biharmonic of its input real data A,
+ * and writes the output into invBA.
+ * @param invBA  \f$\Delta^{-2} A\f$
+ * @param plan FFT plan created by \ref accfft_plan_dft_3d_r2c. Must be an outplace plan, otherwise the function will return
+ * without computing the gradient.
+ * @param timer See \ref timer for more details.
+ */
+void accfft_inv_biharmonic(double * invBA,double *A,accfft_plan *plan, double* timer){
+  accfft_inv_biharmonic_t<double,accfft_plan>(invBA,A,plan,timer);
 }
 
 
