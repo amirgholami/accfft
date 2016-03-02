@@ -38,6 +38,8 @@ void accfft_grad      (double* A_x , double* A_y, double* A_z, double* A, accfft
 void accfft_laplace   (double* LA  , double* A  , accfft_plan* plan, double* timer=NULL);
 void accfft_divergence(double* divA, double* A_x, double* A_y, double* A_z, accfft_plan* plan, double* timer=NULL);
 void accfft_biharmonic   (double* LA  , double* A  , accfft_plan* plan, double* timer=NULL);
+void accfft_inv_laplace   (double* invLA  , double* A  , accfft_plan* plan, double* timer=NULL);
+void accfft_inv_biharmonic   (double* invBA  , double* A  , accfft_plan* plan, double* timer=NULL);
 
 void accfft_gradf      (float* A_x , float* A_y, float* A_z, float* A, accfft_planf *plan, std::bitset<3> *pXYZ=NULL, double* timer=NULL);
 void accfft_laplacef   (float* LA  , float* A  , accfft_planf* plan, double* timer=NULL);
