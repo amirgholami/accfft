@@ -35,7 +35,6 @@
 #include <cufft.h>
 #include "accfft_common.h"
 #define VERBOSE 0
-#define PCOUT if(procid==0) std::cout
 
 /**
  * Cleanup all CPU resources
@@ -450,6 +449,7 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
     else{
       plan->T_plan_2->execute_gpu(plan->T_plan_2,data_out_d,timings,2,1,coords[1]);
     }
+    MPI_Barrier(plan->c_comm);
     /**************************************************************/
     /*******************  N0 x N1/P0 x N2/P1 **********************/
     /**************************************************************/
@@ -479,6 +479,7 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction,float * data_d, f
     else{
       plan->T_plan_2i->execute_gpu(plan->T_plan_2i,(float*)data_d,timings,1,1,coords[1]);
     }
+    MPI_Barrier(plan->c_comm);
     /**************************************************************/
     /*******************  N0/P0 x N1 x N2/P1 **********************/
     /**************************************************************/
@@ -960,7 +961,6 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     else{
       plan->T_plan_2->execute_gpu(plan->T_plan_2,(float*)data_out_d,timings,2,1,coords[1]);
     }
-    checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
     /**************************************************************/
     /*******************  N0 x N1/P0 x N2/P1 **********************/
@@ -988,16 +988,13 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     }
 
 
-    PCOUT<<"before T_plan2i"<<std::endl;
     if(plan->oneD){
       plan->T_plan_2i->execute_gpu(plan->T_plan_2i,(float*)data_d,timings,1);
     }
     else{
       plan->T_plan_2i->execute_gpu(plan->T_plan_2i,(float*)data_d,timings,1,1,coords[1]);
     }
-    checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
-    PCOUT<<"after T_plan2i"<<std::endl;
     /**************************************************************/
     /*******************  N0/P0 x N1 x N2/P1 **********************/
     /**************************************************************/
@@ -1013,13 +1010,10 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,Complexf * da
     }
     MPI_Barrier(plan->c_comm);
 
-    PCOUT<<"before T_plan1i"<<std::endl;
     if(!plan->oneD){
       plan->T_plan_1i->execute_gpu(plan->T_plan_1i,(float*)data_d,timings,1,osize_1i[0],coords[0]);
     }
-    checkCuda_accfft (cudaDeviceSynchronize());
     MPI_Barrier(plan->c_comm);
-    PCOUT<<"after T_plan1i"<<std::endl;
     /**************************************************************/
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/

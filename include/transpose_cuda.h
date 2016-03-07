@@ -43,6 +43,7 @@ class Mem_Mgr_gpu{
     T* buffer;
     T* buffer_2;
     T* buffer_d;
+    T* buffer_d2;
     //T * data_cpu;
     //MPI_Comm comm;
 		// Deconstructor
@@ -117,6 +118,7 @@ class T_Plan_gpu{
     T * buffer;
     T * buffer_2;
     T * buffer_d;
+    T * buffer_d2;
     //T * data_cpu;
     // Deconstructor
     ~T_Plan_gpu();
@@ -150,6 +152,8 @@ template<typename T> void          transpose_cuda_v7(T_Plan_gpu<T>* T_plan, T * 
 template<typename T> void        transpose_cuda_v7_2(T_Plan_gpu<T>* T_plan, T * inout, double *timings, int kway , unsigned flags=0,int howmany=1, int tag=0 ); // INPLACE local transpose + paralltoallv+local transpose
 
 
+template<typename T> void     fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags=0, int howmany=1, int tag=0 );  // handles only the cases where Flag=1
+template<typename T> void     fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags=0, int howmany=1, int tag=0 );  // handles only the cases where Flag=1
 template<typename T> void     fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags=0, int howmany=1, int tag=0 );  // handles only the cases where Flag=1
 template<typename T> void     fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags=0, int howmany=1, int tag=0 );  // handles only the cases where Flag=1
 template<typename T> void     fast_transpose_cuda_v1_2i(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigned flags=0, int howmany=1, int tag=0 );  // handles only the cases where Flag=1
