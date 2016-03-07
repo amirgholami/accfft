@@ -280,7 +280,8 @@ static void mult_wave_number_inv_laplace(Tc* wA, Tc* A, int* N,MPI_Comm c_comm )
 
 #pragma omp parallel
   {
-    long int X,Y,Z,wx,wy,wz,wave;
+    long int X,Y,Z,wx,wy,wz;
+    double wave;
     long int ptr;
 #pragma omp for
     for (int i=0; i<osize[0]; i++){
@@ -296,22 +297,22 @@ static void mult_wave_number_inv_laplace(Tc* wA, Tc* A, int* N,MPI_Comm c_comm )
 
           if(X>N[0]/2)
             wx-=N[0];
-          if(X==N[0]/2)
-            wx=0;
+          //if(X==N[0]/2)
+          //  wx=0;
 
           if(Y>N[1]/2)
             wy-=N[1];
-          if(Y==N[1]/2)
-            wy=0;
+          //if(Y==N[1]/2)
+          //  wy=0;
 
           if(Z>N[2]/2)
             wz-=N[2];
-          if(Z==N[2]/2)
-            wz=0;
+          //if(Z==N[2]/2)
+          //  wz=0;
 
           wave=-wx*wx-wy*wy-wz*wz;
           if(wave==0)
-            wave=1;
+            wave=-1;
           wave=1./wave;
 
           ptr=(i*osize[1]+j)*osize[2]+k;
@@ -337,7 +338,8 @@ static void mult_wave_number_inv_biharmonic(Tc* wA, Tc* A, int* N,MPI_Comm c_com
 
 #pragma omp parallel
   {
-    long int X,Y,Z,wx,wy,wz,wave;
+    long int X,Y,Z,wx,wy,wz;
+    double wave;
     long int ptr;
 #pragma omp for
     for (int i=0; i<osize[0]; i++){
@@ -353,18 +355,18 @@ static void mult_wave_number_inv_biharmonic(Tc* wA, Tc* A, int* N,MPI_Comm c_com
 
           if(X>N[0]/2)
             wx-=N[0];
-          if(X==N[0]/2)
-            wx=0;
+          //if(X==N[0]/2)
+          //  wx=0;
 
           if(Y>N[1]/2)
             wy-=N[1];
-          if(Y==N[1]/2)
-            wy=0;
+          //if(Y==N[1]/2)
+          //  wy=0;
 
           if(Z>N[2]/2)
             wz-=N[2];
-          if(Z==N[2]/2)
-            wz=0;
+          //if(Z==N[2]/2)
+          //  wz=0;
 
           wave=-wx*wx-wy*wy-wz*wz;
           wave*=wave;
