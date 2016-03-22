@@ -50,6 +50,8 @@ struct accfft_plan{
   int osize_1i[3], ostart_1i[3];
   int osize_2i[3], ostart_2i[3];
 
+  int isize[3],istart[3];
+  int osize[3],ostart[3];
   double * data;
   double * data_out;
   Complex * data_c;

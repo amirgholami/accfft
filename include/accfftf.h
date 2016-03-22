@@ -50,6 +50,10 @@ struct accfft_planf{
   int osize_1i[3], ostart_1i[3];
   int osize_2i[3], ostart_2i[3];
 
+  int isize[3],istart[3];
+  int osize[3],ostart[3];
+
+
   float * data;
   float * data_out;
   Complexf * data_c;

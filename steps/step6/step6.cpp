@@ -1,8 +1,8 @@
 /*
- * File: grad1.cpp
+ * File: step6.cpp
  * License: Please see LICENSE file.
  * AccFFT: Massively Parallel FFT Library
- * Created by Amir Gholami on 12/23/2014
+ * Created by Amir Gholami on 12/23/2015
  * Email: contact@accfft.org
  */
 
@@ -21,7 +21,8 @@ inline double testcase(double X,double Y,double Z){
 
   double pi=M_PI;
   double analytic;
-  analytic=sin(Y)*sin(X);// std::exp( -SIGMA * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
+  //analytic=sin(4*Y)*sin(4*X)*sin(4*Z);
+  analytic=std::exp( -SIGMA * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
   if(analytic!=analytic) analytic=0; /* Do you think the condition will be false always? */
   return analytic;
 } // end testcase
@@ -104,9 +105,9 @@ void step6(int *n, int nthreads) {
   int c_dims[2]={0};
   MPI_Comm c_comm;
   accfft_create_comm(MPI_COMM_WORLD,c_dims,&c_comm);
-  double factor=4;
+  double factor=1;
   double dt=1.0/n[0]/n[0]/factor;
-  int Nt=10*factor;
+  int Nt=128*factor;
   double T=dt*Nt;
 
   PCOUT<<"dt=\t"<<dt<<std::endl;
@@ -119,6 +120,12 @@ void step6(int *n, int nthreads) {
   int isize[3],osize[3],istart[3],ostart[3];
   /* Get the local pencil size and the allocation size */
   alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
+
+  /* Offsets for writing the output data */
+  std::string filename;
+  MPI_Offset istart_mpi[3] = { istart[0], istart[1], istart[2] };
+  MPI_Offset isize_mpi[3]  = { isize[0],  isize[1],  isize[2] };
+
 
   //data=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   double * u=(double*)accfft_alloc(alloc_max);
@@ -158,6 +165,7 @@ void step6(int *n, int nthreads) {
   MPI_Barrier(c_comm);
   }
   exec_time+=MPI_Wtime();
+
   /* Compute the error between u_n and u_true */
   double err=0,g_err,norm=0,g_norm;
   for(long long int i=0; i<isize[0]*isize[1]*isize[2];++i){
@@ -172,15 +180,12 @@ void step6(int *n, int nthreads) {
   PCOUT<<"L2 Rel. Err\t"<<g_err/g_norm<<std::endl;
 
   /* Write the output */
-  std::string filename;
-  MPI_Offset istart_mpi[3] = { istart[0], istart[1], istart[2] };
-  MPI_Offset isize_mpi[3]  = { isize[0],  isize[1],  isize[2] };
   filename = "u_0.nc";
-  write_pnetcdf(filename,istart_mpi,isize_mpi,n,u_0);
+  write_pnetcdf(filename,istart_mpi,isize_mpi,c_comm,n,u_0);
   filename = "u_true.nc";
-  write_pnetcdf(filename,istart_mpi,isize_mpi,n,u_true);
+  write_pnetcdf(filename,istart_mpi,isize_mpi,c_comm,n,u_true);
   filename = "u_num.nc";
-  write_pnetcdf(filename,istart_mpi,isize_mpi,n,u_n);
+  write_pnetcdf(filename,istart_mpi,isize_mpi,c_comm,n,u_n);
 
   /* Compute some timings statistics */
   double g_setup_time,g_timings[5],g_exec_time;

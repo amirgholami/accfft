@@ -1,5 +1,5 @@
 /*
- * File: poisson3d_gpu.cpp
+ * File: step4_gpu.cpp
  * Project: AccFFT
  * Created by Amir Gholami on 12/23/2014
  * Contact: contact@accfft.org
@@ -604,6 +604,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
     write_pnetcdf(filename,
 		  istart_mpi,
 		  isize_mpi,
+      c_comm,
 		  n,
 		  rho_cpu);
   }
@@ -665,6 +666,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
     write_pnetcdf(filename,
 		  istart_mpi,
 		  isize_mpi,
+      c_comm,
 		  n,
 		  phi_cpu);
   }
@@ -675,6 +677,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
     write_pnetcdf(filename,
 		  istart_mpi,
 		  isize_mpi,
+      c_comm,
 		  n,
 		  exact_solution);
   }

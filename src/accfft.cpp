@@ -180,8 +180,8 @@ accfft_plan*  accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out, 
   plan->inplace==true ? n_tuples_i=(n[2]/2+1)*2:  n_tuples_i=n[2];
   n_tuples_o=(n[2]/2+1)*2;
 
-  int isize[3],osize[3],istart[3],ostart[3];
-  alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
+  //int isize[3],osize[3],istart[3],ostart[3];
+  alloc_max=accfft_local_size_dft_r2c(n,plan->isize,plan->istart,plan->osize,plan->ostart,c_comm);
   plan->alloc_max=alloc_max;
 
   dfft_get_local_size(n[0],n[1],n_tuples_o/2,osize_0,ostart_0,c_comm);
@@ -577,8 +577,8 @@ accfft_plan*  accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out
   int alloc_local;
   int alloc_max=0,n_tuples=(n[2]/2+1)*2;
 
-  int isize[3],osize[3],istart[3],ostart[3];
-  alloc_max=accfft_local_size_dft_c2c(n,isize,istart,osize,ostart,c_comm);
+  //int isize[3],osize[3],istart[3],ostart[3];
+  alloc_max=accfft_local_size_dft_c2c(n,plan->isize,plan->istart,plan->osize,plan->ostart,c_comm);
   plan->alloc_max=alloc_max;
 
   dfft_get_local_size(n[0],n[1],n[2],osize_0,ostart_0,c_comm);

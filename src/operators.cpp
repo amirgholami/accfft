@@ -160,6 +160,7 @@ enum ComponentIndex3D {
  * \param[in]  filename  : PnetCDF filename
  * \param[in]  starts    : offset to where to start reading data
  * \param[in]  counts    : number of elements read (3D sub-domain inside global)
+ * \param[in]  c_comm    : MPI Communicator
  * \param[in]  gsizes    : global sizes
  * \param[out] localData : actual data buffer (size : nx*ny*nz*sizeof(double))
  *
@@ -168,12 +169,13 @@ enum ComponentIndex3D {
 void read_pnetcdf(const std::string &filename,
 		  MPI_Offset         starts[3],
 		  MPI_Offset         counts[3],
+      MPI_Comm           c_comm,
 		  int                gsizes[3],
 		  double            *localData)
 {
 
   int myRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_rank(c_comm, &myRank);
 
   // netcdf file id
   int ncFileId;
@@ -189,7 +191,7 @@ void read_pnetcdf(const std::string &filename,
   /*
    * Open NetCDF file
    */
-  err = ncmpi_open(MPI_COMM_WORLD, filename.c_str(), 
+  err = ncmpi_open(c_comm, filename.c_str(), 
 		   ncOpenMode,
 		   MPI_INFO_NULL, &ncFileId);
   if (err != NC_NOERR) {
@@ -270,6 +272,7 @@ void read_pnetcdf(const std::string &filename,
  * \param[in]  filename  : PnetCDF filename
  * \param[in]  starts    : offset to where to start reading data
  * \param[in]  counts    : number of elements read (3D sub-domain inside global)
+ * \param[in]  c_comm    : MPI Communicator
  * \param[in]  gsizes    : global sizes
  * \param[in]  localData : actual data buffer (size : nx*ny*nz*sizeof(double))
  *
@@ -277,11 +280,12 @@ void read_pnetcdf(const std::string &filename,
 void write_pnetcdf(const std::string &filename,
 		   MPI_Offset         starts[3],
 		   MPI_Offset         counts[3],
+       MPI_Comm           c_comm,
 		   int                gsizes[3],
 		   double            *localData)
 {
   int myRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_rank(c_comm, &myRank);
 
   // netcdf file id
   int ncFileId;
@@ -313,7 +317,7 @@ void write_pnetcdf(const std::string &filename,
   /*
    * Create NetCDF file
    */
-  err = ncmpi_create(MPI_COMM_WORLD, filename.c_str(),
+  err = ncmpi_create(c_comm, filename.c_str(),
 		     ncCreationMode,
 		     MPI_INFO_NULL, &ncFileId);
   if (err != NC_NOERR) {
