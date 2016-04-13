@@ -33,6 +33,7 @@
 #include "parUtils.h"
 
 #define PCOUT if(procid==0) std::cout
+//#define VERBOSE2
 #define VERBOSE 0
 
 static bool IsPowerOfTwo(ulong x)
@@ -1422,10 +1423,10 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway, un
     for(int h=0;h<howmany;h++)
       for(int id=0;id<nprocs_1;++id){
         if(procid==id)
-          for(int i=0;i<local_n1;i++){
+          for(int i=0;i<N[0];i++){
             std::cout<<std::endl;
-            for(int j=0;j<N[0];j++){
-              std::cout<<'\t'<<data[h*odist+(i*N[0]+j)*n_tuples];
+            for(int j=0;j<local_n1;j++){
+              std::cout<<'\t'<<data[h*odist+(i*local_n1+j)*n_tuples];
             }
           }
         std::cout<<'\n';
