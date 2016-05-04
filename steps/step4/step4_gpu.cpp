@@ -24,10 +24,10 @@
  * \date June 15, 2015
  */
 
+#include <mpi.h>
 #include <stdlib.h>
 #include <math.h> // for M_PI
 #include <unistd.h> // for getopt
-#include <mpi.h>
 
 #include <cuda_runtime_api.h>
 

@@ -110,6 +110,7 @@ void accfft_biharmonicf(float * BA,float *A,accfft_planf *plan, double* timer){
 }
 
 
+#ifdef USE_PNETCDF
 #include <pnetcdf.h>
 #include <cstdlib>
 #include <string>
@@ -384,3 +385,4 @@ void write_pnetcdf(const std::string &filename,
   PNETCDF_HANDLE_ERROR;
 
 } // write_pnetcdf
+#endif

@@ -24,19 +24,15 @@
  * \date June 1st, 2015
  */
 
+#include <mpi.h>
 #include <stdlib.h>
 #include <math.h> // for M_PI
 #include <unistd.h> // for getopt
-#include <mpi.h>
 
 #include <accfft.h>
 #include <accfft_utils.h>
 
 #include <string>
-
-#ifdef USE_PNETCDF
-#include <pnetcdf_io.h>
-#endif // USE_PNETCDF
 
 #define SQR(x) ((x)*(x))
 

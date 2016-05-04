@@ -12,7 +12,6 @@
 #include <accfft.h>
 #include <accfft_operators.h>
 
-//#include <pnetcdf_io.h>
 #define SIGMA 2
 
 void initialize(double *a,int*n, MPI_Comm c_comm);
@@ -179,6 +178,7 @@ void step6(int *n, int nthreads) {
   PCOUT<<"L2 Err\t"<<g_err<<std::endl;
   PCOUT<<"L2 Rel. Err\t"<<g_err/g_norm<<std::endl;
 
+#ifdef USE_PNETCDF
   /* Write the output */
   filename = "u_0.nc";
   write_pnetcdf(filename,istart_mpi,isize_mpi,c_comm,n,u_0);
@@ -186,6 +186,7 @@ void step6(int *n, int nthreads) {
   write_pnetcdf(filename,istart_mpi,isize_mpi,c_comm,n,u_true);
   filename = "u_num.nc";
   write_pnetcdf(filename,istart_mpi,isize_mpi,c_comm,n,u_n);
+#endif
 
   /* Compute some timings statistics */
   double g_setup_time,g_timings[5],g_exec_time;

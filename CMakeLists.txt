@@ -96,6 +96,7 @@ if (PNETCDF_FOUND)
     src/operatorsf.cpp
     )
   include_directories(${PNETCDF_INCLUDE_DIRS})
+  add_definitions(-DUSE_PNETCDF)
 else()
   set (libaccfft_utils_SRCS ${libaccfft_SRCS} 
     src/operators.cpp

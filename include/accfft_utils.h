@@ -21,6 +21,7 @@
 #ifndef _ACCFFT_UTILS_H
 #define _ACCFFT_UTILS_H
 
+#ifdef USE_PNETCDF
 void read_pnetcdf(const std::string &filename,
 		  MPI_Offset         starts[3],
 		  MPI_Offset         counts[3],
@@ -34,5 +35,6 @@ void write_pnetcdf(const std::string &filename,
        MPI_Comm           c_comm,
 		   int                gsizes[3],
 		   double            *localData);
+#endif
 
 #endif // _ACCFFT_UTILS_H

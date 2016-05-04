@@ -133,6 +133,8 @@ void accfft_inv_biharmonic(double * invBA,double *A,accfft_plan *plan, double* t
 }
 
 
+#ifdef USE_PNETCDF
+
 #include <pnetcdf.h>
 #include <cstdlib>
 #include <string>
@@ -411,3 +413,4 @@ void write_pnetcdf(const std::string &filename,
   PNETCDF_HANDLE_ERROR;
 
 } // write_pnetcdf
+#endif
