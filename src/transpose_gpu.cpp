@@ -5660,7 +5660,7 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigne
   if(VERBOSE>=2){
     cudaMemcpy(data_cpu, data, T_plan->alloc_local, cudaMemcpyDeviceToHost);
     for(int h=0;h<howmany;h++)
-      for(int id=0;id<1+0*nprocs;++id){
+      for(int id=0;id<1;++id){
         if(procid==id)
           for(int i=0;i<local_n0;i++){
             std::cout<<std::endl;
