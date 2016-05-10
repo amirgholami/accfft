@@ -134,15 +134,10 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
   MPI_Comm_rank(Comm, &procid);
   MPI_Comm_size(Comm,&nprocs);
 
-  local_n0_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-  local_n1_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-  local_0_start_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-  local_1_start_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-
-  memset(local_n0_proc,0,sizeof(ptrdiff_t)*nprocs);
-  memset(local_n1_proc,0,sizeof(ptrdiff_t)*nprocs);
-  memset(local_0_start_proc,0,sizeof(ptrdiff_t)*nprocs);
-  memset(local_1_start_proc,0,sizeof(ptrdiff_t)*nprocs);
+  local_n0_proc=(ptrdiff_t*) calloc(nprocs,sizeof(ptrdiff_t));
+  local_n1_proc=(ptrdiff_t*) calloc(nprocs,sizeof(ptrdiff_t));
+  local_0_start_proc=(ptrdiff_t*) calloc(nprocs,sizeof(ptrdiff_t));
+  local_1_start_proc=(ptrdiff_t*) calloc(nprocs,sizeof(ptrdiff_t));
 
   // Determine local_n0/n1 of each processor
 
