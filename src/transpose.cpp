@@ -36,11 +36,11 @@
 //#define VERBOSE2
 #define VERBOSE 0
 
-static bool IsPowerOfTwo(ulong x)
+static bool IsPowerOfTwo(unsigned long x)
 {
       return (x & (x - 1)) == 0;
 }
-static bool IsPowerOfN(ulong x,int n)
+static bool IsPowerOfN(unsigned long x,int n)
 {
   if(x==0) return false;
   while (x % n == 0) {
