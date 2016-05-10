@@ -181,35 +181,20 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
 
 
   // Set send recv counts for communication part
-  scount_proc=(int*) malloc(sizeof(int)*nprocs);
-  rcount_proc=(int*) malloc(sizeof(int)*nprocs);
-  soffset_proc=(int*) malloc(sizeof(int)*nprocs);
-  roffset_proc=(int*) malloc(sizeof(int)*nprocs);
+  scount_proc=(int*) calloc(nprocs,sizeof(int));
+  rcount_proc=(int*) calloc(nprocs,sizeof(int));
+  soffset_proc=(int*) calloc(nprocs,sizeof(int));
+  roffset_proc=(int*) calloc(nprocs,sizeof(int));
 
-  scount_proc_f=(int*) malloc(sizeof(int)*nprocs);
-  rcount_proc_f=(int*) malloc(sizeof(int)*nprocs);
-  soffset_proc_f=(int*) malloc(sizeof(int)*nprocs);
-  roffset_proc_f=(int*) malloc(sizeof(int)*nprocs);
+  scount_proc_f=(int*) calloc(nprocs,sizeof(int));
+  rcount_proc_f=(int*) calloc(nprocs,sizeof(int));
+  soffset_proc_f=(int*) calloc(nprocs,sizeof(int));
+  roffset_proc_f=(int*) calloc(nprocs,sizeof(int));
 
-  scount_proc_w=(int*) malloc(sizeof(int)*nprocs);
-  rcount_proc_w=(int*) malloc(sizeof(int)*nprocs);
-  soffset_proc_w=(int*) malloc(sizeof(int)*nprocs);
-  roffset_proc_w=(int*) malloc(sizeof(int)*nprocs);
-
-  memset(scount_proc,0,sizeof(int)*nprocs);
-  memset(rcount_proc,0,sizeof(int)*nprocs);
-  memset(soffset_proc,0,sizeof(int)*nprocs);
-  memset(roffset_proc,0,sizeof(int)*nprocs);
-
-  memset(scount_proc_f,0,sizeof(int)*nprocs);
-  memset(rcount_proc_f,0,sizeof(int)*nprocs);
-  memset(soffset_proc_f,0,sizeof(int)*nprocs);
-  memset(roffset_proc_f,0,sizeof(int)*nprocs);
-
-  memset(scount_proc_w,0,sizeof(int)*nprocs);
-  memset(rcount_proc_w,0,sizeof(int)*nprocs);
-  memset(soffset_proc_w,0,sizeof(int)*nprocs);
-  memset(roffset_proc_w,0,sizeof(int)*nprocs);
+  scount_proc_w=(int*) calloc(nprocs,sizeof(int));
+  rcount_proc_w=(int*) calloc(nprocs,sizeof(int));
+  soffset_proc_w=(int*) calloc(nprocs,sizeof(int));
+  roffset_proc_w=(int*) calloc(nprocs,sizeof(int));
 
   last_recv_count=0; // Will store the n_tuples of the last received data. In general ~=n_tuples
   if(nprocs_1>nprocs_0)
