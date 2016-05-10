@@ -342,9 +342,10 @@ void T_Plan<T>::which_method(T* data){
 
   T_Plan<T>* T_plan=this;
   double dummy[4]={0};
-  double * time= (double*) malloc(sizeof(double)*(2*(int)log2(nprocs)+3));
-  double * g_time= (double*) malloc(sizeof(double)*(2*(int)log2(nprocs)+3));
-  for (int i=0;i<2*(int)log2(nprocs)+3;i++)
+  size_t temp = 2*(int)log2(nprocs)+3;
+  double * time= (double*) malloc(sizeof(double)*temp);
+  double * g_time= (double*) malloc(sizeof(double)*temp);
+  for (int i=0;i<temp;i++)
     time[i]=1000;
 
   transpose_v5(T_plan,(T*)data,dummy);  // Warmup
