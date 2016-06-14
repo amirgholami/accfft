@@ -73,7 +73,6 @@ Mem_Mgr_gpu<T>::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howman
     {
       ptrdiff_t * local_n0_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
       ptrdiff_t * local_n1_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-#pragma omp parallel for
       for (int proc=0;proc<nprocs;++proc){
         local_n0_proc[proc]=ceil(N[0]/(double)nprocs);
         local_n1_proc[proc]=ceil(N[1]/(double)nprocs);
@@ -818,12 +817,10 @@ void fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -891,7 +888,6 @@ void fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   s_buf=data_cpu; r_buf=send_recv_cpu;
   T * r_buf_d=T_plan->buffer_d2;
   T * s_buf_d=send_recv_d;
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -1167,12 +1163,10 @@ void fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings, i
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -1235,7 +1229,6 @@ void fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings, i
   T *s_buf, *r_buf;
   s_buf=data_cpu; r_buf=send_recv_cpu;
   T * r_buf_d=send_recv_d;
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -1515,12 +1508,10 @@ void fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings, int
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -1577,7 +1568,6 @@ void fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings, int
   MPI_Status ierr;
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -1863,12 +1853,10 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, i
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -1930,7 +1918,6 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, i
   MPI_Status ierr;
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -2121,7 +2108,6 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, i
   // Right now the data is in transposed out format.
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],local_n1,n_tuples,&data[h*odist] );
 
@@ -2228,12 +2214,10 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -2307,7 +2291,6 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   MPI_Status ierr;
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -2414,7 +2397,6 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   // Right now the data is in transposed out format.
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],local_n1,n_tuples,&data[h*odist] );
 
@@ -2521,12 +2503,10 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -2604,7 +2584,6 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings
   memset(flag,0,sizeof(int)*nprocs);
   memset(color,0,sizeof(int)*nprocs);
   int counter=1;
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -2724,7 +2703,6 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings
   // Right now the data is in transposed out format.
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],local_n1,n_tuples,&data[h*odist] );
 
@@ -2831,12 +2809,10 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan,T * data, double *timings,
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -3004,7 +2980,6 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan,T * data, double *timings,
   // Right now the data is in transposed out format.
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],local_n1,n_tuples,&data[h*odist] );
 
@@ -3104,12 +3079,10 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings, un
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -3165,7 +3138,6 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings, un
   MPI_Status ierr;
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -3335,12 +3307,10 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -3400,7 +3370,6 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   memset(flag,0,sizeof(int)*nprocs);
   memset(color,0,sizeof(int)*nprocs);
   int counter=1;
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -3592,12 +3561,10 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -3656,7 +3623,6 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   int flag[nprocs],color[nprocs];
   memset(flag,0,sizeof(int)*nprocs);
   memset(color,0,sizeof(int)*nprocs);
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -3834,12 +3800,10 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings, un
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -3893,7 +3857,6 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings, un
 
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -4051,12 +4014,10 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,int
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -4110,7 +4071,6 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,int
 
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -4270,12 +4230,10 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -4329,7 +4287,6 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
 
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -4489,12 +4446,10 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -4648,7 +4603,6 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   // Right now the data is in transposed out format.
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],local_n1,n_tuples,&data[h*odist] );
 
@@ -4753,12 +4707,10 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -4829,7 +4781,6 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
 
   MPI_Request * s_request= new MPI_Request[nprocs];
   MPI_Request * request= new MPI_Request[nprocs];
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -4915,7 +4866,6 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
   // Right now the data is in transposed out format.
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose_cuda(N[0],local_n1,n_tuples,&data[h*odist] );
 
@@ -5056,7 +5006,6 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigne
   int soffset=0,roffset=0;
   MPI_Status ierr;
   MPI_Request request[nprocs], s_request[nprocs];
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;
@@ -5281,7 +5230,6 @@ void transpose_cuda_v5_2(T_Plan_gpu<T>* T_plan, T* data, double *timings, unsign
   int flag[nprocs],color[nprocs];
   memset(flag,0,sizeof(int)*nprocs);
   memset(color,0,sizeof(int)*nprocs);
-#pragma omp parallel for
   for (int proc=0;proc<nprocs;++proc){
     request[proc]=MPI_REQUEST_NULL;
     s_request[proc]=MPI_REQUEST_NULL;

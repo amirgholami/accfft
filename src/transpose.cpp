@@ -70,7 +70,6 @@ Mem_Mgr<T>::Mem_Mgr(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int s
     {
       ptrdiff_t * local_n0_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
       ptrdiff_t * local_n1_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-      //#pragma omp parallel for
       for (int proc=0;proc<nprocs;++proc){
         local_n0_proc[proc]=ceil(N[0]/(double)nprocs);
         local_n1_proc[proc]=ceil(N[1]/(double)nprocs);
@@ -1299,8 +1298,6 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway, un
 
   int soffset=0,roffset=0;
   MPI_Status ierr;
-  MPI_Request * s_request= new MPI_Request[nprocs];
-  MPI_Request * request= new MPI_Request[nprocs];
   int counter=1;
   T *s_buf, *r_buf;
   if(Flags[1]==1){
@@ -1311,8 +1308,9 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway, un
   }
 
   if(method==1){
-    s_request[procid]=MPI_REQUEST_NULL;
-    request[procid]=MPI_REQUEST_NULL;
+    MPI_Request * request= new MPI_Request[2*nprocs];
+    request[2*procid]   = MPI_REQUEST_NULL;
+    request[2*procid+1] = MPI_REQUEST_NULL;
     // SEND
     int dst_r,dst_s;
     for (int i=0;i<nprocs;++i){
@@ -1321,20 +1319,19 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway, un
       if(dst_r!=procid || dst_s!=nprocs){
         roffset=roffset_proc[dst_r];
         MPI_Irecv(&r_buf[roffset],rcount_proc[dst_r],T_plan->MPI_T, dst_r,
-            tag, T_plan->comm, &request[dst_r]);
+            tag, T_plan->comm, &request[2*dst_r+1]);
         soffset=soffset_proc[dst_s];
         MPI_Isend(&s_buf[soffset],scount_proc[dst_s],T_plan->MPI_T,dst_s, tag,
-            T_plan->comm, &s_request[dst_s]);
+            T_plan->comm, &request[2*dst_s]);
       }
     }
     // Copy Your own part. See the note below for the if condition
     soffset=soffset_proc[procid];//aoffset_proc[proc];//proc*count_proc[proc];
     roffset=roffset_proc[procid];
     memcpy(&r_buf[roffset],&s_buf[soffset],sizeof(T)*scount_proc[procid]);
-    for (int proc=0;proc<nprocs;++proc){
-      MPI_Wait(&request[proc], &ierr);
-      MPI_Wait(&s_request[proc], &ierr);
-    }
+    MPI_Waitall(2*nprocs, request, MPI_STATUSES_IGNORE);
+    delete [] request;
+
 
   }
   else if (method==2){
@@ -1409,8 +1406,6 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway, un
 #endif
 
 
-  delete [] request;
-  delete [] s_request;
 
 #ifdef VERBOSE1
   PCOUT<<"Shuffle Time= "<<shuffle_time<<std::endl;
@@ -1489,12 +1484,10 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, u
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -1567,27 +1560,28 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, u
 
   int soffset=0,roffset=0;
   MPI_Status ierr;
-  MPI_Request * s_request= new MPI_Request[nprocs];
-  MPI_Request * request= new MPI_Request[nprocs];
-  s_request[procid]=MPI_REQUEST_NULL;
-  request[procid]=MPI_REQUEST_NULL;
+
   int counter=1;
 
   T *s_buf, *r_buf;
   s_buf=buffer_2; r_buf=send_recv;
   if(method==1){
     // SEND
+    MPI_Request * request= new MPI_Request[2*nprocs];
+
     int dst_r, dst_s;
+    request[2*procid]=MPI_REQUEST_NULL;
+    request[2*procid+1]=MPI_REQUEST_NULL;
     for (int i=0;i<nprocs;++i){
       dst_r=(procid+i)%nprocs;
       dst_s=(procid-i+nprocs)%nprocs;
       if(dst_r!=procid && dst_s!=procid){
         roffset=roffset_proc[dst_r];
         MPI_Irecv(&r_buf[roffset*howmany],rcount_proc[dst_r]*howmany,T_plan->MPI_T, dst_r,
-            tag, T_plan->comm, &request[dst_r]);
+            tag, T_plan->comm, &request[2*dst_r+1]);
         soffset=soffset_proc[dst_s];
         MPI_Isend(&s_buf[soffset*howmany],scount_proc[dst_s]*howmany,T_plan->MPI_T,dst_s, tag,
-            T_plan->comm, &s_request[dst_s]);
+            T_plan->comm, &request[2*dst_s]);
       }
     }
     soffset=soffset_proc[procid];//aoffset_proc[proc];//proc*count_proc[proc];
@@ -1595,10 +1589,9 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, u
     memcpy(&r_buf[roffset*howmany],&s_buf[soffset*howmany],howmany*sizeof(T)*scount_proc[procid]);
 
 
-    for (int proc=0;proc<nprocs;++proc){
-      MPI_Wait(&request[proc], &ierr);
-      MPI_Wait(&s_request[proc], &ierr);
-    }
+    MPI_Waitall(2*nprocs, request, MPI_STATUSES_IGNORE);
+    delete [] request;
+
   }
   else if(method==2){
     if(T_plan->is_evenly_distributed==0)
@@ -1668,7 +1661,6 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, u
   // If the user did not want this layout, transpose again.
   if(!comm_test)
     if(Flags[1]==0){
-#pragma omp parallel for
       for(int h=0;h<howmany;h++)
         local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
     }
@@ -1691,9 +1683,6 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, u
       MPI_Barrier(T_plan->comm);
     }
 #endif
-
-  delete [] request;
-  delete [] s_request;
 
 
   if(VERBOSE>=1){
@@ -1767,12 +1756,10 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -1990,12 +1977,10 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
 
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -2390,12 +2375,10 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -2537,7 +2520,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   // Right now the data is in transposed out format.
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
   }
@@ -2640,12 +2622,10 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -2772,7 +2752,6 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   // Right now the data is in transposed out format.
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
   }
@@ -2875,12 +2854,10 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   ptrdiff_t *local_1_start_proc=T_plan->local_1_start_proc;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -3004,7 +2981,6 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   // Right now the data is in transposed out format.
   // If the user did not want this layout, transpose again.
   if(Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],local_n1,n_tuples,&data[h*odist] );
   }
@@ -3095,7 +3071,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
     if(howmany==1)
       local_transpose(local_n0,N[1],n_tuples,data );
     else{
-#pragma omp parallel for
       for(int i=0;i<howmany;i++)
         local_transpose(local_n0,N[1],n_tuples,&data[i*idist] );
     }
@@ -3117,7 +3092,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
       }
 
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
   }
@@ -3212,7 +3186,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   int last_ntuples=0,first_ntuples=T_plan->local_n0_proc[0]*n_tuples;
   if(local_n1!=0)
     last_ntuples=T_plan->last_recv_count/((int)local_n1);
-#pragma omp parallel for
   for(int i=0;i<howmany;i++){
     if(local_n1==1)
       memcpy(&data[i*odist],&send_recv[i*odist],T_plan->alloc_local/howmany ); // you are done, no additional transpose is needed.
@@ -3248,7 +3221,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
     if(howmany==1)
       local_transpose(local_n1,N[0],n_tuples,data );
     else{
-#pragma omp parallel for
       for(int h=0;h<howmany;h++)
         local_transpose(local_n1,N[0],n_tuples,&data[h*odist] );
     }
@@ -3725,12 +3697,10 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   int ptr=0;
   shuffle_time-=MPI_Wtime();
   if(nprocs==1 && Flags[0]==1 && Flags[1]==1){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(local_n1,N[0],n_tuples,&data[h*idist] );
   }
   if(nprocs==1 && Flags[0]==0 && Flags[1]==0){
-#pragma omp parallel for
     for(int h=0;h<howmany;h++)
       local_transpose(N[0],N[1],n_tuples,&data[h*idist] );
   }
@@ -3747,7 +3717,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   PCOUT<<"\n flags="<<flags<<std::endl;
   // if the input is transposed, then transpose it to get to non transposed input
   if(Flags[0]==1){
-#pragma omp parallel for
     for(int i=0;i<howmany;i++)
       local_transpose(local_n0,N[1],n_tuples,&data[i*idist] );
     if(VERBOSE>=2) PCOUT<<"Local Transpose:"<<std::endl;
@@ -3842,7 +3811,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
     if(howmany==1)
       local_transpose(local_n1,N[0],n_tuples,data );
     else{
-#pragma omp parallel for
       for(int h=0;h<howmany;h++)
         local_transpose(local_n1,N[0],n_tuples,&data[h*odist] );
     }
