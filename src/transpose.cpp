@@ -862,7 +862,7 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
     roffset=roffset_proc[procid]*howmany;
     memcpy(&r_buf[roffset],&s_buf[soffset],sizeof(T)*scount_proc[procid]*howmany);
 
-    MPI_Waitall(2*nprocs, request, MPI_STATUSES_NULL);
+    MPI_Waitall(2*nprocs, request, MPI_STATUSES_IGNORE);
     delete [] request;
 
   }
@@ -1085,7 +1085,7 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings,int kway, un
     soffset=soffset_proc[procid];//aoffset_proc[proc];//proc*count_proc[proc];
     roffset=roffset_proc[procid];
     memcpy(&r_buf[roffset],&s_buf[soffset],sizeof(T)*scount_proc[procid]);
-    MPI_Waitall(2*nprocs, request, MPI_STATUSES_NULL);
+    MPI_Waitall(2*nprocs, request, MPI_STATUSES_IGNORE);
     delete [] request;
   }
   else if(method==-2){
