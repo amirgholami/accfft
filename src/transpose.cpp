@@ -841,19 +841,20 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   T *s_buf=buffer_2, *r_buf=send_recv;
   if(method==-1){
     MPI_Request * request= new MPI_Request[2*nprocs];
+    int dst_r, dst_s;
+    request[2*procid]=MPI_REQUEST_NULL;
+    request[2*procid+1]=MPI_REQUEST_NULL;
     // SEND
-    for (int proc=0;proc<nprocs;++proc){
-      if(proc!=procid){
-        soffset=soffset_proc[proc]*howmany;
-        roffset=roffset_proc[proc]*howmany;
-        MPI_Isend(&s_buf[soffset],scount_proc[proc]*howmany,T_plan->MPI_T,proc, tag,
-            T_plan->comm, &request[2*proc]);
-        MPI_Irecv(&r_buf[roffset],rcount_proc[proc]*howmany,T_plan->MPI_T, proc,
-            tag, T_plan->comm, &request[2*proc+1]);
-      } else {
-          // set these to proper null so we can use waitall below
-          request[2*proc]   = MPI_REQUEST_NULL;
-          request[2*proc+1] = MPI_REQUEST_NULL;
+    for (int i=0;i<nprocs;++i){
+      dst_r=(procid+i)%nprocs;
+      dst_s=(procid-i+nprocs)%nprocs;
+      if(dst_r!=procid && dst_s!=procid){
+        soffset=soffset_proc[dst_s]*howmany;
+        roffset=roffset_proc[dst_r]*howmany;
+        MPI_Isend(&s_buf[soffset],scount_proc[dst_s]*howmany,T_plan->MPI_T,dst_s, tag,
+            T_plan->comm, &request[2*dst_s]);
+        MPI_Irecv(&r_buf[roffset],rcount_proc[dst_r]*howmany,T_plan->MPI_T, dst_r,
+            tag, T_plan->comm, &request[2*dst_r+1]);
       }
     }
     // Copy Your own part. See the note below for the if condition
@@ -1066,18 +1067,19 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings,int kway, un
   // SEND
   if(method==-1){
     MPI_Request * request= new MPI_Request[2*nprocs];
-    for (int proc=0;proc<nprocs;++proc){
-      if(proc!=procid){
-        soffset=soffset_proc[proc];
-        roffset=roffset_proc[proc];
-        MPI_Isend(&s_buf[soffset],scount_proc[proc],T_plan->MPI_T,proc, tag,
-            T_plan->comm, &request[2*proc]);
-        MPI_Irecv(&r_buf[roffset],rcount_proc[proc],T_plan->MPI_T, proc,
-            tag, T_plan->comm, &request[2*proc+1]);
-      } else {
-          // set these to proper null so we can use waitall below
-          request[2*proc]   = MPI_REQUEST_NULL;
-          request[2*proc+1] = MPI_REQUEST_NULL;
+    request[2*procid]   = MPI_REQUEST_NULL;
+    request[2*procid+1] = MPI_REQUEST_NULL;
+    int dst_r,dst_s;
+    for (int i=0;i<nprocs;++i){
+      dst_r=(procid+i)%nprocs;
+      dst_s=(procid-i+nprocs)%nprocs;
+      if(dst_r!=procid || dst_s!=nprocs){
+        roffset=roffset_proc[dst_r];
+        soffset=soffset_proc[dst_s];
+        MPI_Isend(&s_buf[soffset],scount_proc[dst_s],T_plan->MPI_T,dst_s, tag,
+            T_plan->comm, &request[2*dst_s]);
+        MPI_Irecv(&r_buf[roffset],rcount_proc[dst_r],T_plan->MPI_T,dst_r,
+            tag, T_plan->comm, &request[2*dst_r+1]);
       }
     }
     // Copy Your own part. See the note below for the if condition
