@@ -134,15 +134,10 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
   MPI_Comm_rank(Comm, &procid);
   MPI_Comm_size(Comm,&nprocs);
 
-  local_n0_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-  local_n1_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-  local_0_start_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-  local_1_start_proc=(ptrdiff_t*) malloc(sizeof(ptrdiff_t)*nprocs);
-
-  memset(local_n0_proc,0,sizeof(int)*nprocs);
-  memset(local_n1_proc,0,sizeof(int)*nprocs);
-  memset(local_0_start_proc,0,sizeof(int)*nprocs);
-  memset(local_1_start_proc,0,sizeof(int)*nprocs);
+  local_n0_proc=(ptrdiff_t*) calloc(nprocs,sizeof(ptrdiff_t));
+  local_n1_proc=(ptrdiff_t*) calloc(nprocs,sizeof(ptrdiff_t));
+  local_0_start_proc=(ptrdiff_t*) calloc(nprocs,sizeof(ptrdiff_t));
+  local_1_start_proc=(ptrdiff_t*) calloc(nprocs,sizeof(ptrdiff_t));
 
   // Determine local_n0/n1 of each processor
 
@@ -181,35 +176,20 @@ T_Plan<T>::T_Plan(int N0, int N1,int tuples, Mem_Mgr<T> * Mem_mgr, MPI_Comm Comm
 
 
   // Set send recv counts for communication part
-  scount_proc=(int*) malloc(sizeof(int)*nprocs);
-  rcount_proc=(int*) malloc(sizeof(int)*nprocs);
-  soffset_proc=(int*) malloc(sizeof(int)*nprocs);
-  roffset_proc=(int*) malloc(sizeof(int)*nprocs);
+  scount_proc=(int*) calloc(nprocs,sizeof(int));
+  rcount_proc=(int*) calloc(nprocs,sizeof(int));
+  soffset_proc=(int*) calloc(nprocs,sizeof(int));
+  roffset_proc=(int*) calloc(nprocs,sizeof(int));
 
-  scount_proc_f=(int*) malloc(sizeof(int)*nprocs);
-  rcount_proc_f=(int*) malloc(sizeof(int)*nprocs);
-  soffset_proc_f=(int*) malloc(sizeof(int)*nprocs);
-  roffset_proc_f=(int*) malloc(sizeof(int)*nprocs);
+  scount_proc_f=(int*) calloc(nprocs,sizeof(int));
+  rcount_proc_f=(int*) calloc(nprocs,sizeof(int));
+  soffset_proc_f=(int*) calloc(nprocs,sizeof(int));
+  roffset_proc_f=(int*) calloc(nprocs,sizeof(int));
 
-  scount_proc_w=(int*) malloc(sizeof(int)*nprocs);
-  rcount_proc_w=(int*) malloc(sizeof(int)*nprocs);
-  soffset_proc_w=(int*) malloc(sizeof(int)*nprocs);
-  roffset_proc_w=(int*) malloc(sizeof(int)*nprocs);
-
-  memset(scount_proc,0,sizeof(int)*nprocs);
-  memset(rcount_proc,0,sizeof(int)*nprocs);
-  memset(soffset_proc,0,sizeof(int)*nprocs);
-  memset(roffset_proc,0,sizeof(int)*nprocs);
-
-  memset(scount_proc_f,0,sizeof(int)*nprocs);
-  memset(rcount_proc_f,0,sizeof(int)*nprocs);
-  memset(soffset_proc_f,0,sizeof(int)*nprocs);
-  memset(roffset_proc_f,0,sizeof(int)*nprocs);
-
-  memset(scount_proc_w,0,sizeof(int)*nprocs);
-  memset(rcount_proc_w,0,sizeof(int)*nprocs);
-  memset(soffset_proc_w,0,sizeof(int)*nprocs);
-  memset(roffset_proc_w,0,sizeof(int)*nprocs);
+  scount_proc_w=(int*) calloc(nprocs,sizeof(int));
+  rcount_proc_w=(int*) calloc(nprocs,sizeof(int));
+  soffset_proc_w=(int*) calloc(nprocs,sizeof(int));
+  roffset_proc_w=(int*) calloc(nprocs,sizeof(int));
 
   last_recv_count=0; // Will store the n_tuples of the last received data. In general ~=n_tuples
   if(nprocs_1>nprocs_0)
@@ -362,9 +342,10 @@ void T_Plan<T>::which_method(T* data){
 
   T_Plan<T>* T_plan=this;
   double dummy[4]={0};
-  double * time= (double*) malloc(sizeof(double)*(2*(int)log2(nprocs)+3));
-  double * g_time= (double*) malloc(sizeof(double)*(2*(int)log2(nprocs)+3));
-  for (int i=0;i<2*(int)log2(nprocs)+3;i++)
+  size_t temp = 2*(int)log2(nprocs)+3;
+  double * time= (double*) malloc(sizeof(double)*temp);
+  double * g_time= (double*) malloc(sizeof(double)*temp);
+  for (int i=0;i<temp;i++)
     time[i]=1000;
 
   transpose_v5(T_plan,(T*)data,dummy);  // Warmup
