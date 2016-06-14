@@ -837,21 +837,24 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
 
   int soffset=0,roffset=0;
   MPI_Status ierr;
-  MPI_Request * s_request= new MPI_Request[nprocs];
-  MPI_Request * request= new MPI_Request[nprocs];
   int counter=1;
 
   T *s_buf=buffer_2, *r_buf=send_recv;
   if(method==-1){
+    MPI_Request * request= new MPI_Request[2*nprocs];
     // SEND
     for (int proc=0;proc<nprocs;++proc){
       if(proc!=procid){
         soffset=soffset_proc[proc]*howmany;
         roffset=roffset_proc[proc]*howmany;
         MPI_Isend(&s_buf[soffset],scount_proc[proc]*howmany,T_plan->MPI_T,proc, tag,
-            T_plan->comm, &s_request[proc]);
+            T_plan->comm, &request[2*proc]);
         MPI_Irecv(&r_buf[roffset],rcount_proc[proc]*howmany,T_plan->MPI_T, proc,
-            tag, T_plan->comm, &request[proc]);
+            tag, T_plan->comm, &request[2*proc+1]);
+      } else {
+          // set these to proper null so we can use waitall below
+          request[2*proc]   = MPI_REQUEST_NULL;
+          request[2*proc+1] = MPI_REQUEST_NULL;
       }
     }
     // Copy Your own part. See the note below for the if condition
@@ -859,12 +862,8 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
     roffset=roffset_proc[procid]*howmany;
     memcpy(&r_buf[roffset],&s_buf[soffset],sizeof(T)*scount_proc[procid]*howmany);
 
-    for (int proc=0;proc<nprocs;++proc){
-      if(proc!=procid){
-        MPI_Wait(&request[proc], &ierr);
-        MPI_Wait(&s_request[proc], &ierr);
-      }
-    }
+    MPI_Waitall(2*nprocs, request, MPI_STATUSES_NULL);
+    delete [] request;
 
   }
   else if(method==-2){
@@ -943,8 +942,6 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
 #endif
 
   reshuffle_time+=MPI_Wtime();
-  delete [] request;
-  delete [] s_request;
 
 
   if(VERBOSE>=1){
@@ -1064,33 +1061,32 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings,int kway, un
 
   int soffset=0,roffset=0;
   MPI_Status ierr;
-  MPI_Request * s_request= new MPI_Request[nprocs];
-  MPI_Request * request= new MPI_Request[nprocs];
   int counter=1;
 
   T *s_buf=data, *r_buf=send_recv;
   // SEND
   if(method==-1){
+    MPI_Request * request= new MPI_Request[2*nprocs];
     for (int proc=0;proc<nprocs;++proc){
       if(proc!=procid){
         soffset=soffset_proc[proc];
         roffset=roffset_proc[proc];
         MPI_Isend(&s_buf[soffset],scount_proc[proc],T_plan->MPI_T,proc, tag,
-            T_plan->comm, &s_request[proc]);
+            T_plan->comm, &request[2*proc]);
         MPI_Irecv(&r_buf[roffset],rcount_proc[proc],T_plan->MPI_T, proc,
-            tag, T_plan->comm, &request[proc]);
+            tag, T_plan->comm, &request[2*proc+1]);
+      } else {
+          // set these to proper null so we can use waitall below
+          request[2*proc]   = MPI_REQUEST_NULL;
+          request[2*proc+1] = MPI_REQUEST_NULL;
       }
     }
     // Copy Your own part. See the note below for the if condition
     soffset=soffset_proc[procid];//aoffset_proc[proc];//proc*count_proc[proc];
     roffset=roffset_proc[procid];
     memcpy(&r_buf[roffset],&s_buf[soffset],sizeof(T)*scount_proc[procid]);
-    for (int proc=0;proc<nprocs;++proc){
-      if(proc!=procid){
-        MPI_Wait(&request[proc], &ierr);
-        MPI_Wait(&s_request[proc], &ierr);
-      }
-    }
+    MPI_Waitall(2*nprocs, request, MPI_STATUSES_NULL);
+    delete [] request;
   }
   else if(method==-2){
     if(T_plan->is_evenly_distributed==0)
@@ -1163,9 +1159,6 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings,int kway, un
 
 
   reshuffle_time+=MPI_Wtime();
-  delete [] request;
-  delete [] s_request;
-
 
   if(VERBOSE>=1){
     PCOUT<<"Shuffle Time= "<<shuffle_time<<std::endl;
