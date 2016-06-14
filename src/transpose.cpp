@@ -750,7 +750,7 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
 #ifdef VERBOSE2
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -988,7 +988,7 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings,int kway, un
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
 #ifdef VERBOSE2
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -1213,7 +1213,7 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway, un
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
 #ifdef VERBOSE2
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -1465,7 +1465,7 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, u
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
 #ifdef VERBOSE2
@@ -1749,7 +1749,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2)
@@ -1972,7 +1972,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings, unsigned fl
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2)
@@ -2171,7 +2171,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway, u
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2)
@@ -2368,7 +2368,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -2618,7 +2618,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings, unsigned 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -2853,7 +2853,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings,int kway, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -3075,7 +3075,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2)
@@ -3316,7 +3316,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2)
@@ -3531,7 +3531,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings,int kway, unsigne
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2)
@@ -3709,7 +3709,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2)

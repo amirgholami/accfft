@@ -790,7 +790,7 @@ void fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
 #ifdef VERBOSE2
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -1140,7 +1140,7 @@ void fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings, i
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
 #ifdef VERBOSE2
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -1489,7 +1489,7 @@ void fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings, int
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -1833,7 +1833,7 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, i
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -2198,7 +2198,7 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -2491,7 +2491,7 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -2801,7 +2801,7 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan,T * data, double *timings,
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -3078,7 +3078,7 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings, un
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -3309,7 +3309,7 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -3566,7 +3566,7 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -3808,7 +3808,7 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings, un
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -4025,7 +4025,7 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,int
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -4244,7 +4244,7 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -4459,7 +4459,7 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings, 
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -4723,7 +4723,7 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,i
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   int ptr=0;
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
@@ -4982,7 +4982,7 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigne
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -5206,7 +5206,7 @@ void transpose_cuda_v5_2(T_Plan_gpu<T>* T_plan, T* data, double *timings, unsign
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -5441,7 +5441,7 @@ void transpose_cuda_v5_3(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsig
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -5654,14 +5654,13 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigne
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
     cudaMemcpy(data_cpu, data, T_plan->alloc_local, cudaMemcpyDeviceToHost);
     for(int h=0;h<howmany;h++)
-      for(int id=0;id<1+0*nprocs;++id){
-        if(procid==id)
+        if(procid==0)
           for(int i=0;i<local_n0;i++){
             std::cout<<std::endl;
             for(int j=0;j<N[1];j++){
@@ -5670,7 +5669,6 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings, unsigne
           }
         std::cout<<'\n';
         MPI_Barrier(T_plan->comm);
-      }
   }
   //PCOUT<<" ============================================= "<<std::endl;
   //PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -5855,7 +5853,7 @@ void transpose_cuda_v7(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kway
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
@@ -6053,7 +6051,7 @@ void transpose_cuda_v7_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,int kw
   int idist=N[1]*local_n0*n_tuples;
   int odist=N[0]*local_n1*n_tuples;
 
-  double comm_time=0*MPI_Wtime(), shuffle_time=0*MPI_Wtime(), reshuffle_time=0*MPI_Wtime(), total_time=0*MPI_Wtime();
+  double comm_time=0, shuffle_time=0, reshuffle_time=0, total_time=0;
 
   if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
   if(VERBOSE>=2){
