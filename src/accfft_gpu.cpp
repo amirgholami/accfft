@@ -830,9 +830,9 @@ accfft_plan_gpu*  accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d, Complex 
     plan->T_plan_1i->alloc_local=plan->alloc_max;
 
 
-    plan->iplan_0=NULL;
-    plan->iplan_1=NULL;
-    plan->iplan_2=NULL;
+    plan->iplan_0=-1;
+    plan->iplan_1=-1;
+    plan->iplan_2=-1;
 
     int coords[2],np[2],periods[2];
     MPI_Cart_get(c_comm,2,np,periods,coords);
