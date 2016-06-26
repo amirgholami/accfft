@@ -121,8 +121,9 @@ Mem_Mgr_gpu<T>::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howman
    // PCOUT<<"PINNED Alloc time= "<<pinned_time<<std::endl;
   }
   else{
-    posix_memalign((void **)&buffer_2,64, alloc_local);
-    posix_memalign((void **)&buffer,64, alloc_local);
+    err=posix_memalign((void **)&buffer_2,64, alloc_local);
+    err=posix_memalign((void **)&buffer,64, alloc_local);
+    assert(err==0 && "posix_memalign failed to allocate memory in Mem_Mgr_gpu");
   }
   cudaMalloc((void **)&buffer_d, alloc_local);
   cudaMalloc((void **)&buffer_d2, alloc_local);
