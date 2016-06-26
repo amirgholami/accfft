@@ -88,7 +88,7 @@ install (DIRECTORY include/ DESTINATION include FILES_MATCHING PATTERN "*.h"
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
 #             CPU UTILS BUILD             #
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
-find_package(PNETCDF)
+find_package(PNETCDF QUIET)
 
 if (PNETCDF_FOUND)
   set (libaccfft_utils_SRCS ${libaccfft_SRCS} 
