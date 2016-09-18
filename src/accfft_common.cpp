@@ -59,11 +59,11 @@ void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
   MPI_Comm_rank(in_comm, &procid);
   MPI_Comm_size(in_comm, &nprocs);
 
-  if(c_dims[0]*c_dims[1]!=nprocs){
-    c_dims[0]=0;c_dims[1]=0;
+  if(c_dims[0] * c_dims[1] != nprocs){
+    c_dims[0] = 0; c_dims[1] = 0;
     MPI_Dims_create(nprocs,2, c_dims);
     //std::swap(c_dims[0],c_dims[1]);
-    PCOUT<<"Input c_dim[0]*c_dims[1]!=nprocs. Automatically switching to "<< c_dims[0]<<" , c_dims_1="<<c_dims[1]<<std::endl;
+    PCOUT<<"Input c_dim[0] * c_dims[1] != nprocs. Automatically switching to c_dims[0] = "<< c_dims[0]<<" , c_dims_1 = "<<c_dims[1]<<std::endl;
   }
 
   /* Create Cartesian Communicator */
