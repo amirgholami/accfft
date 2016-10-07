@@ -24,6 +24,8 @@ target_link_libraries(step1
   accfft_utils
   ${FFTW_LIB}
   ${FFTW_THREADS_LIB}
+  ${FFTWF_LIB}
+  ${FFTWF_THREADS_LIB}
 )
 if (PNETCDF_FOUND)
   target_link_libraries(step1 ${PNETCDF_LIBRARIES})
