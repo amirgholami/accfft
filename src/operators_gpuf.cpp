@@ -20,7 +20,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with AccFFT.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 #include <mpi.h>
 #include <omp.h>
 #include <iostream>
@@ -30,14 +30,19 @@
 #include <cuda_runtime_api.h>
 #include <accfft_gpuf.h>
 
-#include <../src/operators_gpu.txx>
-
+#include "operators_gpu.txx"
 
 /* Single Precision Instantiation */
-template void accfft_grad_gpu_t<float,accfft_plan_gpuf>       (float* A_x , float* A_y, float *A_z, float* A,accfft_plan_gpuf *plan, std::bitset<3> *pXYZ, double* timer);
-template void accfft_laplace_gpu_t<float,accfft_plan_gpuf>    (float* LA  , float* A  , accfft_plan_gpuf *plan, double* timer);
-template void accfft_divergence_gpu_t<float,accfft_plan_gpuf> (float* divA, float* A_x, float *A_y, float* A_z,accfft_plan_gpuf *plan, double* timer);
-template void accfft_biharmonic_gpu_t<float,accfft_plan_gpuf>    (float* LA  , float* A  , accfft_plan_gpuf *plan, double* timer);
+template void accfft_grad_gpu_t<float, accfft_plan_gpuf>(float* A_x, float* A_y,
+		float *A_z, float* A, accfft_plan_gpuf *plan, std::bitset<3> *pXYZ,
+		double* timer);
+template void accfft_laplace_gpu_t<float, accfft_plan_gpuf>(float* LA, float* A,
+		accfft_plan_gpuf *plan, double* timer);
+template void accfft_divergence_gpu_t<float, accfft_plan_gpuf>(float* divA,
+		float* A_x, float *A_y, float* A_z, accfft_plan_gpuf *plan,
+		double* timer);
+template void accfft_biharmonic_gpu_t<float, accfft_plan_gpuf>(float* LA,
+		float* A, accfft_plan_gpuf *plan, double* timer);
 
 /**
  * Computes single precision gradient of its input real data A, and returns the x, y, and z components
@@ -53,8 +58,10 @@ template void accfft_biharmonic_gpu_t<float,accfft_plan_gpuf>    (float* LA  , f
  * some time, when just one or two of the gradient components are needed.
  * @param timer See \ref timer for more details.
  */
-void accfft_grad_gpuf(float * A_x, float *A_y, float *A_z, float*A,accfft_plan_gpuf *plan, std::bitset<3> *pXYZ, double* timer){
-  accfft_grad_gpu_t<float,accfft_plan_gpuf>(A_x, A_y, A_z, A, plan, pXYZ, timer);
+void accfft_grad_gpuf(float * A_x, float *A_y, float *A_z, float*A,
+		accfft_plan_gpuf *plan, std::bitset<3> *pXYZ, double* timer) {
+	accfft_grad_gpu_t<float, accfft_plan_gpuf>(A_x, A_y, A_z, A, plan, pXYZ,
+			timer);
 }
 
 /**
@@ -66,8 +73,9 @@ void accfft_grad_gpuf(float * A_x, float *A_y, float *A_z, float*A,accfft_plan_g
  * without computing the gradient.
  * @param timer See \ref timer for more details.
  */
-void accfft_laplace_gpuf(float* LA, float* A,accfft_plan_gpuf *plan, double* timer){
-  accfft_laplace_gpu_t<float,accfft_plan_gpuf>(LA,A,plan,timer);
+void accfft_laplace_gpuf(float* LA, float* A, accfft_plan_gpuf *plan,
+		double* timer) {
+	accfft_laplace_gpu_t<float, accfft_plan_gpuf>(LA, A, plan, timer);
 }
 
 /**
@@ -82,8 +90,10 @@ void accfft_laplace_gpuf(float* LA, float* A,accfft_plan_gpuf *plan, double* tim
  * without computing the gradient.
  * @param timer See \ref timer for more details.
  */
-void accfft_divergence_gpuf(float* divA, float* A_x, float* A_y, float* A_z,accfft_plan_gpuf *plan, double* timer){
-  accfft_divergence_gpu_t<float,accfft_plan_gpuf>(divA, A_x, A_y, A_z, plan, timer);
+void accfft_divergence_gpuf(float* divA, float* A_x, float* A_y, float* A_z,
+		accfft_plan_gpuf *plan, double* timer) {
+	accfft_divergence_gpu_t<float, accfft_plan_gpuf>(divA, A_x, A_y, A_z, plan,
+			timer);
 }
 
 /**
@@ -95,6 +105,7 @@ void accfft_divergence_gpuf(float* divA, float* A_x, float* A_y, float* A_z,accf
  * without computing the gradient.
  * @param timer See \ref timer for more details.
  */
-void accfft_biharmonic_gpuf(float* BA, float* A,accfft_plan_gpuf *plan, double* timer){
-  accfft_biharmonic_gpu_t<float,accfft_plan_gpuf>(BA,A,plan,timer);
+void accfft_biharmonic_gpuf(float* BA, float* A, accfft_plan_gpuf *plan,
+		double* timer) {
+	accfft_biharmonic_gpu_t<float, accfft_plan_gpuf>(BA, A, plan, timer);
 }

@@ -19,7 +19,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with AccFFT.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 #include <mpi.h>
 #include <omp.h>
@@ -32,17 +32,17 @@
  * Allocates aligned memory to enable SIMD
  * @param size Allocation size in Bytes
  */
-void* accfft_alloc(ptrdiff_t size){
-  void * ptr=fftw_malloc(size);
-  return ptr;
+void* accfft_alloc(ptrdiff_t size) {
+	void * ptr = fftw_malloc(size);
+	return ptr;
 }
 /**
  * Free memory allocated by \ref accfft_alloc
  * @param ptr Address of the memory to be freed.
  */
-void accfft_free(void * ptr){
-  fftw_free(ptr);
-  return;
+void accfft_free(void * ptr) {
+	fftw_free(ptr);
+	return;
 }
 /**
  * Creates a Cartesian communicator of size c_dims[0]xc_dims[1] from its input.
@@ -53,39 +53,43 @@ void accfft_free(void * ptr){
  * @param c_dims A 2D integer array, which sets the size of the Cartesian array to c_dims[0]xc_dims[1]
  * @param c_comm A pointer to the Cartesian communicator which will be created
  */
-void accfft_create_comm(MPI_Comm in_comm,int * c_dims,MPI_Comm *c_comm){
+void accfft_create_comm(MPI_Comm in_comm, int * c_dims, MPI_Comm *c_comm) {
 
-  int nprocs, procid;
-  MPI_Comm_rank(in_comm, &procid);
-  MPI_Comm_size(in_comm, &nprocs);
+	int nprocs, procid;
+	MPI_Comm_rank(in_comm, &procid);
+	MPI_Comm_size(in_comm, &nprocs);
 
-  if(c_dims[0] * c_dims[1] != nprocs){
-    c_dims[0] = 0; c_dims[1] = 0;
-    MPI_Dims_create(nprocs,2, c_dims);
-    //std::swap(c_dims[0],c_dims[1]);
-    PCOUT<<"Input c_dim[0] * c_dims[1] != nprocs. Automatically switching to c_dims[0] = "<< c_dims[0]<<" , c_dims_1 = "<<c_dims[1]<<std::endl;
-  }
+	if (c_dims[0] * c_dims[1] != nprocs) {
+		c_dims[0] = 0;
+		c_dims[1] = 0;
+		MPI_Dims_create(nprocs, 2, c_dims);
+		//std::swap(c_dims[0],c_dims[1]);
+		PCOUT
+				<< "Input c_dim[0] * c_dims[1] != nprocs. Automatically switching to c_dims[0] = "
+				<< c_dims[0] << " , c_dims_1 = " << c_dims[1] << std::endl;
+	}
 
-  /* Create Cartesian Communicator */
-  int period[2], reorder;
-  int coord[2];
-  period[0]=0; period[1]=0;
-  reorder=1;
+	/* Create Cartesian Communicator */
+	int period[2], reorder;
+	int coord[2];
+	period[0] = 0;
+	period[1] = 0;
+	reorder = 1;
 
-  MPI_Cart_create(in_comm, 2, c_dims, period, reorder, c_comm);
-  //PCOUT<<"dim[0]= "<<c_dims[0]<<" dim[1]= "<<c_dims[1]<<std::endl;
+	MPI_Cart_create(in_comm, 2, c_dims, period, reorder, c_comm);
+	//PCOUT<<"dim[0]= "<<c_dims[0]<<" dim[1]= "<<c_dims[1]<<std::endl;
 
-  //MPI_Cart_coords(c_comm, procid, 2, coord);
+	//MPI_Cart_coords(c_comm, procid, 2, coord);
 
-  return;
+	return;
 
 }
 /**
  * Initialize AccFFT library.
  * @return 0 if successful.
  */
-int accfft_init(){
-  return 0;
+int accfft_init() {
+	return 0;
 }
 
 /**
@@ -93,18 +97,20 @@ int accfft_init(){
  * @param nthreads The number of OpenMP threads to use for execution of local FFT.
  * @return 0 if successful
  */
-int accfft_init(int nthreads){
-  int threads_ok=1;
-  if (threads_ok) threads_ok = fftw_init_threads();
-  if (threads_ok) fftw_plan_with_nthreads(nthreads);
+int accfft_init(int nthreads) {
+	int threads_ok = 1;
+	if (threads_ok)
+		threads_ok = fftw_init_threads();
+	if (threads_ok)
+		fftw_plan_with_nthreads(nthreads);
 
-  return (!threads_ok);
+	return (!threads_ok);
 }
 
 /**
  * Cleanup all CPU resources
  */
-void accfft_cleanup(){
-  fftw_cleanup_threads();
-  fftw_cleanup();
+void accfft_cleanup() {
+	fftw_cleanup_threads();
+	fftw_cleanup();
 }

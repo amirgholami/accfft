@@ -16,18 +16,18 @@
  *  You should have received a copy of the GNU General Public License
  *  along with AccFFT.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 #ifndef _OMP_UTILS_H_
 #define _OMP_UTILS_H_
 
 namespace omp_par {
 
-  template <class T, class I>
-    T reduce(T* A, I cnt);
+template<class T, class I>
+T reduce(T* A, I cnt);
 
-  template <class T, class I>
-    void scan(T* A, T* B,I cnt);
+template<class T, class I>
+void scan(T* A, T* B, I cnt);
 
 }
 

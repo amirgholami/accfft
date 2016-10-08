@@ -16,25 +16,25 @@
  *  You should have received a copy of the GNU General Public License
  *  along with AccFFT.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 #ifndef _ACCFFT_UTILS_H
 #define _ACCFFT_UTILS_H
 
 #ifdef USE_PNETCDF
 void read_pnetcdf(const std::string &filename,
-		  MPI_Offset         starts[3],
-		  MPI_Offset         counts[3],
-      MPI_Comm           c_comm,
-		  int                gsizes[3],
-		  double            *localData);
+		MPI_Offset starts[3],
+		MPI_Offset counts[3],
+		MPI_Comm c_comm,
+		int gsizes[3],
+		double *localData);
 
 void write_pnetcdf(const std::string &filename,
-		   MPI_Offset         starts[3],
-		   MPI_Offset         counts[3],
-       MPI_Comm           c_comm,
-		   int                gsizes[3],
-		   double            *localData);
+		MPI_Offset starts[3],
+		MPI_Offset counts[3],
+		MPI_Comm c_comm,
+		int gsizes[3],
+		double *localData);
 #endif
 
 #endif // _ACCFFT_UTILS_H

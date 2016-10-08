@@ -20,7 +20,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with AccFFT.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
+#include "operators_gpu.txx"
+
 #include <mpi.h>
 #include <omp.h>
 #include <iostream>
@@ -30,15 +32,18 @@
 #include <cuda_runtime_api.h>
 #include <accfft_gpu.h>
 
-#include <../src/operators_gpu.txx>
 
 /* Double Precision Instantiation */
-template void accfft_grad_gpu_t<double,accfft_plan_gpu>(double * A_x, double *A_y, double *A_z,double *A,accfft_plan_gpu *plan, std::bitset<3>* pXYZ, double* timer);
-template void accfft_laplace_gpu_t<double,accfft_plan_gpu>(double * LA,double *A,accfft_plan_gpu *plan, double* timer);
-template void accfft_divergence_gpu_t<double,accfft_plan_gpu>(double* divA, double * A_x, double *A_y, double *A_z,accfft_plan_gpu *plan, double* timer);
-template void accfft_biharmonic_gpu_t<double,accfft_plan_gpu>(double * LA,double *A,accfft_plan_gpu *plan, double* timer);
-
-
+template void accfft_grad_gpu_t<double, accfft_plan_gpu>(double * A_x,
+		double *A_y, double *A_z, double *A, accfft_plan_gpu *plan,
+		std::bitset<3>* pXYZ, double* timer);
+template void accfft_laplace_gpu_t<double, accfft_plan_gpu>(double * LA,
+		double *A, accfft_plan_gpu *plan, double* timer);
+template void accfft_divergence_gpu_t<double, accfft_plan_gpu>(double* divA,
+		double * A_x, double *A_y, double *A_z, accfft_plan_gpu *plan,
+		double* timer);
+template void accfft_biharmonic_gpu_t<double, accfft_plan_gpu>(double * LA,
+		double *A, accfft_plan_gpu *plan, double* timer);
 
 /**
  * Computes double precision gradient of its input real data A, and returns the x, y, and z components
@@ -54,8 +59,10 @@ template void accfft_biharmonic_gpu_t<double,accfft_plan_gpu>(double * LA,double
  * some time, when just one or two of the gradient components are needed.
  * @param timer See \ref timer for more details.
  */
-void accfft_grad_gpu(double * A_x, double *A_y, double *A_z,double *A,accfft_plan_gpu *plan, std::bitset<3>* pXYZ, double* timer){
-  accfft_grad_gpu_t<double,accfft_plan_gpu>(A_x, A_y, A_z, A, plan, pXYZ, timer);
+void accfft_grad_gpu(double * A_x, double *A_y, double *A_z, double *A,
+		accfft_plan_gpu *plan, std::bitset<3>* pXYZ, double* timer) {
+	accfft_grad_gpu_t<double, accfft_plan_gpu>(A_x, A_y, A_z, A, plan, pXYZ,
+			timer);
 }
 
 /**
@@ -67,8 +74,9 @@ void accfft_grad_gpu(double * A_x, double *A_y, double *A_z,double *A,accfft_pla
  * without computing the gradient.
  * @param timer See \ref timer for more details.
  */
-void accfft_laplace_gpu(double * LA,double *A,accfft_plan_gpu *plan, double* timer){
-  accfft_laplace_gpu_t<double,accfft_plan_gpu>(LA,A,plan,timer);
+void accfft_laplace_gpu(double * LA, double *A, accfft_plan_gpu *plan,
+		double* timer) {
+	accfft_laplace_gpu_t<double, accfft_plan_gpu>(LA, A, plan, timer);
 }
 
 /**
@@ -83,8 +91,10 @@ void accfft_laplace_gpu(double * LA,double *A,accfft_plan_gpu *plan, double* tim
  * without computing the gradient.
  * @param timer See \ref timer for more details.
  */
-void accfft_divergence_gpu(double* divA, double * A_x, double *A_y, double *A_z,accfft_plan_gpu *plan, double* timer){
-  accfft_divergence_gpu_t<double,accfft_plan_gpu>(divA, A_x, A_y, A_z, plan, timer);
+void accfft_divergence_gpu(double* divA, double * A_x, double *A_y, double *A_z,
+		accfft_plan_gpu *plan, double* timer) {
+	accfft_divergence_gpu_t<double, accfft_plan_gpu>(divA, A_x, A_y, A_z, plan,
+			timer);
 }
 
 /**
@@ -96,6 +106,7 @@ void accfft_divergence_gpu(double* divA, double * A_x, double *A_y, double *A_z,
  * without computing the gradient.
  * @param timer See \ref timer for more details.
  */
-void accfft_biharmonic_gpu(double * BA,double *A,accfft_plan_gpu *plan, double* timer){
-  accfft_biharmonic_gpu_t<double,accfft_plan_gpu>(BA,A,plan,timer);
+void accfft_biharmonic_gpu(double * BA, double *A, accfft_plan_gpu *plan,
+		double* timer) {
+	accfft_biharmonic_gpu_t<double, accfft_plan_gpu>(BA, A, plan, timer);
 }

@@ -16,7 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with AccFFT.  If not, see <http://www.gnu.org/licenses/>.
  *
-*/
+ */
 
 /*
  * The following people have contributed to this file:
@@ -26,7 +26,7 @@
  * @author Santi Swaroop Adavani, santis@gmail.com
  * @author Dhairya Malhotra, dhairya.malhotra88@gmail.com
  * @author Amir Gholami, gholami@accfft.org
-*/
+ */
 
 #ifndef __PAR_UTILS_H_
 #define __PAR_UTILS_H_
@@ -40,13 +40,13 @@
 
 namespace par {
 
-  template <class T, bool ASYNC>
-    int Mpi_Alltoallv_dense(T* sendbuf, int* sendcnts, int* sdispls,
-        T* recvbuf, int* recvcnts, int* rdispls, MPI_Comm comm, int kway=KWAY);
+template<class T, bool ASYNC>
+int Mpi_Alltoallv_dense(T* sendbuf, int* sendcnts, int* sdispls, T* recvbuf,
+		int* recvcnts, int* rdispls, MPI_Comm comm, int kway = KWAY);
 
-  template <class T, bool ASYNC>
-    int Mpi_Alltoallv_dense_gpu(T* sendbuf, int* sendcnts, int* sdispls,
-        T* recvbuf, int* recvcnts, int* rdispls, MPI_Comm comm, int kway=KWAY);
+template<class T, bool ASYNC>
+int Mpi_Alltoallv_dense_gpu(T* sendbuf, int* sendcnts, int* sdispls, T* recvbuf,
+		int* recvcnts, int* rdispls, MPI_Comm comm, int kway = KWAY);
 
 }
 
