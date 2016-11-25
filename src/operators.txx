@@ -20,6 +20,7 @@
 
 #ifndef OPERATORS_TXX
 #define OPERATORS_TXX
+#include "accfft_operators.h"
 template<typename Tc>
 static void grad_mult_wave_numberx(Tc* wA, Tc* A, int* N, MPI_Comm c_comm,
 		std::bitset<3> xyz) {
