@@ -21,10 +21,10 @@ add_executable(step2f ${step2f_SRCS})
 target_link_libraries(step2f
   accfft
   accfft_utils
-  ${FFTW_LIB}
   ${FFTW_THREADS_LIB}
-  ${FFTWF_LIB}
+  ${FFTW_LIB}
   ${FFTWF_THREADS_LIB}
+  ${FFTWF_LIB}
 )
 if (PNETCDF_FOUND)
   target_link_libraries(step2f ${PNETCDF_LIBRARIES})
@@ -43,8 +43,10 @@ add_executable(step2 ${step2_SRCS})
 target_link_libraries(step2
   accfft
   accfft_utils
-  ${FFTW_LIB}
   ${FFTW_THREADS_LIB}
+  ${FFTW_LIB}
+  ${FFTWF_THREADS_LIB}
+  ${FFTWF_LIB}
 )
 if (PNETCDF_FOUND)
   target_link_libraries(step2 ${PNETCDF_LIBRARIES})

@@ -20,8 +20,10 @@ add_executable(step6 ${step6_SRCS})
 target_link_libraries(step6
   accfft
   accfft_utils
-  ${FFTW_LIB}
   ${FFTW_THREADS_LIB}
+  ${FFTW_LIB}
+  ${FFTWF_THREADS_LIB}
+  ${FFTWF_LIB}
 )
 if (PNETCDF_FOUND)
   target_link_libraries(step6 ${PNETCDF_LIBRARIES})
