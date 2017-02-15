@@ -20,6 +20,8 @@
 
 #ifndef OPERATORS_GPU_TXX
 #define OPERATORS_GPU_TXX
+#include <cuda_runtime_api.h>
+
 template<typename Tc>
 void grad_mult_wave_numberx_gpu(Tc* wA, Tc* A, int* N, int * osize,
 		int * ostart, std::bitset<3> xyz);

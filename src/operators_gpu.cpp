@@ -21,16 +21,8 @@
  *  along with AccFFT.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-#include "operators_gpu.txx"
-
-#include <mpi.h>
-#include <omp.h>
-#include <iostream>
-#include <cmath>
-#include <math.h>
-#include <string.h>
-#include <cuda_runtime_api.h>
 #include <accfft_gpu.h>
+#include "operators_gpu.txx"
 
 
 /* Double Precision Instantiation */
