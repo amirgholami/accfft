@@ -311,23 +311,24 @@ static void mult_wave_number_inv_laplace(Tc* wA, Tc* A, int* N,
 
 					if (X > N[0] / 2)
 						wx -= N[0];
-					//if(X==N[0]/2)
-					//  wx=0;
+					if(X == N[0] / 2)
+					  wx=0;
 
 					if (Y > N[1] / 2)
 						wy -= N[1];
-					//if(Y==N[1]/2)
-					//  wy=0;
+					if(Y == N[1] / 2)
+					  wy=0;
 
 					if (Z > N[2] / 2)
 						wz -= N[2];
-					//if(Z==N[2]/2)
-					//  wz=0;
+					if(Z == N[2] / 2)
+					  wz=0;
 
 					wave = -wx * wx - wy * wy - wz * wz;
 					if (wave == 0)
-						wave = -1;
-					wave = 1. / wave;
+						wave = 0;
+          else
+					  wave = 1. / wave;
 
 					ptr = (i * osize[1] + j) * osize[2] + k;
 					wA[ptr][0] = scale * wave * A[ptr][0];

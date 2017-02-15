@@ -221,14 +221,14 @@ void read_pnetcdf(const std::string &filename,
 	 */
 	int NC_mode;
 	err = ncmpi_inq_version(ncFileId, &NC_mode);
-	if (myRank==0) {
-		if (NC_mode == NC_64BIT_DATA)
-		std::cout << "Pnetcdf Input mode : NC_64BIT_DATA (CDF-5)\n";
-		else if (NC_mode == NC_64BIT_OFFSET)
-		std::cout << "Pnetcdf Input mode : NC_64BIT_OFFSET (CDF-2)\n";
-		else
-		std::cout << "Pnetcdf Input mode : unknown\n";
-	}
+	// if (myRank==0) {
+	//	if (NC_mode == NC_64BIT_DATA)
+	//	std::cout << "Pnetcdf Input mode : NC_64BIT_DATA (CDF-5)\n";
+	//	else if (NC_mode == NC_64BIT_OFFSET)
+	//	std::cout << "Pnetcdf Input mode : NC_64BIT_OFFSET (CDF-2)\n";
+	//	else
+	//	std::cout << "Pnetcdf Input mode : unknown " << NC_mode << std::endl;
+	// }
 
 	/*
 	 * Query information about variable named "data"
