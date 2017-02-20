@@ -26,11 +26,17 @@
 
 
 /* Double Precision Instantiation */
+template void accfft_grad_gpu_slow_t<double, accfft_plan_gpu>(double * A_x,
+		double *A_y, double *A_z, double *A, accfft_plan_gpu *plan,
+		std::bitset<3>* pXYZ, double* timer);
 template void accfft_grad_gpu_t<double, accfft_plan_gpu>(double * A_x,
 		double *A_y, double *A_z, double *A, accfft_plan_gpu *plan,
 		std::bitset<3>* pXYZ, double* timer);
 template void accfft_laplace_gpu_t<double, accfft_plan_gpu>(double * LA,
 		double *A, accfft_plan_gpu *plan, double* timer);
+template void accfft_divergence_gpu_slow_t<double, accfft_plan_gpu>(double* divA,
+		double * A_x, double *A_y, double *A_z, accfft_plan_gpu *plan,
+		double* timer);
 template void accfft_divergence_gpu_t<double, accfft_plan_gpu>(double* divA,
 		double * A_x, double *A_y, double *A_z, accfft_plan_gpu *plan,
 		double* timer);

@@ -33,26 +33,31 @@
 #include "operators.txx"
 
 template void grad_mult_wave_numberx<Complex>(Complex* wA, Complex* A, int* N,
-		MPI_Comm c_comm, std::bitset<3> xyz);
+		MPI_Comm c_comm, int* size, int* start, std::bitset<3> xyz);
 template void grad_mult_wave_numbery<Complex>(Complex* wA, Complex* A, int* N,
-		MPI_Comm c_comm, std::bitset<3> xyz);
+		MPI_Comm c_comm, int* size, int* start, std::bitset<3> xyz);
 
 template void grad_mult_wave_numberx<Complexf>(Complexf* wA, Complexf* A,
-		int* N, MPI_Comm c_comm, std::bitset<3> xyz);
+		int* N, MPI_Comm c_comm, int* size, int* start, std::bitset<3> xyz);
 template void grad_mult_wave_numbery<Complexf>(Complexf* wA, Complexf* A,
-		int* N, MPI_Comm c_comm, std::bitset<3> xyz);
+		int* N, MPI_Comm c_comm, int* size, int* start, std::bitset<3> xyz);
 template void grad_mult_wave_numberz<Complexf>(Complexf* wA, Complexf* A,
-		int* N, MPI_Comm c_comm, std::bitset<3> xyz);
+		int* N, MPI_Comm c_comm, int* start, int* size, std::bitset<3> xyz);
 template void grad_mult_wave_number_laplace<Complexf>(Complexf* wA, Complexf* A,
 		int* N, MPI_Comm c_comm);
 template void biharmonic_mult_wave_number<Complexf>(Complexf* wA, Complexf* A,
 		int* N, MPI_Comm c_comm);
 
+template void accfft_grad_slow_t<float, accfft_planf>(float * A_x, float *A_y,
+		float* A_z, float* A, accfft_planf *plan, std::bitset<3>* pXYZ,
+		double* timer);
 template void accfft_grad_t<float, accfft_planf>(float * A_x, float *A_y,
 		float* A_z, float* A, accfft_planf *plan, std::bitset<3>* pXYZ,
 		double* timer);
 template void accfft_laplace_t<float, accfft_planf>(float * LA, float *A,
 		accfft_planf *plan, double* timer);
+template void accfft_divergence_slow_t<float, accfft_planf>(float* divA, float* A_x,
+		float* A_y, float*A_z, accfft_planf *plan, double* timer);
 template void accfft_divergence_t<float, accfft_planf>(float* divA, float* A_x,
 		float* A_y, float*A_z, accfft_planf *plan, double* timer);
 template void accfft_biharmonic_t<float, accfft_planf>(float * BA, float *A,

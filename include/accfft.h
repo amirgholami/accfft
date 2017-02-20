@@ -40,7 +40,12 @@ struct accfft_plan {
 	T_Plan<double> * T_plan_2;
 	T_Plan<double> * T_plan_2i;
 	T_Plan<double> * T_plan_1i;
+	T_Plan<double> * T_plan_y;
+	T_Plan<double> * T_plan_yi;
+	T_Plan<double> * T_plan_x;
+	T_Plan<double> * T_plan_xi;
 	fftw_plan fplan_0, iplan_0, fplan_1, iplan_1, fplan_2, iplan_2;
+  fftw_plan fplan_y, fplan_x, iplan_y, iplan_x;
 	int coord[2], np[2], periods[2];
 	MPI_Comm c_comm, row_comm, col_comm;
 
@@ -49,6 +54,8 @@ struct accfft_plan {
 	int osize_2[3], ostart_2[3];
 	int osize_1i[3], ostart_1i[3];
 	int osize_2i[3], ostart_2i[3];
+  int osize_y[3], osize_yi[3], ostart_y[3];
+  int osize_x[3], osize_xi[3], ostart_x[3];
 
 	int isize[3], istart[3];
 	int osize[3], ostart[3];
@@ -71,15 +78,21 @@ struct accfft_plan {
 		T_plan_1i = NULL;
 		T_plan_2 = NULL;
 		T_plan_2i = NULL;
+		T_plan_x = NULL;
+		T_plan_xi = NULL;
+		T_plan_y = NULL;
+		T_plan_yi = NULL;
 		Mem_mgr = NULL;
+    fplan_y = NULL;
+    fplan_x = NULL;
+    iplan_y = NULL;
+    iplan_x = NULL;
 	}
 	;
 
 };
 
 int accfft_init(int nthreads);
-int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,
-		MPI_Comm c_comm);
 int accfft_local_size_dft_r2c(int * n, int * isize, int * istart, int * osize,
 		int *ostart, MPI_Comm c_comm);
 
@@ -116,4 +129,26 @@ void accfft_execute_c2r_t(accfft_plan* plan, Tc* data, T* data_out,
 template<typename T>
 int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
 		int *ostart, MPI_Comm c_comm);
+
+// templates for execution in z direction only
+template<typename T, typename Tc>
+void accfft_execute_r2c_z_t(accfft_plan* plan, T* data, Tc* data_out,
+		double * timer = NULL);
+template<typename Tc, typename T>
+void accfft_execute_c2r_z_t(accfft_plan* plan, Tc* data, T* data_out,
+		double * timer = NULL);
+// templates for execution in y direction only
+template<typename T, typename Tc>
+void accfft_execute_r2c_y_t(accfft_plan* plan, T* data, Tc* data_out,
+		double * timer = NULL);
+template<typename Tc, typename T>
+void accfft_execute_c2r_y_t(accfft_plan* plan, Tc* data, T* data_out,
+		double * timer = NULL);
+// templates for execution in x direction only
+template<typename T, typename Tc>
+void accfft_execute_r2c_x_t(accfft_plan* plan, T* data, Tc* data_out,
+		double * timer = NULL);
+template<typename Tc, typename T>
+void accfft_execute_c2r_x_t(accfft_plan* plan, Tc* data, T* data_out,
+		double * timer = NULL);
 #endif

@@ -44,6 +44,191 @@ void accfft_free(void * ptr) {
 	fftw_free(ptr);
 	return;
 }
+
+int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,
+		MPI_Comm c_comm) {
+	int nprocs, procid;
+	MPI_Comm_rank(c_comm, &procid);
+
+	int coords[2], np[2], periods[2];
+	MPI_Cart_get(c_comm, 2, np, periods, coords);
+	isize[2] = N2;
+	isize[0] = ceil(N0 / (double) np[0]);
+	isize[1] = ceil(N1 / (double) np[1]);
+
+	istart[0] = isize[0] * (coords[0]);
+	istart[1] = isize[1] * (coords[1]);
+	istart[2] = 0;
+
+	if ((N0 - isize[0] * coords[0]) < isize[0]) {
+		isize[0] = N0 - isize[0] * coords[0];
+		isize[0] *= (int) isize[0] > 0;
+		istart[0] = N0 - isize[0];
+	}
+	if ((N1 - isize[1] * coords[1]) < isize[1]) {
+		isize[1] = N1 - isize[1] * coords[1];
+		isize[1] *= (int) isize[1] > 0;
+		istart[1] = N1 - isize[1];
+	}
+
+	if (VERBOSE >= 2) {
+		MPI_Barrier(c_comm);
+		for (int r = 0; r < np[0]; r++)
+			for (int c = 0; c < np[1]; c++) {
+				MPI_Barrier(c_comm);
+				if ((coords[0] == r) && (coords[1] == c))
+					std::cout << coords[0] << "," << coords[1] << " isize[0]= "
+							<< isize[0] << " isize[1]= " << isize[1]
+							<< " isize[2]= " << isize[2] << " istart[0]= "
+							<< istart[0] << " istart[1]= " << istart[1]
+							<< " istart[2]= " << istart[2] << std::endl;
+				MPI_Barrier(c_comm);
+			}
+		MPI_Barrier(c_comm);
+	}
+	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(double);
+
+	return alloc_local;
+}
+
+int dfft_get_local_sizef(int N0, int N1, int N2, int * isize, int * istart,
+		MPI_Comm c_comm) {
+	int nprocs, procid;
+	MPI_Comm_rank(c_comm, &procid);
+
+	int coords[2], np[2], periods[2];
+	MPI_Cart_get(c_comm, 2, np, periods, coords);
+	isize[2] = N2;
+	isize[0] = ceil(N0 / (double) np[0]);
+	isize[1] = ceil(N1 / (double) np[1]);
+
+	istart[0] = isize[0] * (coords[0]);
+	istart[1] = isize[1] * (coords[1]);
+	istart[2] = 0;
+
+	if ((N0 - isize[0] * coords[0]) < isize[0]) {
+		isize[0] = N0 - isize[0] * coords[0];
+		isize[0] *= (int) isize[0] > 0;
+		istart[0] = N0 - isize[0];
+	}
+	if ((N1 - isize[1] * coords[1]) < isize[1]) {
+		isize[1] = N1 - isize[1] * coords[1];
+		isize[1] *= (int) isize[1] > 0;
+		istart[1] = N1 - isize[1];
+	}
+
+	if (VERBOSE >= 2) {
+		MPI_Barrier(c_comm);
+		for (int r = 0; r < np[0]; r++)
+			for (int c = 0; c < np[1]; c++) {
+				MPI_Barrier(c_comm);
+				if ((coords[0] == r) && (coords[1] == c))
+					std::cout << coords[0] << "," << coords[1] << " isize[0]= "
+							<< isize[0] << " isize[1]= " << isize[1]
+							<< " isize[2]= " << isize[2] << " istart[0]= "
+							<< istart[0] << " istart[1]= " << istart[1]
+							<< " istart[2]= " << istart[2] << std::endl;
+				MPI_Barrier(c_comm);
+			}
+		MPI_Barrier(c_comm);
+	}
+	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(float);
+
+	return alloc_local;
+}
+
+int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,
+		MPI_Comm c_comm) {
+	int procid;
+	MPI_Comm_rank(c_comm, &procid);
+
+	int coords[2], np[2], periods[2];
+	MPI_Cart_get(c_comm, 2, np, periods, coords);
+	isize[2] = N2;
+	isize[0] = ceil(N0 / (double) np[0]);
+	isize[1] = ceil(N1 / (double) np[1]);
+
+	istart[0] = isize[0] * (coords[0]);
+	istart[1] = isize[1] * (coords[1]);
+	istart[2] = 0;
+
+	if ((N0 - isize[0] * coords[0]) < isize[0]) {
+		isize[0] = N0 - isize[0] * coords[0];
+		isize[0] *= (int) isize[0] > 0;
+		istart[0] = N0 - isize[0];
+	}
+	if ((N1 - isize[1] * coords[1]) < isize[1]) {
+		isize[1] = N1 - isize[1] * coords[1];
+		isize[1] *= (int) isize[1] > 0;
+		istart[1] = N1 - isize[1];
+	}
+
+	if (VERBOSE >= 2) {
+		MPI_Barrier(c_comm);
+		for (int r = 0; r < np[0]; r++)
+			for (int c = 0; c < np[1]; c++) {
+				MPI_Barrier(c_comm);
+				if ((coords[0] == r) && (coords[1] == c))
+					std::cout << coords[0] << "," << coords[1] << " isize[0]= "
+							<< isize[0] << " isize[1]= " << isize[1]
+							<< " isize[2]= " << isize[2] << " istart[0]= "
+							<< istart[0] << " istart[1]= " << istart[1]
+							<< " istart[2]= " << istart[2] << std::endl;
+				MPI_Barrier(c_comm);
+			}
+		MPI_Barrier(c_comm);
+	}
+	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(double);
+
+	return alloc_local;
+} // end dfft_get_local_size_gpu
+
+int dfft_get_local_size_gpuf(int N0, int N1, int N2, int * isize, int * istart,
+		MPI_Comm c_comm) {
+	int procid;
+	MPI_Comm_rank(c_comm, &procid);
+
+	int coords[2], np[2], periods[2];
+	MPI_Cart_get(c_comm, 2, np, periods, coords);
+	isize[2] = N2;
+	isize[0] = ceil(N0 / (double) np[0]);
+	isize[1] = ceil(N1 / (double) np[1]);
+
+	istart[0] = isize[0] * (coords[0]);
+	istart[1] = isize[1] * (coords[1]);
+	istart[2] = 0;
+
+	if ((N0 - isize[0] * coords[0]) < isize[0]) {
+		isize[0] = N0 - isize[0] * coords[0];
+		isize[0] *= (int) isize[0] > 0;
+		istart[0] = N0 - isize[0];
+	}
+	if ((N1 - isize[1] * coords[1]) < isize[1]) {
+		isize[1] = N1 - isize[1] * coords[1];
+		isize[1] *= (int) isize[1] > 0;
+		istart[1] = N1 - isize[1];
+	}
+
+	if (VERBOSE >= 2) {
+		MPI_Barrier(c_comm);
+		for (int r = 0; r < np[0]; r++)
+			for (int c = 0; c < np[1]; c++) {
+				MPI_Barrier(c_comm);
+				if ((coords[0] == r) && (coords[1] == c))
+					std::cout << coords[0] << "," << coords[1] << " isize[0]= "
+							<< isize[0] << " isize[1]= " << isize[1]
+							<< " isize[2]= " << isize[2] << " istart[0]= "
+							<< istart[0] << " istart[1]= " << istart[1]
+							<< " istart[2]= " << istart[2] << std::endl;
+				MPI_Barrier(c_comm);
+			}
+		MPI_Barrier(c_comm);
+	}
+	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(float);
+
+	return alloc_local;
+}
+
 /**
  * Creates a Cartesian communicator of size c_dims[0]xc_dims[1] from its input.
  * If c_dims[0]xc_dims[1] would not match the size of in_comm, then the function prints

@@ -24,9 +24,9 @@ __global__ void grad_mult_wave_numberx_cu(Tc* wA, Tc* A, int* N, int* osize, int
 
 	{
 		long int X,wave;
-		long int ptr;
+		ptrdiff_t ptr;
 		X=(i+ostart[0]);
-		//Y=(j+ostart[1]);
+    //Y=(j+ostart[1]);
 		//Z=(k+ostart[2]);
 
 		wave=X;
@@ -76,7 +76,7 @@ __global__ void grad_mult_wave_numbery_cu(Tc* wA, Tc* A, int* N, int* osize, int
 	}
 
 	return;
-} // end grad_mult_wave_numberx_cu
+} // end grad_mult_wave_numbery_cu
 
 template <typename Tc>
 __global__ void grad_mult_wave_numberz_cu(Tc* wA, Tc* A, int* N, int* osize, int * ostart, double scale ) {
@@ -109,7 +109,7 @@ __global__ void grad_mult_wave_numberz_cu(Tc* wA, Tc* A, int* N, int* osize, int
 	}
 
 	return;
-} // end grad_mult_wave_numberx_cu
+} // end grad_mult_wave_numberz_cu
 
 template <typename Tc>
 __global__ void laplace_mult_wave_number_cu(Tc* wA, Tc* A, int* N, int* osize, int * ostart, double scale ) {
@@ -155,7 +155,7 @@ __global__ void laplace_mult_wave_number_cu(Tc* wA, Tc* A, int* N, int* osize, i
 	}
 
 	return;
-} // end grad_mult_wave_numberx_cu
+} // end laplace_mult_wave_number_cu
 
 template <typename Tc>
 __global__ void biharmonic_mult_wave_number_cu(Tc* wA, Tc* A, int* N, int* osize, int * ostart, double scale ) {
@@ -202,7 +202,7 @@ __global__ void biharmonic_mult_wave_number_cu(Tc* wA, Tc* A, int* N, int* osize
 	}
 
 	return;
-} // end grad_mult_wave_numberx_cu
+} // end biharmonic_mult_wave_number_cu
 
 template <typename T>
 __global__ void daxpy_cu(const long long int n,const T alpha, T* x, T* y) {
@@ -239,9 +239,9 @@ void grad_mult_wave_numberx_gpu_(Tc* wA, Tc* A, int* N, int * osize,
 	cudaMemcpy(osize_gpu, osize, 3 * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(ostart_gpu, ostart, 3 * sizeof(int), cudaMemcpyHostToDevice);
 
-	int blocksInX = std::ceil(N[0] / 4.);
-	int blocksInY = std::ceil(N[1] / 4.);
-	int blocksInZ = std::ceil(N[2] / 4.);
+	int blocksInX = std::ceil(osize[0] / 4.);
+	int blocksInY = std::ceil(osize[1] / 4.);
+	int blocksInZ = std::ceil(osize[2] / 4.);
 
 	dim3 Dg(blocksInX, blocksInY, blocksInZ);
 	dim3 Db(4, 4, 4);
@@ -278,9 +278,9 @@ void grad_mult_wave_numbery_gpu_(Tc* wA, Tc* A, int* N, int * osize,
 	cudaMemcpy(osize_gpu, osize, 3 * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(ostart_gpu, ostart, 3 * sizeof(int), cudaMemcpyHostToDevice);
 
-	int blocksInX = std::ceil(N[0] / 4.);
-	int blocksInY = std::ceil(N[1] / 4.);
-	int blocksInZ = std::ceil(N[2] / 4.);
+	int blocksInX = std::ceil(osize[0] / 4.);
+	int blocksInY = std::ceil(osize[1] / 4.);
+	int blocksInZ = std::ceil(osize[2] / 4.);
 
 	dim3 Dg(blocksInX, blocksInY, blocksInZ);
 	dim3 Db(4, 4, 4);
@@ -317,9 +317,9 @@ void grad_mult_wave_numberz_gpu_(Tc* wA, Tc* A, int* N, int * osize,
 	cudaMemcpy(osize_gpu, osize, 3 * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(ostart_gpu, ostart, 3 * sizeof(int), cudaMemcpyHostToDevice);
 
-	int blocksInX = std::ceil(N[0] / 4.);
-	int blocksInY = std::ceil(N[1] / 4.);
-	int blocksInZ = std::ceil(N[2] / 4.);
+	int blocksInX = std::ceil(osize[0] / 4.);
+	int blocksInY = std::ceil(osize[1] / 4.);
+	int blocksInZ = std::ceil(osize[2] / 4.);
 
 	dim3 Dg(blocksInX, blocksInY, blocksInZ);
 	dim3 Db(4, 4, 4);
@@ -353,9 +353,9 @@ void laplace_mult_wave_number_gpu_(Tc* wA, Tc* A, int* N, int * osize,
 	cudaMemcpy(osize_gpu, osize, 3 * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(ostart_gpu, ostart, 3 * sizeof(int), cudaMemcpyHostToDevice);
 
-	int blocksInX = std::ceil(N[0] / 4.);
-	int blocksInY = std::ceil(N[1] / 4.);
-	int blocksInZ = std::ceil(N[2] / 4.);
+	int blocksInX = std::ceil(osize[0] / 4.);
+	int blocksInY = std::ceil(osize[1] / 4.);
+	int blocksInZ = std::ceil(osize[2] / 4.);
 
 	dim3 Dg(blocksInX, blocksInY, blocksInZ);
 	dim3 Db(4, 4, 4);
@@ -390,9 +390,9 @@ void biharmonic_mult_wave_number_gpu_(Tc* wA, Tc* A, int* N, int * osize,
 	cudaMemcpy(osize_gpu, osize, 3 * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(ostart_gpu, ostart, 3 * sizeof(int), cudaMemcpyHostToDevice);
 
-	int blocksInX = std::ceil(N[0] / 4.);
-	int blocksInY = std::ceil(N[1] / 4.);
-	int blocksInZ = std::ceil(N[2] / 4.);
+	int blocksInX = std::ceil(osize[0] / 4.);
+	int blocksInY = std::ceil(osize[1] / 4.);
+	int blocksInZ = std::ceil(osize[2] / 4.);
 
 	dim3 Dg(blocksInX, blocksInY, blocksInZ);
 	dim3 Db(4, 4, 4);

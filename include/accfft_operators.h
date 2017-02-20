@@ -29,10 +29,14 @@
 #include <accfft.h>
 #include <accfftf.h>
 
+template<typename T, typename Tp> void accfft_grad_slow_t(T* A_x, T* A_y, T* A_z,
+		T* A, Tp *plan, std::bitset<3>* pXYZ = NULL, double* timer = NULL);
 template<typename T, typename Tp> void accfft_grad_t(T* A_x, T* A_y, T* A_z,
 		T* A, Tp *plan, std::bitset<3>* pXYZ = NULL, double* timer = NULL);
 template<typename T, typename Tp> void accfft_laplace_t(T* LA, T* A, Tp* plan,
 		double* timer = NULL);
+template<typename T, typename Tp> void accfft_divergence_slow_t(T* divA, T* A_x,
+		T* A_y, T* A_z, Tp* plan, double* timer = NULL);
 template<typename T, typename Tp> void accfft_divergence_t(T* divA, T* A_x,
 		T* A_y, T* A_z, Tp* plan, double* timer = NULL);
 template<typename T, typename Tp> void accfft_biharmonic_t(T* LA, T* A,

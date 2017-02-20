@@ -36,8 +36,14 @@
 template void accfft_grad_gpu_t<float, accfft_plan_gpuf>(float* A_x, float* A_y,
 		float *A_z, float* A, accfft_plan_gpuf *plan, std::bitset<3> *pXYZ,
 		double* timer);
+template void accfft_grad_gpu_slow_t<float, accfft_plan_gpuf>(float* A_x, float* A_y,
+		float *A_z, float* A, accfft_plan_gpuf *plan, std::bitset<3> *pXYZ,
+		double* timer);
 template void accfft_laplace_gpu_t<float, accfft_plan_gpuf>(float* LA, float* A,
 		accfft_plan_gpuf *plan, double* timer);
+template void accfft_divergence_gpu_slow_t<float, accfft_plan_gpuf>(float* divA,
+		float* A_x, float *A_y, float* A_z, accfft_plan_gpuf *plan,
+		double* timer);
 template void accfft_divergence_gpu_t<float, accfft_plan_gpuf>(float* divA,
 		float* A_x, float *A_y, float* A_z, accfft_plan_gpuf *plan,
 		double* timer);

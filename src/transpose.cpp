@@ -1253,6 +1253,8 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 
 #ifdef VERBOSE2
 	if(VERBOSE>=2) PCOUT<<"INPUT:"<<std::endl;
+	if(VERBOSE>=2) PCOUT<<"ln0:"<<local_n0<<std::endl;
+	if(VERBOSE>=2) PCOUT<<"N[1]= :"<<N[1]<<std::endl;
 	if(VERBOSE>=2)
 	for(int h=0;h<howmany;h++)
 	for(int id=0;id<nprocs;++id) {
