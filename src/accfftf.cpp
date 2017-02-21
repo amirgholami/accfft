@@ -24,11 +24,7 @@
 #include <mpi.h>
 #include <fftw3.h>
 #include <omp.h>
-#include <iostream>
-#include <cmath>
-#include <math.h>
 #include "transpose.h"
-#include <string.h>
 #include "accfftf.h"
 #include "accfft_common.h"
 #define VERBOSE 0

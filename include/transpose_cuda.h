@@ -24,6 +24,7 @@
 //#include "transpose.h"
 #include <cuda.h>
 #include <vector>
+#include <cstddef>
 
 template<typename T>
 class Mem_Mgr_gpu {

@@ -27,6 +27,7 @@
 #include <math.h>
 #include "transpose_cuda.h"
 #include <string.h>
+#include <cstddef>
 #include <bitset>
 #include "cuda.h"
 #include <cufft.h>

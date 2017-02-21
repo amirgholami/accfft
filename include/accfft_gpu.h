@@ -28,6 +28,7 @@
 #include "transpose_cuda.h"
 #include <cuda_runtime_api.h>
 #include <string.h>
+#include <cstddef>
 #include <bitset>
 #include "cuda.h"
 #include <cufft.h>

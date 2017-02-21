@@ -29,6 +29,7 @@
 #include <math.h>
 #include "transpose.h"
 #include <string.h>
+#include <cstdlib>
 #include "accfft.h"
 #include "accfft_common.h"
 #define VERBOSE 0

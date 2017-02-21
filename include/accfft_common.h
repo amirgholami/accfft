@@ -27,6 +27,8 @@
 #include <cmath>
 #include <math.h>
 #define VERBOSE 0
+#include <stdint.h>
+#include <cstddef>
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
 typedef float Complexf[2];
