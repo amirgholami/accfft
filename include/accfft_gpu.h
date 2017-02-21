@@ -96,7 +96,7 @@ struct accfft_plan_gpu {
 int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,
 		MPI_Comm c_comm);
 int accfft_local_size_dft_r2c_gpu(int * n, int * isize, int * istart,
-		int * osize, int *ostart, MPI_Comm c_comm, bool inplace = 0);
+		int * osize, int *ostart, MPI_Comm c_comm);
 
 accfft_plan_gpu* accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d,
 		double * data_out_d, MPI_Comm c_comm, unsigned flags = ACCFFT_MEASURE);

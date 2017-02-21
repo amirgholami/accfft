@@ -156,7 +156,7 @@ void accfft_grad_gpu_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 	int isize[3], osize[3], istart[3], ostart[3];
 	long long int alloc_max;
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpu_t<T>(N, isize, istart, osize,
+	alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
 			ostart, c_comm);
 	//PCOUT<<"istart[0]= "<<istart[0]<<" istart[1]= "<<istart[1]<<" istart[2]="<<istart[2]<<std::endl;
 	//PCOUT<<"ostart[0]= "<<ostart[0]<<" ostart[1]= "<<ostart[1]<<" ostart[2]="<<ostart[2]<<std::endl;
@@ -252,7 +252,7 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 	int isize[3], osize[3], istart[3], ostart[3];
 	long long int alloc_max;
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpu_t<T>(N, isize, istart, osize,
+	alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
 			ostart, c_comm);
   if(procid == 1) {
   std::cout<<"istart[0]= "<<istart[0]<<" istart[1]= "<<istart[1]<<" istart[2]="<<istart[2]<<std::endl;
@@ -351,7 +351,7 @@ void accfft_laplace_gpu_t(T* LA, T* A, Tp* plan, double* timer) {
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_gpu_t<T>(N, isize, istart, osize,
+  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
       ostart, c_comm);
 
   Tc* A_hat;  //=(Tc*) accfft_alloc(alloc_max);
@@ -408,7 +408,7 @@ void accfft_divergence_gpu_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_gpu_t<T>(N, isize, istart, osize,
+  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
       ostart, c_comm);
   //PCOUT<<"istart[0]= "<<istart[0]<<" istart[1]= "<<istart[1]<<" istart[2]="<<istart[2]<<std::endl;
   //PCOUT<<"ostart[0]= "<<ostart[0]<<" ostart[1]= "<<ostart[1]<<" ostart[2]="<<ostart[2]<<std::endl;
@@ -512,7 +512,7 @@ void accfft_divergence_gpu_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_gpu_t<T>(N, isize, istart, osize,
+  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
       ostart, c_comm);
 
   Tc* A_hat;  //=(Tc*) accfft_alloc(alloc_max);
@@ -612,7 +612,7 @@ void accfft_biharmonic_gpu_t(T* LA, T* A, Tp* plan, double* timer) {
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_gpu_t<T>(N, isize, istart, osize,
+  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
       ostart, c_comm);
 
   Tc* A_hat;  //=(Tc*) accfft_alloc(alloc_max);

@@ -126,9 +126,6 @@ template<typename Tc, typename T>
 void accfft_execute_c2r_t(accfft_plan* plan, Tc* data, T* data_out,
 		double * timer = NULL, std::bitset<3> XYZ = 111);
 
-template<typename T>
-int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
-		int *ostart, MPI_Comm c_comm);
 
 // templates for execution in z direction only
 template<typename T, typename Tc>

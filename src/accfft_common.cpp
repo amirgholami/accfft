@@ -45,7 +45,8 @@ void accfft_free(void * ptr) {
 	return;
 }
 
-int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,
+template<typename T>
+int dfft_get_local_size_t(int N0, int N1, int N2, int * isize, int * istart,
 		MPI_Comm c_comm) {
 	int nprocs, procid;
 	MPI_Comm_rank(c_comm, &procid);
@@ -86,149 +87,174 @@ int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,
 			}
 		MPI_Barrier(c_comm);
 	}
-	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(double);
+	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(T);
 
 	return alloc_local;
 }
 
-int dfft_get_local_sizef(int N0, int N1, int N2, int * isize, int * istart,
-		MPI_Comm c_comm) {
-	int nprocs, procid;
-	MPI_Comm_rank(c_comm, &procid);
+template int dfft_get_local_size_t<double>(int N0, int N1, int N2, int * isize, int * istart,
+    MPI_Comm c_comm);
+template int dfft_get_local_size_t<float>(int N0, int N1, int N2, int * isize, int * istart,
+    MPI_Comm c_comm);
 
-	int coords[2], np[2], periods[2];
-	MPI_Cart_get(c_comm, 2, np, periods, coords);
-	isize[2] = N2;
-	isize[0] = ceil(N0 / (double) np[0]);
-	isize[1] = ceil(N1 / (double) np[1]);
+template<typename T>
+int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
+		int *ostart, MPI_Comm c_comm) {
 
-	istart[0] = isize[0] * (coords[0]);
-	istart[1] = isize[1] * (coords[1]);
-	istart[2] = 0;
-
-	if ((N0 - isize[0] * coords[0]) < isize[0]) {
-		isize[0] = N0 - isize[0] * coords[0];
-		isize[0] *= (int) isize[0] > 0;
-		istart[0] = N0 - isize[0];
-	}
-	if ((N1 - isize[1] * coords[1]) < isize[1]) {
-		isize[1] = N1 - isize[1] * coords[1];
-		isize[1] *= (int) isize[1] > 0;
-		istart[1] = N1 - isize[1];
-	}
-
-	if (VERBOSE >= 2) {
-		MPI_Barrier(c_comm);
-		for (int r = 0; r < np[0]; r++)
-			for (int c = 0; c < np[1]; c++) {
-				MPI_Barrier(c_comm);
-				if ((coords[0] == r) && (coords[1] == c))
-					std::cout << coords[0] << "," << coords[1] << " isize[0]= "
-							<< isize[0] << " isize[1]= " << isize[1]
-							<< " isize[2]= " << isize[2] << " istart[0]= "
-							<< istart[0] << " istart[1]= " << istart[1]
-							<< " istart[2]= " << istart[2] << std::endl;
-				MPI_Barrier(c_comm);
-			}
-		MPI_Barrier(c_comm);
-	}
-	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(float);
-
-	return alloc_local;
-}
-
-int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,
-		MPI_Comm c_comm) {
 	int procid;
 	MPI_Comm_rank(c_comm, &procid);
+	//1D & 2D Decomp
+	int osize_0[3] = { 0 }, ostart_0[3] = { 0 };
+	int osize_1[3] = { 0 }, ostart_1[3] = { 0 };
+	int osize_2[3] = { 0 }, ostart_2[3] = { 0 };
+	int osize_y[3] = { 0 }, ostart_y[3] = { 0 };
+	int osize_yi[3] = { 0 }, ostart_yi[3] = { 0 };
+	int osize_x[3] = { 0 }, ostart_x[3] = { 0 };
+	int osize_xi[3] = { 0 }, ostart_xi[3] = { 0 };
 
-	int coords[2], np[2], periods[2];
-	MPI_Cart_get(c_comm, 2, np, periods, coords);
-	isize[2] = N2;
-	isize[0] = ceil(N0 / (double) np[0]);
-	isize[1] = ceil(N1 / (double) np[1]);
+	int alloc_local;
+	int alloc_max = 0, n_tuples;
+	//inplace==true ? n_tuples=(n[2]/2+1)*2:  n_tuples=n[2];
+	n_tuples = (n[2] / 2 + 1) * 2; //SNAFU
+	alloc_local = dfft_get_local_size_t<T>(n[0], n[1], n_tuples, osize_0,
+			ostart_0, c_comm);
+	alloc_max = std::max(alloc_max, alloc_local);
+	alloc_local = dfft_get_local_size_t<T>(n[0], n_tuples / 2, n[1], osize_1,
+			ostart_1, c_comm);
+	alloc_max = std::max(alloc_max, alloc_local * 2);
+	alloc_local = dfft_get_local_size_t<T>(n[1], n_tuples / 2, n[0], osize_2,
+			ostart_2, c_comm);
+	alloc_max = std::max(alloc_max, alloc_local * 2);
 
-	istart[0] = isize[0] * (coords[0]);
-	istart[1] = isize[1] * (coords[1]);
-	istart[2] = 0;
+	std::swap(osize_1[1], osize_1[2]);
+	std::swap(ostart_1[1], ostart_1[2]);
 
-	if ((N0 - isize[0] * coords[0]) < isize[0]) {
-		isize[0] = N0 - isize[0] * coords[0];
-		isize[0] *= (int) isize[0] > 0;
-		istart[0] = N0 - isize[0];
+	std::swap(ostart_2[1], ostart_2[2]);
+	std::swap(ostart_2[0], ostart_2[1]);
+	std::swap(osize_2[1], osize_2[2]);
+	std::swap(osize_2[0], osize_2[1]);
+
+	dfft_get_local_size_t<T>(n[0], n[1], n[2], isize, istart, c_comm);
+	osize[0] = osize_2[0];
+	osize[1] = osize_2[1];
+	osize[2] = osize_2[2];
+
+	ostart[0] = ostart_2[0];
+	ostart[1] = ostart_2[1];
+	ostart[2] = ostart_2[2];
+
+  // for y only fft
+	alloc_local = dfft_get_local_size_t<T>(n[0], n[2], n[1], osize_y, ostart_y, c_comm);
+	alloc_max = std::max(alloc_max, alloc_local);
+	alloc_local = dfft_get_local_size_t<T>(n[0], n[2], (n[1] / 2 + 1), osize_yi, ostart_yi, c_comm);
+	alloc_max = std::max(alloc_max, 2 * alloc_local);
+	std::swap(osize_y[1], osize_y[2]);
+	std::swap(ostart_y[1], ostart_y[2]);
+	std::swap(osize_yi[1], osize_yi[2]);
+	std::swap(ostart_yi[1], ostart_yi[2]);
+
+
+  // for x only fft. The strategy is to divide (N1/P1 x N2) by P0 completely.
+  // So we treat the last size to be just 1.
+	alloc_local = dfft_get_local_size_t<T>(n[1], n[2], n[0], osize_x, ostart_x, c_comm);
+	alloc_max = std::max(alloc_max, alloc_local);
+  osize_x[1] = osize_x[1] * osize_x[0];
+  osize_x[0] = osize_x[2];
+  osize_x[2] = 1;
+  ostart_x[0] = 0;
+  ostart_x[1] = -1<<8; // starts have no meaning in this approach
+  ostart_x[2] = -1<<8;
+
+	alloc_local = dfft_get_local_size_t<T>(n[1], n[2], n[0] / 2 + 1, osize_xi, ostart_xi, c_comm);
+	alloc_max = std::max(alloc_max, 2 * alloc_local);
+  osize_xi[1] = osize_xi[1] * osize_xi[0];
+  osize_xi[0] = osize_xi[2];
+  osize_xi[2] = 1;
+  ostart_xi[0] = 0;
+  ostart_xi[1] = -1<<8; // starts have no meaning in this approach
+  ostart_xi[2] = -1<<8;
+
+
+	//isize[0]=osize_0[0];
+	//isize[1]=osize_0[1];
+	//isize[2]=n[2];//osize_0[2];
+
+	return alloc_max;
+
+} // end accfft_local_size_dft_r2c_gpu
+
+template int accfft_local_size_dft_r2c_t<double>(int * n, int * isize,
+		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
+template int accfft_local_size_dft_r2c_t<Complex>(int * n, int * isize,
+		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
+template int accfft_local_size_dft_r2c_t<float>(int * n, int * isize,
+		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
+template int accfft_local_size_dft_r2c_t<Complexf>(int * n, int * isize,
+		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
+
+template<typename T>
+int accfft_local_size_dft_c2c_t(int * n, int * isize, int * istart, int * osize,
+		int *ostart, MPI_Comm c_comm) {
+
+	int osize_0[3] = { 0 }, ostart_0[3] = { 0 };
+	int osize_1[3] = { 0 }, ostart_1[3] = { 0 };
+	int osize_2[3] = { 0 }, ostart_2[3] = { 0 };
+	int osize_1i[3] = { 0 }, ostart_1i[3] = { 0 };
+	int osize_2i[3] = { 0 }, ostart_2i[3] = { 0 };
+
+	int alloc_local;
+	int alloc_max = 0, n_tuples = n[2] * 2;
+	alloc_local = dfft_get_local_size_t<T>(n[0], n[1], n[2], osize_0, ostart_0,
+			c_comm);
+	alloc_max = std::max(alloc_max, alloc_local);
+	alloc_local = dfft_get_local_size_t<T>(n[0], n[2], n[1], osize_1, ostart_1,
+			c_comm);
+	alloc_max = std::max(alloc_max, alloc_local);
+	alloc_local = dfft_get_local_size_t<T>(n[1], n[2], n[0], osize_2, ostart_2,
+			c_comm);
+	alloc_max = std::max(alloc_max, alloc_local);
+	alloc_max *= 2; // because of c2c
+
+	std::swap(osize_1[1], osize_1[2]);
+	std::swap(ostart_1[1], ostart_1[2]);
+
+	std::swap(ostart_2[1], ostart_2[2]);
+	std::swap(ostart_2[0], ostart_2[1]);
+	std::swap(osize_2[1], osize_2[2]);
+	std::swap(osize_2[0], osize_2[1]);
+
+	for (int i = 0; i < 3; i++) {
+		osize_1i[i] = osize_1[i];
+		osize_2i[i] = osize_2[i];
+		ostart_1i[i] = ostart_1[i];
+		ostart_2i[i] = ostart_2[i];
 	}
-	if ((N1 - isize[1] * coords[1]) < isize[1]) {
-		isize[1] = N1 - isize[1] * coords[1];
-		isize[1] *= (int) isize[1] > 0;
-		istart[1] = N1 - isize[1];
-	}
 
-	if (VERBOSE >= 2) {
-		MPI_Barrier(c_comm);
-		for (int r = 0; r < np[0]; r++)
-			for (int c = 0; c < np[1]; c++) {
-				MPI_Barrier(c_comm);
-				if ((coords[0] == r) && (coords[1] == c))
-					std::cout << coords[0] << "," << coords[1] << " isize[0]= "
-							<< isize[0] << " isize[1]= " << isize[1]
-							<< " isize[2]= " << isize[2] << " istart[0]= "
-							<< istart[0] << " istart[1]= " << istart[1]
-							<< " istart[2]= " << istart[2] << std::endl;
-				MPI_Barrier(c_comm);
-			}
-		MPI_Barrier(c_comm);
-	}
-	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(double);
+	//isize[0]=osize_0[0];
+	//isize[1]=osize_0[1];
+	//isize[2]=n[2];//osize_0[2];
+	dfft_get_local_size_t<T>(n[0], n[1], n[2], isize, istart, c_comm);
 
-	return alloc_local;
-} // end dfft_get_local_size_gpu
+	osize[0] = osize_2[0];
+	osize[1] = osize_2[1];
+	osize[2] = osize_2[2];
 
-int dfft_get_local_size_gpuf(int N0, int N1, int N2, int * isize, int * istart,
-		MPI_Comm c_comm) {
-	int procid;
-	MPI_Comm_rank(c_comm, &procid);
+	ostart[0] = ostart_2[0];
+	ostart[1] = ostart_2[1];
+	ostart[2] = ostart_2[2];
 
-	int coords[2], np[2], periods[2];
-	MPI_Cart_get(c_comm, 2, np, periods, coords);
-	isize[2] = N2;
-	isize[0] = ceil(N0 / (double) np[0]);
-	isize[1] = ceil(N1 / (double) np[1]);
+	return alloc_max;
 
-	istart[0] = isize[0] * (coords[0]);
-	istart[1] = isize[1] * (coords[1]);
-	istart[2] = 0;
-
-	if ((N0 - isize[0] * coords[0]) < isize[0]) {
-		isize[0] = N0 - isize[0] * coords[0];
-		isize[0] *= (int) isize[0] > 0;
-		istart[0] = N0 - isize[0];
-	}
-	if ((N1 - isize[1] * coords[1]) < isize[1]) {
-		isize[1] = N1 - isize[1] * coords[1];
-		isize[1] *= (int) isize[1] > 0;
-		istart[1] = N1 - isize[1];
-	}
-
-	if (VERBOSE >= 2) {
-		MPI_Barrier(c_comm);
-		for (int r = 0; r < np[0]; r++)
-			for (int c = 0; c < np[1]; c++) {
-				MPI_Barrier(c_comm);
-				if ((coords[0] == r) && (coords[1] == c))
-					std::cout << coords[0] << "," << coords[1] << " isize[0]= "
-							<< isize[0] << " isize[1]= " << isize[1]
-							<< " isize[2]= " << isize[2] << " istart[0]= "
-							<< istart[0] << " istart[1]= " << istart[1]
-							<< " istart[2]= " << istart[2] << std::endl;
-				MPI_Barrier(c_comm);
-			}
-		MPI_Barrier(c_comm);
-	}
-	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(float);
-
-	return alloc_local;
 }
 
+template int accfft_local_size_dft_c2c_t<double>(int * n, int * isize,
+		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
+template int accfft_local_size_dft_c2c_t<Complex>(int * n, int * isize,
+		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
+template int accfft_local_size_dft_c2c_t<float>(int * n, int * isize,
+		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
+template int accfft_local_size_dft_c2c_t<Complexf>(int * n, int * isize,
+		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
 /**
  * Creates a Cartesian communicator of size c_dims[0]xc_dims[1] from its input.
  * If c_dims[0]xc_dims[1] would not match the size of in_comm, then the function prints

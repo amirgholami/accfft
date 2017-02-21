@@ -58,90 +58,10 @@ void accfft_cleanup_gpu() {
  * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
  * @return
  */
-int accfft_local_size_dft_r2c_gpu(int * n, int * isize, int * istart,
-		int * osize, int *ostart, MPI_Comm c_comm, bool inplace) {
-
-	int procid;
-	MPI_Comm_rank(c_comm, &procid);
-	//1D & 2D Decomp
-	int osize_0[3] = { 0 }, ostart_0[3] = { 0 };
-	int osize_1[3] = { 0 }, ostart_1[3] = { 0 };
-	int osize_2[3] = { 0 }, ostart_2[3] = { 0 };
-	int osize_y[3] = { 0 }, ostart_y[3] = { 0 };
-	int osize_yi[3] = { 0 }, ostart_yi[3] = { 0 };
-	int osize_x[3] = { 0 }, ostart_x[3] = { 0 };
-	int osize_xi[3] = { 0 }, ostart_xi[3] = { 0 };
-
-	int alloc_local;
-	int alloc_max = 0, n_tuples;
-	//inplace==true ? n_tuples=(n[2]/2+1)*2:  n_tuples=n[2];
-	n_tuples = (n[2] / 2 + 1) * 2; //SNAFU
-	alloc_local = dfft_get_local_size_gpu(n[0], n[1], n_tuples, osize_0,
-			ostart_0, c_comm);
-	alloc_max = std::max(alloc_max, alloc_local);
-	alloc_local = dfft_get_local_size_gpu(n[0], n_tuples / 2, n[1], osize_1,
-			ostart_1, c_comm);
-	alloc_max = std::max(alloc_max, alloc_local * 2);
-	alloc_local = dfft_get_local_size_gpu(n[1], n_tuples / 2, n[0], osize_2,
-			ostart_2, c_comm);
-	alloc_max = std::max(alloc_max, alloc_local * 2);
-
-	std::swap(osize_1[1], osize_1[2]);
-	std::swap(ostart_1[1], ostart_1[2]);
-
-	std::swap(ostart_2[1], ostart_2[2]);
-	std::swap(ostart_2[0], ostart_2[1]);
-	std::swap(osize_2[1], osize_2[2]);
-	std::swap(osize_2[0], osize_2[1]);
-
-	dfft_get_local_size_gpu(n[0], n[1], n[2], isize, istart, c_comm);
-	osize[0] = osize_2[0];
-	osize[1] = osize_2[1];
-	osize[2] = osize_2[2];
-
-	ostart[0] = ostart_2[0];
-	ostart[1] = ostart_2[1];
-	ostart[2] = ostart_2[2];
-
-  // for y only fft
-	alloc_local = dfft_get_local_size_gpu(n[0], n[2], n[1], osize_y, ostart_y, c_comm);
-	alloc_max = std::max(alloc_max, alloc_local);
-	alloc_local = dfft_get_local_size_gpu(n[0], n[2], (n[1] / 2 + 1), osize_yi, ostart_yi, c_comm);
-	alloc_max = std::max(alloc_max, 2 * alloc_local);
-	std::swap(osize_y[1], osize_y[2]);
-	std::swap(ostart_y[1], ostart_y[2]);
-	std::swap(osize_yi[1], osize_yi[2]);
-	std::swap(ostart_yi[1], ostart_yi[2]);
-
-
-  // for x only fft. The strategy is to divide (N1/P1 x N2) by P0 completely.
-  // So we treat the last size to be just 1.
-	alloc_local = dfft_get_local_size_gpu(n[1], n[2], n[0], osize_x, ostart_x, c_comm);
-	alloc_max = std::max(alloc_max, alloc_local);
-  osize_x[1] = osize_x[1] * osize_x[0];
-  osize_x[0] = osize_x[2];
-  osize_x[2] = 1;
-  ostart_x[0] = 0;
-  ostart_x[1] = -1<<8; // starts have no meaning in this approach
-  ostart_x[2] = -1<<8;
-
-	alloc_local = dfft_get_local_size_gpu(n[1], n[2], n[0] / 2 + 1, osize_xi, ostart_xi, c_comm);
-	alloc_max = std::max(alloc_max, 2 * alloc_local);
-  osize_xi[1] = osize_xi[1] * osize_xi[0];
-  osize_xi[0] = osize_xi[2];
-  osize_xi[2] = 1;
-  ostart_xi[0] = 0;
-  ostart_xi[1] = -1<<8; // starts have no meaning in this approach
-  ostart_xi[2] = -1<<8;
-
-
-	//isize[0]=osize_0[0];
-	//isize[1]=osize_0[1];
-	//isize[2]=n[2];//osize_0[2];
-
-	return alloc_max;
-
-} // end accfft_local_size_dft_r2c_gpu
+int accfft_local_size_dft_r2c_gpu(int * n, int * isize, int * istart, int * osize,
+		int *ostart, MPI_Comm c_comm) {
+  return accfft_local_size_dft_r2c_t<double>(n, isize, istart, osize, ostart, c_comm);
+}
 
 /**
  * Creates a 3D R2C parallel FFT plan.If data_out point to the same location as the input
@@ -200,13 +120,13 @@ accfft_plan_gpu* accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d,
 
 	//int isize[3],osize[3],istart[3],ostart[3];
 	alloc_max = accfft_local_size_dft_r2c_gpu(n, plan->isize, plan->istart,
-			plan->osize, plan->ostart, c_comm, plan->inplace);
+			plan->osize, plan->ostart, c_comm);
 	plan->alloc_max = alloc_max;
 
-	dfft_get_local_size_gpu(n[0], n[1], n_tuples_o / 2, osize_0, ostart_0, c_comm);
-	dfft_get_local_size_gpu(n[0], n_tuples_o / 2, n[1], osize_1, ostart_1,
+	dfft_get_local_size_t<double>(n[0], n[1], n_tuples_o / 2, osize_0, ostart_0, c_comm);
+	dfft_get_local_size_t<double>(n[0], n_tuples_o / 2, n[1], osize_1, ostart_1,
 			c_comm);
-	dfft_get_local_size_gpu(n[1], n_tuples_o / 2, n[0], osize_2, ostart_2,
+	dfft_get_local_size_t<double>(n[1], n_tuples_o / 2, n[0], osize_2, ostart_2,
 			c_comm);
 
 	std::swap(osize_1[1], osize_1[2]);
@@ -217,7 +137,7 @@ accfft_plan_gpu* accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d,
 	std::swap(osize_2[1], osize_2[2]);
 	std::swap(osize_2[0], osize_2[1]);
   // osize_y is the configuration after y transpose
-	dfft_get_local_size_gpu(n[0], n[2], n[1], osize_y, ostart_y, c_comm);
+	dfft_get_local_size_t<double>(n[0], n[2], n[1], osize_y, ostart_y, c_comm);
 	std::swap(osize_y[1], osize_y[2]);
 	std::swap(ostart_y[1], ostart_y[2]);
   osize_yi[0] = osize_y[0];
@@ -226,7 +146,7 @@ accfft_plan_gpu* accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d,
 
   // for x only fft. The strategy is to divide (N1/P1 x N2) by P0 completely.
   // So we treat the last size to be just 1.
-	dfft_get_local_size_gpu(n[1], n[2], n[0], osize_x, ostart_x, c_comm);
+	dfft_get_local_size_t<double>(n[1], n[2], n[0], osize_x, ostart_x, c_comm);
   osize_x[1] = osize_x[1] * osize_x[0];
   osize_x[0] = osize_x[2];
   osize_x[2] = 1;
@@ -234,7 +154,7 @@ accfft_plan_gpu* accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d,
   ostart_x[1] = -1<<8; // starts have no meaning in this approach
   ostart_x[2] = -1<<8;
 
-	dfft_get_local_size_gpu(n[1], n[2], n[0] / 2 + 1, osize_xi, ostart_x, c_comm);
+	dfft_get_local_size_t<double>(n[1], n[2], n[0] / 2 + 1, osize_xi, ostart_x, c_comm);
   osize_xi[1] = osize_xi[1] * osize_xi[0];
   osize_xi[0] = osize_xi[2];
   osize_xi[2] = 1;
@@ -770,52 +690,10 @@ void accfft_execute_c2r_gpu(accfft_plan_gpu* plan, Complex * data,
  * @param c_comm Cartesian communicator returned by \ref accfft_create_comm
  * @return
  */
-int accfft_local_size_dft_c2c_gpu(int * n, int * isize, int * istart,
-		int * osize, int *ostart, MPI_Comm c_comm) {
-
-	int osize_0[3] = { 0 }, ostart_0[3] = { 0 };
-	int osize_1[3] = { 0 }, ostart_1[3] = { 0 };
-	int osize_2[3] = { 0 }, ostart_2[3] = { 0 };
-	//int osize_1i[3]={0}, ostart_1i[3]={0};
-	//int osize_2i[3]={0}, ostart_2i[3]={0};
-
-	int alloc_local;
-	int alloc_max = 0;  //,n_tuples=n[2]*2;
-	alloc_local = dfft_get_local_size_gpu(n[0], n[1], n[2], osize_0, ostart_0,
-			c_comm);
-	alloc_max = std::max(alloc_max, alloc_local);
-	alloc_local = dfft_get_local_size_gpu(n[0], n[2], n[1], osize_1, ostart_1,
-			c_comm);
-	alloc_max = std::max(alloc_max, alloc_local);
-	alloc_local = dfft_get_local_size_gpu(n[1], n[2], n[0], osize_2, ostart_2,
-			c_comm);
-	alloc_max = std::max(alloc_max, alloc_local);
-	alloc_max *= 2; // because of c2c
-
-	std::swap(osize_1[1], osize_1[2]);
-	std::swap(ostart_1[1], ostart_1[2]);
-
-	std::swap(ostart_2[1], ostart_2[2]);
-	std::swap(ostart_2[0], ostart_2[1]);
-	std::swap(osize_2[1], osize_2[2]);
-	std::swap(osize_2[0], osize_2[1]);
-
-	//isize[0]=osize_0[0];
-	//isize[1]=osize_0[1];
-	//isize[2]=n[2];//osize_0[2];
-	dfft_get_local_size_gpu(n[0], n[1], n[2], isize, istart, c_comm);
-
-	osize[0] = osize_2[0];
-	osize[1] = osize_2[1];
-	osize[2] = osize_2[2];
-
-	ostart[0] = ostart_2[0];
-	ostart[1] = ostart_2[1];
-	ostart[2] = ostart_2[2];
-
-	return alloc_max;
-
-}  // end accfft_local_size_dft_c2c_gpu
+int accfft_local_size_dft_c2c_gpu(int * n, int * isize, int * istart, int * osize,
+		int *ostart, MPI_Comm c_comm) {
+  return accfft_local_size_dft_c2c_t<double>(n, isize, istart, osize, ostart, c_comm);
+}
 
 /**
  * Creates a 3D C2C parallel FFT plan. If data_out point to the same location as the input
@@ -871,9 +749,9 @@ accfft_plan_gpu* accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d,
 			plan->osize, plan->ostart, c_comm);
 	plan->alloc_max = alloc_max;
 
-	dfft_get_local_size_gpu(n[0], n[1], n[2], osize_0, ostart_0, c_comm);
-	dfft_get_local_size_gpu(n[0], n[2], n[1], osize_1, ostart_1, c_comm);
-	dfft_get_local_size_gpu(n[1], n[2], n[0], osize_2, ostart_2, c_comm);
+	dfft_get_local_size_t<double>(n[0], n[1], n[2], osize_0, ostart_0, c_comm);
+	dfft_get_local_size_t<double>(n[0], n[2], n[1], osize_1, ostart_1, c_comm);
+	dfft_get_local_size_t<double>(n[1], n[2], n[0], osize_2, ostart_2, c_comm);
 
 	std::swap(osize_1[1], osize_1[2]);
 	std::swap(ostart_1[1], ostart_1[2]);
@@ -1343,17 +1221,6 @@ template void accfft_execute_r2c_gpu_t<double, Complex>(accfft_plan_gpu* plan,
 		double* data, Complex* data_out, double * timer, std::bitset<3> XYZ);
 template void accfft_execute_c2r_gpu_t<Complex, double>(accfft_plan_gpu* plan,
 		Complex* data, double* data_out, double * timer, std::bitset<3> XYZ);
-
-template<typename T>
-int accfft_local_size_dft_r2c_gpu_t(int * n, int * isize, int * istart,
-		int * osize, int *ostart, MPI_Comm c_comm) {
-	return accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart,
-			c_comm);
-}
-template int accfft_local_size_dft_r2c_gpu_t<double>(int * n, int * isize,
-		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
-template int accfft_local_size_dft_r2c_gpu_t<Complex>(int * n, int * isize,
-		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
 
 // templates for execution only in z direction
 void accfft_execute_z_gpu(accfft_plan_gpu* plan, int direction, double * data_d,

@@ -43,14 +43,17 @@ void accfft_create_comm(MPI_Comm in_comm, int * c_dims, MPI_Comm *c_comm);
 int accfft_init();
 void* accfft_alloc(ptrdiff_t size);
 void accfft_free(void * ptr);
-int dfft_get_local_size(int N0, int N1, int N2, int * isize, int * istart,
+template <typename T>
+int dfft_get_local_size_t(int N0, int N1, int N2, int * isize, int * istart,
 		MPI_Comm c_comm);
-int dfft_get_local_sizef(int N0, int N1, int N2, int * isize, int * istart,
-		MPI_Comm c_comm);
-int dfft_get_local_size_gpu(int N0, int N1, int N2, int * isize, int * istart,
-		MPI_Comm c_comm);
-int dfft_get_local_size_gpuf(int N0, int N1, int N2, int * isize, int * istart,
-		MPI_Comm c_comm);
+
+template<typename T>
+int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
+		int *ostart, MPI_Comm c_comm);
+template<typename T>
+int accfft_local_size_dft_c2c_t(int * n, int * isize, int * istart, int * osize,
+		int *ostart, MPI_Comm c_comm);
+
 #endif
 #ifndef _PNETCDF_IO_H_
 #define _PNETCDF_IO_H_

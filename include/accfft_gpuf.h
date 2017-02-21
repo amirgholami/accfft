@@ -121,7 +121,7 @@ int accfft_local_size_dft_c2c_gpuf(int * n, int * isize, int * istart,
 accfft_plan_gpuf* accfft_plan_dft_3d_r2c_gpuf(int * n, float * data_d,
 		float * data_out_d, MPI_Comm c_comm, unsigned flags = ACCFFT_MEASURE);
 int accfft_local_size_dft_r2c_gpuf(int * n, int * isize, int * istart,
-		int * osize, int *ostart, MPI_Comm c_comm, bool inplace = 0);
+		int * osize, int *ostart, MPI_Comm c_comm);
 
 template<typename T, typename Tc>
 void accfft_execute_r2c_gpu_t(accfft_plan_gpuf* plan, T* data, Tc* data_out,
