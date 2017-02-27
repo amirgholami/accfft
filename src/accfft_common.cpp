@@ -45,15 +45,16 @@ void accfft_free(void * ptr) {
 	return;
 }
 
+// uses 2D comm to compute N0/P0 x N1/P1 x tuple for each proc
 template<typename T>
-int dfft_get_local_size_t(int N0, int N1, int N2, int * isize, int * istart,
+int dfft_get_local_size_t(int N0, int N1, int tuple, int * isize, int * istart,
 		MPI_Comm c_comm) {
 	int nprocs, procid;
 	MPI_Comm_rank(c_comm, &procid);
 
 	int coords[2], np[2], periods[2];
 	MPI_Cart_get(c_comm, 2, np, periods, coords);
-	isize[2] = N2;
+	isize[2] = tuple;
 	isize[0] = ceil(N0 / (double) np[0]);
 	isize[1] = ceil(N1 / (double) np[1]);
 
@@ -156,20 +157,22 @@ int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
 
   // for x only fft. The strategy is to divide (N1/P1 x N2) by P0 completely.
   // So we treat the last size to be just 1.
-	alloc_local = dfft_get_local_size_t<T>(n[1], n[2], n[0], osize_x, ostart_x, c_comm);
-	alloc_max = std::max(alloc_max, alloc_local);
-  osize_x[1] = osize_x[1] * osize_x[0];
+	dfft_get_local_size_t<T>(isize[1] * n[2], n[2], n[0], osize_x, ostart_x, c_comm);
+  osize_x[1] = osize_x[0];
   osize_x[0] = osize_x[2];
   osize_x[2] = 1;
   ostart_x[0] = 0;
   ostart_x[1] = -1<<8; // starts have no meaning in this approach
   ostart_x[2] = -1<<8;
+	alloc_local = osize_x[0] * osize_x[1] * osize_x[2] * sizeof(T);
+  alloc_max = std::max(alloc_max, alloc_local);
 
-	alloc_local = dfft_get_local_size_t<T>(n[1], n[2], n[0] / 2 + 1, osize_xi, ostart_xi, c_comm);
-	alloc_max = std::max(alloc_max, 2 * alloc_local);
-  osize_xi[1] = osize_xi[1] * osize_xi[0];
+	dfft_get_local_size_t<T>(isize[1] * n[2], n[2], n[0] / 2 + 1, osize_xi, ostart_xi, c_comm);
+  osize_xi[1] = osize_xi[0];
   osize_xi[0] = osize_xi[2];
   osize_xi[2] = 1;
+	alloc_local = osize_xi[0] * osize_xi[1] * osize_xi[2] * sizeof(T);
+	alloc_max = std::max(alloc_max, 2 * alloc_local);
   ostart_xi[0] = 0;
   ostart_xi[1] = -1<<8; // starts have no meaning in this approach
   ostart_xi[2] = -1<<8;
@@ -181,7 +184,7 @@ int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
 
 	return alloc_max;
 
-} // end accfft_local_size_dft_r2c_gpu
+} // end accfft_local_size_dft_r2c
 
 template int accfft_local_size_dft_r2c_t<double>(int * n, int * isize,
 		int * istart, int * osize, int *ostart, MPI_Comm c_comm);

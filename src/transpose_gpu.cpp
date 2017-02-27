@@ -100,7 +100,6 @@ Mem_Mgr_gpu<T>::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howman
 	PINNED=1;
 	else
 	PINNED=0;
-#ifdef ENABLE_GPU
 	// PCOUT<<"ENABLE GPU"<<std::endl;
 	if(PINNED==1) {
 		cudaError_t cuda_err1, cuda_err2;
@@ -115,17 +114,15 @@ Mem_Mgr_gpu<T>::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howman
 		// PCOUT<<"PINNED Alloc time= "<<pinned_time<<std::endl;
 	}
 	else {
+    // buffer_2 = (T*) malloc(alloc_local);
+    // buffer = (T*) malloc(alloc_local);
+    // std::cout << alloc_local << std::endl;
 		err=posix_memalign((void **)&buffer_2,64, alloc_local);
 		err=posix_memalign((void **)&buffer,64, alloc_local);
 		assert(err==0 && "posix_memalign failed to allocate memory in Mem_Mgr_gpu");
 	}
 	cudaMalloc((void **)&buffer_d, alloc_local);
 	cudaMalloc((void **)&buffer_d2, alloc_local);
-#else
-	err=posix_memalign((void **)&buffer,64, alloc_local);
-	err=posix_memalign((void **)&buffer_2,64, alloc_local);
-	assert(err==0 && "posix_memalign failed to allocate memory in Mem_Mgr_gpu");
-#endif
 	memset( buffer,0, alloc_local );
 	memset( buffer_2,0, alloc_local );
 
@@ -3267,6 +3264,18 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	s_buf = data_cpu;
 	r_buf = send_recv_cpu;
 
+	if (VERBOSE >= 2)
+		PCOUT << "Local Transpose:" << std::endl;
+	if (VERBOSE >= 2) {
+    if(procid == 2) {
+    for(int proc = 0; proc < nprocs; ++proc) {
+      std::cout << rcount_proc[proc] << '\t'
+        << roffset_proc[proc]<< std::endl;
+    }
+    std::cout << "alloc_local = " << T_plan->alloc_local << std::endl;
+    std::cout << r_buf[2] << std::endl;
+    }
+	}
 	// SEND
 	// Flags[1]=1 data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --memcpy--> data_d
 	// Flags[1]=0 data_d --Th--> send_recv_d  --memcpy-->  data_cpu  --alltoall--> send_recv_cpu --Th--> data_d

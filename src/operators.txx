@@ -523,24 +523,38 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 
 	/* Multiply x Wave Numbers */
 	if (XYZ[0]) {
+    if(0)
+    if(procid==2){
+      std::cout << " isize[0] = " << plan->isize[0]
+                << " isize[1] = " << plan->isize[1]
+                << " isize[2] = " << plan->isize[2] << std::endl;
+      int* osize_xi = plan->osize_xi;
+      int* osize_x = plan->osize_x;
+      int* ostart_xi = plan->ostart_2;
+      std::cout << " osize_x[0] = " << osize_x[0]
+                << " osize_x[1] = " << osize_x[1]
+                << " osize_x[2] = " << osize_x[2] << std::endl;
+      std::cout << " osize_xi[0] = " << osize_xi[0]
+                << " osize_xi[1] = " << osize_xi[1]
+                << " osize_xi[2] = " << osize_xi[2] << std::endl;
+      std::cout << "alloc_max = " << alloc_max << std::endl;
+    }
 	  accfft_execute_r2c_x_t<T, Tc>(plan, A, A_hat, timings);
 	  scale_xyz[0] = 1;
 	  scale_xyz[1] = 0;
 	  scale_xyz[2] = 0;
-    if(0){
-      int* osize_xi = plan->osize_xi;
-      int* ostart_xi = plan->ostart_2;
-      std::cout << " osize_xi[0] = " << osize_xi[0]
-                << " osize_xi[1] = " << osize_xi[1]
-                << " osize_xi[2] = " << osize_xi[2] << std::endl;
-      std::cout << " ostart_xi[0] = " << ostart_xi[0]
-                << " ostart_xi[1] = " << ostart_xi[1]
-                << " ostart_xi[2] = " << ostart_xi[2] << std::endl;
-    }
     grad_mult_wave_numberx<Tc>(tmp, A_hat, N, c_comm, plan->osize_xi, plan->ostart_2, scale_xyz);
 
     /* Backward transform */
     accfft_execute_c2r_x_t<Tc, T>(plan, tmp, A_x, timings);
+    if(0)
+    if(procid == 0) {
+      int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
+      double err = 0;
+      for(int i = 0; i < N_local; ++i)
+        err += A_x[i] - A[i];
+      std::cout << "err = " << err << std::endl;
+    }
   }
   /* Multiply y Wave Numbers */
   if (XYZ[1]) {

@@ -143,18 +143,18 @@ accfft_plan* accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out,
 
   // for x only fft. The strategy is to divide (N1/P1 x N2) by P0 completely.
   // So we treat the last size to be just 1.
-	dfft_get_local_size_t<double>(n[1], n[2], n[0], osize_x, ostart_x, c_comm);
-  osize_x[1] = osize_x[1] * osize_x[0];
+	dfft_get_local_size_t<double>(isize[1] * n[2], n[2], n[0], osize_x, ostart_x, c_comm);
+  osize_x[1] = osize_x[0];
   osize_x[0] = osize_x[2];
   osize_x[2] = 1;
+
+	dfft_get_local_size_t<double>(isize[1] * n[2], n[2], n[0] / 2 + 1, osize_xi, ostart_x, c_comm);
+  osize_xi[1] = osize_xi[0];
+  osize_xi[0] = osize_xi[2];
+  osize_xi[2] = 1;
   ostart_x[0] = 0;
   ostart_x[1] = -1<<8; // starts have no meaning in this approach
   ostart_x[2] = -1<<8;
-
-	dfft_get_local_size_t<double>(n[1], n[2], n[0] / 2 + 1, osize_xi, ostart_x, c_comm);
-  osize_xi[1] = osize_xi[1] * osize_xi[0];
-  osize_xi[0] = osize_xi[2];
-  osize_xi[2] = 1;
 
 	for (int i = 0; i < 3; i++) {
 		osize_1i[i] = osize_1[i];
@@ -1226,37 +1226,36 @@ void accfft_execute_x(accfft_plan* plan, int direction, double * data,
 	int *osize_1i = plan->osize_1i, *ostart_1i = plan->ostart_1i;
 	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
+  int64_t alloc_max = plan->alloc_max;
 
+  double* cwork =(double*) accfft_alloc(plan->alloc_max);
 	if (direction == -1) {
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
-    double* cwork =(double*) accfft_alloc(plan->alloc_max);
     memcpy(cwork, data, N_local * sizeof(double));
-		if (1) {
-			plan->T_plan_x->execute(plan->T_plan_x, cwork, timings, 2);
-		}
+		plan->T_plan_x->execute(plan->T_plan_x, cwork, timings, 2);
     //memcpy(data_out, cwork, plan->alloc_max); //snafu
 		/**************************************************************/
 		/*******************  N0 x N1/P0 x N2/P1 **********************/
 		/**************************************************************/
 		fft_time -= MPI_Wtime();
 		fftw_execute_dft_r2c(plan->fplan_x, (double*) cwork,
-				(fftw_complex*) data_out);
+			(fftw_complex*) data_out);
 		fft_time += MPI_Wtime();
-    free(cwork);
 	} else if (direction == 1) {
 		// IFFT in X direction
 		fft_time -= MPI_Wtime();
 		fftw_execute_dft_c2r(plan->iplan_x, (fftw_complex*) data,
-				(double*) data_out);
+				(double*) cwork);
 		fft_time += MPI_Wtime();
-    //memcpy(data_out, data, N_local * sizeof(double)); //snafu
-		if (1) {
-			plan->T_plan_xi->execute(plan->T_plan_xi, data_out, timings, 1);
-		}
+    int* osize_x = plan->osize_x;
+    // memcpy(data_out, data, 2 * osize_xi[0] * osize_xi[1] * osize_xi[2] * sizeof(double)); //snafu
+		plan->T_plan_xi->execute(plan->T_plan_xi, cwork, timings, 1);
+    memcpy(data_out, cwork, N_local * sizeof(double));
 	}
 
+  free(cwork);
 	MPI_Barrier(plan->c_comm);
 	timings[4] += fft_time;
 	if (timer == NULL) {

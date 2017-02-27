@@ -281,6 +281,21 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
                 << " ostart_xi[1] = " << ostart_xi[1]
                 << " ostart_xi[2] = " << ostart_xi[2] << std::endl;
     }
+    if(procid==2){
+      std::cout << " isize[0] = " << plan->isize[0]
+                << " isize[1] = " << plan->isize[1]
+                << " isize[2] = " << plan->isize[2] << std::endl;
+      int* osize_xi = plan->osize_xi;
+      int* osize_x = plan->osize_x;
+      int* ostart_xi = plan->ostart_2;
+      std::cout << " osize_x[0] = " << osize_x[0]
+                << " osize_x[1] = " << osize_x[1]
+                << " osize_x[2] = " << osize_x[2] << std::endl;
+      std::cout << " osize_xi[0] = " << osize_xi[0]
+                << " osize_xi[1] = " << osize_xi[1]
+                << " osize_xi[2] = " << osize_xi[2] << std::endl;
+      std::cout << "alloc_max = " << alloc_max << std::endl;
+    }
     accfft_execute_r2c_x_gpu_t<T, Tc>(plan, A, A_hat, timings);
     scale_xyz[0] = 1;
     scale_xyz[1] = 0;
@@ -290,7 +305,6 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 
 		/* Backward transform */
 		accfft_execute_c2r_x_gpu_t<Tc, T>(plan, tmp, A_x, timings);
-		// accfft_execute_c2r_x_gpu_t<Tc, T>(plan, A_hat, A_x, timings);
 	}
 	/* Multiply y Wave Numbers */
 	if (XYZ[1]) {
