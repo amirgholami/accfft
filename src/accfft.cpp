@@ -67,6 +67,7 @@ accfft_plan* accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out,
 	accfft_plan *plan = new accfft_plan;
 	int nprocs, procid;
 	MPI_Comm_rank(c_comm, &procid);
+	MPI_Comm_size(c_comm, &nprocs);
 	plan->procid = procid;
 	MPI_Cart_get(c_comm, 2, plan->np, plan->periods, plan->coord);
 	plan->c_comm = c_comm;
@@ -166,7 +167,7 @@ accfft_plan* accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out,
 	// FFT Plans
 	{
     // creat aa dummy data for plan creation of fplan_x and fplan_y
-    double* dummy_data = (double*) accfft_alloc(alloc_max);
+    double* dummy_data = (double*) accfft_alloc(plan->alloc_max);
 		plan->fplan_0 = fftw_plan_many_dft_r2c(1, &n[2],
 				osize_0[0] * osize_0[1], //int rank, const int *n, int howmany
 				data, NULL,         //double *in, const int *inembed,
@@ -231,7 +232,16 @@ accfft_plan* accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out,
 				(double*) dummy_data, (fftw_complex*) data_out,
 				fftw_flags);
 		if (plan->fplan_y == NULL)
-			std::cout << "!!! fplan1 not created in r2c plan!!!" << std::endl;
+			std::cout << "!!! fplan_y not created in r2c plan!!!" << std::endl;
+    //for(int proc = 0; proc < nprocs; ++proc) {
+    //  if(proc == procid) {
+    //    std::cout << "osize_y[0] = "<< osize_y[0]
+    //      << " osize_y[1] = "<< osize_y[1]
+    //      << " osize_y[2] = "<< osize_y[2] << std::endl;
+    //  }
+    //  sleep(.5);
+    //}
+    // do{}while(1);
 
 		dims, howmany_dims[2];
 		dims.n = osize_y[1];
@@ -243,14 +253,15 @@ accfft_plan* accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out,
 		howmany_dims[0].is = 1;
 
 		howmany_dims[1].n = osize_y[0];
+		//howmany_dims[1].os = 2*(osize_y[1] / 2 +1) * osize_y[2];
 		howmany_dims[1].os = osize_y[1] * osize_y[2];
-		howmany_dims[1].is = (osize_y[1] /2 + 1) * osize_y[2];
+		howmany_dims[1].is = (osize_y[1] / 2 + 1) * osize_y[2];
 
 		plan->iplan_y = fftw_plan_guru_dft_c2r(1, &dims, 2, howmany_dims,
 				(fftw_complex*) data_out, (double*) dummy_data,
 				fftw_flags);
 		if (plan->iplan_y == NULL)
-			std::cout << "!!! iplan1 not created in r2c plan !!!" << std::endl;
+			std::cout << "!!! iplan_y not created in r2c plan !!!" << std::endl;
 
 		// ----
 
@@ -287,7 +298,7 @@ accfft_plan* accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out,
 				osize_xi[1] * osize_xi[2], //int rank, const int *n, int howmany
 				(fftw_complex*) data_out, NULL, //double *in, const int *inembed,
 				osize_xi[1] * osize_xi[2], 1,      //int istride, int idist,
-				dummy_data, NULL, //fftw_complex *out, const int *onembed,
+				data_out, NULL, //fftw_complex *out, const int *onembed,
 			  osize_x[1] * osize_x[2], 1,        // int ostride, int odist,
 				fftw_flags);
 		if (plan->iplan_x == NULL)
@@ -297,7 +308,7 @@ accfft_plan* accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out,
 
 	// 1D Decomposition
 	if (plan->oneD) {
-		plan->Mem_mgr = new Mem_Mgr<double>(n[0], n[1], n_tuples_o, c_comm);
+		plan->Mem_mgr = new Mem_Mgr<double>(n[0], n[1], n_tuples_o, c_comm, 1, plan->alloc_max);
 		plan->T_plan_2 = new T_Plan<double>(n[0], n[1], n_tuples_o,
 				plan->Mem_mgr, c_comm);
 		plan->T_plan_2i = new T_Plan<double>(n[1], n[0], n_tuples_o,
@@ -691,7 +702,7 @@ accfft_plan* accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out,
 	// 1D Decomposition
 	if (plan->oneD) {
 		int NX = n[0], NY = n[1], NZ = n[2];
-		plan->Mem_mgr = new Mem_Mgr<double>(NX, NY, (NZ) * 2, c_comm);
+		plan->Mem_mgr = new Mem_Mgr<double>(NX, NY, (NZ) * 2, c_comm, 1, plan->alloc_max);
 		plan->T_plan_2 = new T_Plan<double>(NX, NY, (NZ) * 2, plan->Mem_mgr,
 				c_comm);
 		plan->T_plan_2i = new T_Plan<double>(NY, NX, NZ * 2, plan->Mem_mgr,
@@ -1124,12 +1135,12 @@ void accfft_execute_y(accfft_plan* plan, int direction, double * data,
 	int *osize_1i = plan->osize_1i, *ostart_1i = plan->ostart_1i;
 	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
   int *osize_y = plan->osize_y;
-
+  int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
+  double* cwork = plan->Mem_mgr->buffer_3;
 	if (direction == -1) {
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
-    double* cwork =(double*) accfft_alloc(plan->alloc_max);
     memcpy(cwork, data, plan->alloc_max);
 		if (!plan->oneD) {
 			plan->T_plan_y->execute(plan->T_plan_y, cwork, timings, 2,
@@ -1142,20 +1153,20 @@ void accfft_execute_y(accfft_plan* plan, int direction, double * data,
 			fftw_execute_dft_r2c(plan->fplan_y, (double*) cwork,
 					(fftw_complex*) data_out);
 		fft_time += MPI_Wtime();
-    free(cwork);
 	} else if (direction == 1) {
 		/**************************************************************/
 		/*******************  N0/P0 x N1 x N2/P1 **********************/
 		/**************************************************************/
 		fft_time -= MPI_Wtime();
 			fftw_execute_dft_c2r(plan->iplan_y, (fftw_complex*) data,
-					(double*) data_out);
+					(double*) cwork);
 		fft_time += MPI_Wtime();
 
 		if (!plan->oneD) {
-			plan->T_plan_yi->execute(plan->T_plan_yi, data_out, timings, 1,
+			plan->T_plan_yi->execute(plan->T_plan_yi, cwork, timings, 1,
 					plan->osize_yi[0], coords[0]);
 		}
+    memcpy(data_out, cwork, N_local * sizeof(double));
 	}
 
 	MPI_Barrier(plan->c_comm);
@@ -1228,7 +1239,7 @@ void accfft_execute_x(accfft_plan* plan, int direction, double * data,
   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
   int64_t alloc_max = plan->alloc_max;
 
-  double* cwork =(double*) accfft_alloc(plan->alloc_max);
+  double* cwork = plan->Mem_mgr->buffer_3;
 	if (direction == -1) {
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
@@ -1247,15 +1258,15 @@ void accfft_execute_x(accfft_plan* plan, int direction, double * data,
 		// IFFT in X direction
 		fft_time -= MPI_Wtime();
 		fftw_execute_dft_c2r(plan->iplan_x, (fftw_complex*) data,
-				(double*) cwork);
+				(double*) data);
 		fft_time += MPI_Wtime();
     int* osize_x = plan->osize_x;
     // memcpy(data_out, data, 2 * osize_xi[0] * osize_xi[1] * osize_xi[2] * sizeof(double)); //snafu
-		plan->T_plan_xi->execute(plan->T_plan_xi, cwork, timings, 1);
-    memcpy(data_out, cwork, N_local * sizeof(double));
+		plan->T_plan_xi->execute(plan->T_plan_xi, data, timings, 1);
+    memcpy(data_out, data, N_local * sizeof(double));
 	}
 
-  free(cwork);
+  //free(cwork);
 	MPI_Barrier(plan->c_comm);
 	timings[4] += fft_time;
 	if (timer == NULL) {

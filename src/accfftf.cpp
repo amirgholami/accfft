@@ -279,7 +279,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				osize_xi[1] * osize_xi[2], //int rank, const int *n, int howmany
 				(fftwf_complex*) data_out, NULL, //double *in, const int *inembed,
 				osize_xi[1] * osize_xi[2], 1,      //int istride, int idist,
-				dummy_data, NULL, //fftw_complex *out, const int *onembed,
+				data_out, NULL, //fftw_complex *out, const int *onembed,
 			  osize_x[1] * osize_x[2], 1,        // int ostride, int odist,
 				fftw_flags);
 		if (plan->iplan_x == NULL)
@@ -289,7 +289,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 
 	// 1D Decomposition
 	if (plan->oneD) {
-		plan->Mem_mgr = new Mem_Mgr<float>(n[0], n[1], n_tuples_o, c_comm);
+		plan->Mem_mgr = new Mem_Mgr<float>(n[0], n[1], n_tuples_o, c_comm, 1, plan->alloc_max);
 		plan->T_plan_2 = new T_Plan<float>(n[0], n[1], n_tuples_o,
 				plan->Mem_mgr, c_comm);
 		plan->T_plan_2i = new T_Plan<float>(n[1], n[0], n_tuples_o,
@@ -686,7 +686,7 @@ accfft_planf* accfft_plan_dft_3d_c2cf(int * n, Complexf * data,
 	// 1D Decomposition
 	if (plan->oneD) {
 		int NX = n[0], NY = n[1], NZ = n[2];
-		plan->Mem_mgr = new Mem_Mgr<float>(NX, NY, (NZ) * 2, c_comm);
+		plan->Mem_mgr = new Mem_Mgr<float>(NX, NY, (NZ) * 2, c_comm, 1, plan->alloc_max);
 		plan->T_plan_2 = new T_Plan<float>(NX, NY, (NZ) * 2, plan->Mem_mgr,
 				c_comm);
 		plan->T_plan_2i = new T_Plan<float>(NY, NX, NZ * 2, plan->Mem_mgr,
@@ -1122,7 +1122,7 @@ void accfft_execute_yf(accfft_planf* plan, int direction, float * data,
 	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
 
 	if (direction == -1) {
-    float* cwork =(float*) accfft_alloc(plan->alloc_max);
+    float* cwork = plan->Mem_mgr->buffer_3;
     memcpy(cwork, data, plan->alloc_max);
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
@@ -1224,7 +1224,7 @@ void accfft_execute_xf(accfft_planf* plan, int direction, float * data,
 	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
 
-  float* cwork =(float*) accfft_alloc(plan->alloc_max);
+  float* cwork = plan->Mem_mgr->buffer_3;
 	if (direction == -1) {
     memcpy(cwork, data, N_local * sizeof(float));
 		/**************************************************************/
@@ -1246,15 +1246,13 @@ void accfft_execute_xf(accfft_planf* plan, int direction, float * data,
 		/**************************************************************/
 		fft_time -= MPI_Wtime();
 		fftwf_execute_dft_c2r(plan->iplan_x, (fftwf_complex*) data,
-				(float*) cwork);
+				(float*) data);
 		fft_time += MPI_Wtime();
 
-		plan->T_plan_xi->execute(plan->T_plan_xi, cwork, timings, 1);
+		plan->T_plan_xi->execute(plan->T_plan_xi, data, timings, 1);
 		MPI_Barrier(plan->c_comm);
-    memcpy(data_out, cwork, N_local * sizeof(float));
+    memcpy(data_out, data, N_local * sizeof(float));
 	}
-
-  free(cwork);
 	timings[4] += fft_time;
 	if (timer == NULL) {
 		//delete [] timings;

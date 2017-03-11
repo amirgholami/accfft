@@ -254,10 +254,6 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 	/* Get the local pencil size and the allocation size */
 	alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
 			ostart, c_comm);
-  if(procid == 1) {
-  std::cout<<"istart[0]= "<<istart[0]<<" istart[1]= "<<istart[1]<<" istart[2]="<<istart[2]<<std::endl;
-	std::cout<<"ostart[0]= "<<ostart[0]<<" ostart[1]= "<<ostart[1]<<" ostart[2]="<<ostart[2]<<std::endl;
-  }
 	Tc* A_hat;  //=(Tc*) accfft_alloc(alloc_max);
 	Tc* tmp;  //=(Tc*) accfft_alloc(alloc_max);
 	cudaMalloc((void**) &A_hat, alloc_max);
@@ -280,21 +276,6 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
       std::cout << " ostart_xi[0] = " << ostart_xi[0]
                 << " ostart_xi[1] = " << ostart_xi[1]
                 << " ostart_xi[2] = " << ostart_xi[2] << std::endl;
-    }
-    if(procid==2){
-      std::cout << " isize[0] = " << plan->isize[0]
-                << " isize[1] = " << plan->isize[1]
-                << " isize[2] = " << plan->isize[2] << std::endl;
-      int* osize_xi = plan->osize_xi;
-      int* osize_x = plan->osize_x;
-      int* ostart_xi = plan->ostart_2;
-      std::cout << " osize_x[0] = " << osize_x[0]
-                << " osize_x[1] = " << osize_x[1]
-                << " osize_x[2] = " << osize_x[2] << std::endl;
-      std::cout << " osize_xi[0] = " << osize_xi[0]
-                << " osize_xi[1] = " << osize_xi[1]
-                << " osize_xi[2] = " << osize_xi[2] << std::endl;
-      std::cout << "alloc_max = " << alloc_max << std::endl;
     }
     accfft_execute_r2c_x_gpu_t<T, Tc>(plan, A, A_hat, timings);
     scale_xyz[0] = 1;

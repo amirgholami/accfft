@@ -25,7 +25,7 @@ template<typename T>
 class Mem_Mgr {
 public:
 	Mem_Mgr(int N0, int N1, int n_tuples, MPI_Comm Comm, int howmany = 1,
-			int specified_alloc_local = 0);
+			ptrdiff_t specified_alloc_local = 0);
 
 	ptrdiff_t N[2];
 	ptrdiff_t n_tuples;
@@ -39,6 +39,7 @@ public:
 
 	T * buffer;
 	T * buffer_2;
+	T * buffer_3; // used for fast operators
 	T * buffer_d;
 	//T * data_cpu;
 	//MPI_Comm comm;

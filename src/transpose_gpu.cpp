@@ -56,7 +56,8 @@ static int intpow(int a, int b) {
 }
 #ifdef ENABLE_GPU
 template <typename T>
-Mem_Mgr_gpu<T>::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany, int specified_alloc_local) {
+Mem_Mgr_gpu<T>::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howmany,
+    ptrdiff_t specified_alloc_local) {
 
 	N[0]=N0;
 	N[1]=N1;
@@ -123,6 +124,7 @@ Mem_Mgr_gpu<T>::Mem_Mgr_gpu(int N0, int N1,int tuples, MPI_Comm Comm, int howman
 	}
 	cudaMalloc((void **)&buffer_d, alloc_local);
 	cudaMalloc((void **)&buffer_d2, alloc_local);
+	cudaMalloc((void **)&buffer_d3, alloc_local);
 	memset( buffer,0, alloc_local );
 	memset( buffer_2,0, alloc_local );
 
@@ -135,7 +137,7 @@ Mem_Mgr_gpu<T>::~Mem_Mgr_gpu() {
 	cudaError_t cuda_err1=cudaSuccess, cuda_err2=cudaSuccess,cuda_err3=cudaSuccess;
 	if(PINNED==1) {
 		if(buffer!=NULL) cuda_err1=cudaFreeHost(buffer);
-		if(buffer!=NULL) cuda_err2=cudaFreeHost(buffer_2);
+		if(buffer_2!=NULL) cuda_err2=cudaFreeHost(buffer_2);
 		if(cuda_err1!=cudaSuccess || cuda_err2!=cudaSuccess) {
 			std::cout<<"!!!!!!!!!! Failed to cudaFreeHost in MemMgr; err1= "<<cuda_err1<<" err2= "<<cuda_err2<<std::endl;
 		}
@@ -145,12 +147,15 @@ Mem_Mgr_gpu<T>::~Mem_Mgr_gpu() {
 		free(buffer_2);
 	}
 	cuda_err3=cudaFree(buffer_d);
+	cuda_err3=cudaFree(buffer_d2);
+	cuda_err3=cudaFree(buffer_d3);
 	if(cuda_err3!=cudaSuccess) {
 		std::cout<<"!!!!!!!!!! Failed to cudaFree in MemMgr; err3= "<<cuda_err3<<std::endl;
 	}
 #else
 	free(buffer);
 	free(buffer_2);
+	free(buffer_3);
 #endif
 }
 

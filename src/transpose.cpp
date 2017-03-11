@@ -54,7 +54,7 @@ static int intpow(int a, int b) {
 
 template<typename T>
 Mem_Mgr<T>::Mem_Mgr(int N0, int N1, int tuples, MPI_Comm Comm, int howmany,
-		int specified_alloc_local) {
+		ptrdiff_t specified_alloc_local) {
 
 	N[0] = N0;
 	N[1] = N1;
@@ -108,9 +108,11 @@ Mem_Mgr<T>::Mem_Mgr(int N0, int N1, int tuples, MPI_Comm Comm, int howmany,
 	int err;
 	err = posix_memalign((void **) &buffer, 64, alloc_local);
 	err = posix_memalign((void **) &buffer_2, 64, alloc_local);
+	err = posix_memalign((void **) &buffer_3, 64, alloc_local);
 	assert(err == 0 && "posix_memalign failed to allocate memory in Mem_Mgr");
 	memset(buffer, 0, alloc_local);
 	memset(buffer_2, 0, alloc_local);
+	memset(buffer_3, 0, alloc_local);
 
 }
 
@@ -119,6 +121,7 @@ Mem_Mgr<T>::~Mem_Mgr() {
 
 	free(buffer);
 	free(buffer_2);
+	free(buffer_3);
 }
 
 void mytestfunctiondouble() {

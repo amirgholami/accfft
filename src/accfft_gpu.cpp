@@ -325,7 +325,7 @@ accfft_plan_gpu* accfft_plan_dft_3d_r2c_gpu(int * n, double * data_d,
 	if (plan->oneD) {
 		int N0 = n[0], N1 = n[1], N2 = n[2];
 
-		plan->Mem_mgr = new Mem_Mgr_gpu<double>(N0, N1, n_tuples_o, c_comm);
+		plan->Mem_mgr = new Mem_Mgr_gpu<double>(N0, N1, n_tuples_o, c_comm, 1, plan->alloc_max);
 		plan->T_plan_2 = new T_Plan_gpu<double>(N0, N1, n_tuples_o,
 				plan->Mem_mgr, c_comm);
 		plan->T_plan_2i = new T_Plan_gpu<double>(N1, N0, n_tuples_o,
@@ -845,7 +845,7 @@ accfft_plan_gpu* accfft_plan_dft_3d_c2c_gpu(int * n, Complex * data_d,
 
 		plan->alloc_max = alloc_max;
 
-		plan->Mem_mgr = new Mem_Mgr_gpu<double>(NX, NY, (NZ) * 2, c_comm);
+		plan->Mem_mgr = new Mem_Mgr_gpu<double>(NX, NY, (NZ) * 2, c_comm, 1, plan->alloc_max);
 		plan->T_plan_2 = new T_Plan_gpu<double>(NX, NY, (NZ) * 2, plan->Mem_mgr,
 				c_comm);
 		plan->T_plan_2i = new T_Plan_gpu<double>(NY, NX, NZ * 2, plan->Mem_mgr,
@@ -1368,8 +1368,7 @@ void accfft_execute_y_gpu(accfft_plan_gpu* plan, int direction, double * data_d,
     /**************************************************************/
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
-    double* cwork_d;
-    cudaMalloc((void**) &cwork_d, alloc_max);
+    double* cwork_d = plan->Mem_mgr->buffer_d3;
     cudaMemcpy(cwork_d, data_d, N_local * sizeof(double), cudaMemcpyDeviceToDevice);
 
     if (!plan->oneD) {
@@ -1394,7 +1393,6 @@ void accfft_execute_y_gpu(accfft_plan_gpu* plan, int direction, double * data_d,
         cudaEventElapsedTime(&dummy_time, fft_startEvent,
           fft_stopEvent));
     fft_time += dummy_time / 1000;
-    cudaFree(cwork_d);
   } else if (direction == 1) {
     /**************************************************************/
     /*******************  N0/P0 x N1 x N2/P1 **********************/
@@ -1513,7 +1511,7 @@ void accfft_execute_x_gpu(accfft_plan_gpu* plan, int direction, double * data_d,
   int *osize_xi = plan->osize_xi;
   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
   double* cwork_d;
-  cudaMalloc((void**) &cwork_d, alloc_max);
+  cwork_d = plan->Mem_mgr->buffer_d3;
 
   if (direction == -1) {
     /**************************************************************/
@@ -1521,13 +1519,6 @@ void accfft_execute_x_gpu(accfft_plan_gpu* plan, int direction, double * data_d,
     /**************************************************************/
     cudaMemcpy(cwork_d, data_d, N_local * sizeof(double), cudaMemcpyDeviceToDevice);
 
-    if(procid == 2) {
-      std::cout << "alloc_max = " << alloc_max << std::endl;
-      std::cout << "nprocs_0 = " << plan->T_plan_x->nprocs_0 << std::endl;
-      std::cout << "nprocs_1 = " << plan->T_plan_x->nprocs_1 << std::endl;
-      std::cout << "local_n0 = " << plan->T_plan_x->local_n0_proc[2] << std::endl;
-      std::cout << "local_n1 = " << plan->T_plan_x->local_n1_proc[2] << std::endl;
-    }
 		plan->T_plan_x->execute_gpu(plan->T_plan_x, cwork_d, timings, 2);
     /**************************************************************/
     /*******************  N0/P0 x N1 x N2/P1 **********************/
@@ -1549,7 +1540,7 @@ void accfft_execute_x_gpu(accfft_plan_gpu* plan, int direction, double * data_d,
     checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
     checkCuda_accfft(
         cufftExecZ2D(plan->iplan_x, (cufftDoubleComplex*) data_d,
-          (cufftDoubleReal*) cwork_d));
+          (cufftDoubleReal*) data_d));
     checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
     checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
     checkCuda_accfft(
@@ -1557,13 +1548,12 @@ void accfft_execute_x_gpu(accfft_plan_gpu* plan, int direction, double * data_d,
           fft_stopEvent));
     fft_time += dummy_time / 1000;
 
-		plan->T_plan_xi->execute_gpu(plan->T_plan_xi, cwork_d, timings, 1);
-    cudaMemcpy(data_out_d, cwork_d, N_local * sizeof(double), cudaMemcpyDeviceToDevice);
+		plan->T_plan_xi->execute_gpu(plan->T_plan_xi, data_d, timings, 1);
+    cudaMemcpy(data_out_d, data_d, N_local * sizeof(double), cudaMemcpyDeviceToDevice);
     /**************************************************************/
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
   }
-  cudaFree(cwork_d);
 
   checkCuda_accfft(cudaEventDestroy(memcpy_startEvent));
   checkCuda_accfft(cudaEventDestroy(memcpy_stopEvent));

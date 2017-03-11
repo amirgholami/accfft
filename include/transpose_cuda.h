@@ -30,7 +30,7 @@ template<typename T>
 class Mem_Mgr_gpu {
 public:
 	Mem_Mgr_gpu(int N0, int N1, int n_tuples, MPI_Comm Comm, int howmany = 1,
-			int specified_alloc_local = 0);
+			ptrdiff_t specified_alloc_local = 0);
 
 	ptrdiff_t N[2];
 	ptrdiff_t n_tuples;
@@ -46,6 +46,7 @@ public:
 	T* buffer_2;
 	T* buffer_d;
 	T* buffer_d2;
+	T* buffer_d3;
 	//T * data_cpu;
 	//MPI_Comm comm;
 	// Deconstructor
