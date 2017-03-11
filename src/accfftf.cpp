@@ -1120,9 +1120,10 @@ void accfft_execute_yf(accfft_planf* plan, int direction, float * data,
 	int *osize_2 = plan->osize_2, *ostart_2 = plan->ostart_2;
 	int *osize_1i = plan->osize_1i, *ostart_1i = plan->ostart_1i;
 	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
+  float* cwork = plan->Mem_mgr->buffer_3;
+  int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
 
 	if (direction == -1) {
-    float* cwork = plan->Mem_mgr->buffer_3;
     memcpy(cwork, data, plan->alloc_max);
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
@@ -1146,13 +1147,14 @@ void accfft_execute_yf(accfft_planf* plan, int direction, float * data,
 		/**************************************************************/
 		fft_time -= MPI_Wtime();
 			fftwf_execute_dft_c2r(plan->iplan_y, (fftwf_complex*) data,
-					(float*) data_out);
+					(float*) cwork);
 		fft_time += MPI_Wtime();
 
 		if (!plan->oneD) {
-			plan->T_plan_yi->execute(plan->T_plan_yi, data_out, timings, 1,
+			plan->T_plan_yi->execute(plan->T_plan_yi, cwork, timings, 1,
 					osize_1i[0], coords[0]);
 		}
+    memcpy(data_out, cwork, N_local * sizeof(float));
 		MPI_Barrier(plan->c_comm);
 	}
 

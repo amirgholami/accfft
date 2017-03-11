@@ -1363,12 +1363,12 @@ void accfft_execute_y_gpu(accfft_plan_gpu* plan, int direction, double * data_d,
   int *osize_y = plan->osize_y;
   int *osize_yi = plan->osize_yi;
   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
+  double* cwork_d = plan->Mem_mgr->buffer_d3;
 
   if (direction == -1) {
     /**************************************************************/
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
-    double* cwork_d = plan->Mem_mgr->buffer_d3;
     cudaMemcpy(cwork_d, data_d, N_local * sizeof(double), cudaMemcpyDeviceToDevice);
 
     if (!plan->oneD) {
@@ -1403,7 +1403,7 @@ void accfft_execute_y_gpu(accfft_plan_gpu* plan, int direction, double * data_d,
           cufftExecZ2D(plan->iplan_y,
             (cufftDoubleComplex*) &data_d[2 * i * osize_yi[1]
             * osize_yi[2]],
-            (cufftDoubleReal*) &data_out_d[i * osize_y[1]
+            (cufftDoubleReal*) &cwork_d[i * osize_y[1]
             * osize_yi[2]]));
     }
     checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
@@ -1414,9 +1414,10 @@ void accfft_execute_y_gpu(accfft_plan_gpu* plan, int direction, double * data_d,
     fft_time += dummy_time / 1000;
 
     if (!plan->oneD) {
-      plan->T_plan_yi->execute_gpu(plan->T_plan_yi, data_out_d, timings, 1,
+      plan->T_plan_yi->execute_gpu(plan->T_plan_yi, cwork_d, timings, 1,
           osize_yi[0], coords[0]);
     }
+    cudaMemcpy(data_out_d, cwork_d, N_local * sizeof(double), cudaMemcpyDeviceToDevice);
     /**************************************************************/
     /*******************  N0/P0 x N1/P1 x N2 **********************/
     /**************************************************************/
