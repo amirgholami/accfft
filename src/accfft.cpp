@@ -426,120 +426,6 @@ accfft_plan* accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out,
 
 } // end accfft_plan_dft_3d_r2c
 
-void accfft_execute(accfft_plan* plan, int direction, double * data,
-		double * data_out, double * timer, std::bitset<3> XYZ) {
-
-	if (data == NULL)
-		data = plan->data;
-	if (data_out == NULL)
-		data_out = plan->data_out;
-	int * coords = plan->coord;
-	int procid = plan->procid;
-	double fft_time = 0;
-	double timings[5] = { 0 };
-	// 1D Decomposition
-	int *osize_0 = plan->osize_0, *ostart_0 = plan->ostart_0;
-	int *osize_1 = plan->osize_1, *ostart_1 = plan->ostart_1;
-	int *osize_2 = plan->osize_2, *ostart_2 = plan->ostart_2;
-	int *osize_1i = plan->osize_1i, *ostart_1i = plan->ostart_1i;
-	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
-
-	if (direction == -1) {
-		/**************************************************************/
-		/*******************  N0/P0 x N1/P1 x N2 **********************/
-		/**************************************************************/
-		// FFT in Z direction
-		fft_time -= MPI_Wtime();
-		if (XYZ[2])
-			fftw_execute_dft_r2c(plan->fplan_0, (double*) data,
-					(fftw_complex*) data_out);
-		else
-			data_out = data;
-		fft_time += MPI_Wtime();
-
-		// Perform N0/P0 transpose
-		if (!plan->oneD) {
-			plan->T_plan_1->execute(plan->T_plan_1, data_out, timings, 2,
-					osize_0[0], coords[0]);
-		}
-		/**************************************************************/
-		/*******************  N0/P0 x N1 x N2/P1 **********************/
-		/**************************************************************/
-		fft_time -= MPI_Wtime();
-		if (XYZ[1])
-			fftw_execute_dft(plan->fplan_1, (fftw_complex*) data_out,
-					(fftw_complex*) data_out);
-		fft_time += MPI_Wtime();
-
-		if (plan->oneD) {
-			plan->T_plan_2->execute(plan->T_plan_2, data_out, timings, 2);
-		} else {
-			plan->T_plan_2->execute(plan->T_plan_2, data_out, timings, 2, 1,
-					coords[1]);
-		}
-		/**************************************************************/
-		/*******************  N0 x N1/P0 x N2/P1 **********************/
-		/**************************************************************/
-		fft_time -= MPI_Wtime();
-		if (XYZ[0])
-			fftw_execute_dft(plan->fplan_2, (fftw_complex*) data_out,
-					(fftw_complex*) data_out);
-		fft_time += MPI_Wtime();
-	} else if (direction == 1) {
-		fft_time -= MPI_Wtime();
-		if (XYZ[0])
-			fftw_execute_dft(plan->iplan_2, (fftw_complex*) data,
-					(fftw_complex*) data);
-		fft_time += MPI_Wtime();
-
-		if (plan->oneD) {
-			plan->T_plan_2i->execute(plan->T_plan_2i, data, timings, 1);
-		} else {
-			plan->T_plan_2i->execute(plan->T_plan_2i, data, timings, 1, 1,
-					coords[1]);
-		}
-
-		/**************************************************************/
-		/*******************  N0/P0 x N1 x N2/P1 **********************/
-		/**************************************************************/
-		fft_time -= MPI_Wtime();
-		if (XYZ[1])
-			fftw_execute_dft(plan->iplan_1, (fftw_complex*) data,
-					(fftw_complex*) data);
-		fft_time += MPI_Wtime();
-
-		if (!plan->oneD) {
-			plan->T_plan_1i->execute(plan->T_plan_1i, data, timings, 1,
-					osize_1i[0], coords[0]);
-		}
-		/**************************************************************/
-		/*******************  N0/P0 x N1/P1 x N2 **********************/
-		/**************************************************************/
-		// IFFT in Z direction
-		fft_time -= MPI_Wtime();
-		if (XYZ[2])
-			fftw_execute_dft_c2r(plan->iplan_0, (fftw_complex*) data,
-					(double*) data_out);
-		else
-			data_out = data;
-		fft_time += MPI_Wtime();
-
-	}
-
-	MPI_Barrier(plan->c_comm);
-	timings[4] += fft_time;
-	if (timer == NULL) {
-		//delete [] timings;
-	} else {
-		timer[0] += timings[0];
-		timer[1] += timings[1];
-		timer[2] += timings[2];
-		timer[3] += timings[3];
-		timer[4] += timings[4];
-	}
-
-	return;
-}
 /**
  * Get the local sizes of the distributed global data for a C2C transform
  * @param n Integer array of size 3, corresponding to the global data size
@@ -796,7 +682,7 @@ accfft_plan* accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out,
  * @param timer See \ref timer for more details.
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-void accfft_execute_r2c(accfft_plan* plan, double * data, Complex * data_out,
+void accfft_execute_r2c(accfft_plan_t<double, Complex, fftw_plan>* plan, double * data, Complex * data_out,
 		double * timer, std::bitset<3> XYZ) {
 	if (plan->r2c_plan_baked) {
 		accfft_execute(plan, -1, data, (double*) data_out, timer, XYZ);
@@ -819,7 +705,7 @@ void accfft_execute_r2c(accfft_plan* plan, double * data, Complex * data_out,
  * @param timer See \ref timer for more details.
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-void accfft_execute_c2r(accfft_plan* plan, Complex * data, double * data_out,
+void accfft_execute_c2r(accfft_plantd* plan, Complex * data, double * data_out,
 		double * timer, std::bitset<3> XYZ) {
 	if (plan->r2c_plan_baked) {
 		accfft_execute(plan, 1, (double*) data, data_out, timer, XYZ);
@@ -842,7 +728,7 @@ void accfft_execute_c2r(accfft_plan* plan, Complex * data, double * data_out,
  * @param timer See \ref timer for more details.
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-void accfft_execute_c2c(accfft_plan* plan, int direction, Complex * data,
+void accfft_execute_c2c(accfft_plantd* plan, int direction, Complex * data,
 		Complex * data_out, double * timer, std::bitset<3> XYZ) {
 	if (!plan->c2c_plan_baked) {
 		if (plan->procid == 0)
@@ -964,12 +850,7 @@ void accfft_execute_c2c(accfft_plan* plan, int direction, Complex * data,
 	return;
 }
 
-/**
- * Destroy AccFFT CPU plan.
- * @param plan Input plan to be destroyed.
- */
-void accfft_destroy_plan(accfft_plan * plan) {
-
+void accfft_destroy_plan(accfft_plantd * plan) {
 	if (plan != NULL) {
 		if (plan->T_plan_1 != NULL)
 			delete (plan->T_plan_1);
@@ -1315,3 +1196,144 @@ template void accfft_execute_r2c_x_t<double, Complex>(accfft_plan* plan,
 		double* data, Complex* data_out, double * timer);
 template void accfft_execute_c2r_x_t<Complex, double>(accfft_plan* plan,
 		Complex* data, double* data_out, double * timer);
+
+void accfft_execute(accfft_plantd* plan, int direction, double * data,
+		double * data_out, double * timer, std::bitset<3> XYZ) {
+
+	if (data == NULL)
+		data = plan->data;
+	if (data_out == NULL)
+		data_out = plan->data_out;
+	int * coords = plan->coord;
+	int procid = plan->procid;
+	double fft_time = 0;
+	double timings[5] = { 0 };
+	// 1D Decomposition
+	int *osize_0 = plan->osize_0, *ostart_0 = plan->ostart_0;
+	int *osize_1 = plan->osize_1, *ostart_1 = plan->ostart_1;
+	int *osize_2 = plan->osize_2, *ostart_2 = plan->ostart_2;
+	int *osize_1i = plan->osize_1i, *ostart_1i = plan->ostart_1i;
+	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
+
+	if (direction == -1) {
+		/**************************************************************/
+		/*******************  N0/P0 x N1/P1 x N2 **********************/
+		/**************************************************************/
+		// FFT in Z direction
+		fft_time -= MPI_Wtime();
+		if (XYZ[2])
+			fftw_execute_dft_r2c(plan->fplan_0, (double*) data,
+					(fftw_complex*) data_out);
+		else
+			data_out = data;
+		fft_time += MPI_Wtime();
+
+		// Perform N0/P0 transpose
+		if (!plan->oneD) {
+			plan->T_plan_1->execute(plan->T_plan_1, data_out, timings, 2,
+					osize_0[0], coords[0]);
+		}
+		/**************************************************************/
+		/*******************  N0/P0 x N1 x N2/P1 **********************/
+		/**************************************************************/
+		fft_time -= MPI_Wtime();
+		if (XYZ[1])
+			fftw_execute_dft(plan->fplan_1, (fftw_complex*) data_out,
+					(fftw_complex*) data_out);
+		fft_time += MPI_Wtime();
+
+		if (plan->oneD) {
+			plan->T_plan_2->execute(plan->T_plan_2, data_out, timings, 2);
+		} else {
+			plan->T_plan_2->execute(plan->T_plan_2, data_out, timings, 2, 1,
+					coords[1]);
+		}
+		/**************************************************************/
+		/*******************  N0 x N1/P0 x N2/P1 **********************/
+		/**************************************************************/
+		fft_time -= MPI_Wtime();
+		if (XYZ[0])
+			fftw_execute_dft(plan->fplan_2, (fftw_complex*) data_out,
+					(fftw_complex*) data_out);
+		fft_time += MPI_Wtime();
+	} else if (direction == 1) {
+		fft_time -= MPI_Wtime();
+		if (XYZ[0])
+			fftw_execute_dft(plan->iplan_2, (fftw_complex*) data,
+					(fftw_complex*) data);
+		fft_time += MPI_Wtime();
+
+		if (plan->oneD) {
+			plan->T_plan_2i->execute(plan->T_plan_2i, data, timings, 1);
+		} else {
+			plan->T_plan_2i->execute(plan->T_plan_2i, data, timings, 1, 1,
+					coords[1]);
+		}
+
+		/**************************************************************/
+		/*******************  N0/P0 x N1 x N2/P1 **********************/
+		/**************************************************************/
+		fft_time -= MPI_Wtime();
+		if (XYZ[1])
+			fftw_execute_dft(plan->iplan_1, (fftw_complex*) data,
+					(fftw_complex*) data);
+		fft_time += MPI_Wtime();
+
+		if (!plan->oneD) {
+			plan->T_plan_1i->execute(plan->T_plan_1i, data, timings, 1,
+					osize_1i[0], coords[0]);
+		}
+		/**************************************************************/
+		/*******************  N0/P0 x N1/P1 x N2 **********************/
+		/**************************************************************/
+		// IFFT in Z direction
+		fft_time -= MPI_Wtime();
+		if (XYZ[2])
+			fftw_execute_dft_c2r(plan->iplan_0, (fftw_complex*) data,
+					(double*) data_out);
+		else
+			data_out = data;
+		fft_time += MPI_Wtime();
+
+	}
+
+	MPI_Barrier(plan->c_comm);
+	timings[4] += fft_time;
+	if (timer == NULL) {
+		//delete [] timings;
+	} else {
+		timer[0] += timings[0];
+		timer[1] += timings[1];
+		timer[2] += timings[2];
+		timer[3] += timings[3];
+		timer[4] += timings[4];
+	}
+
+	return;
+}
+
+void accfft_execute_c2r(accfft_plan* plan, Complex * data,
+		double * data_out, double * timer, std::bitset<3> xyz) {
+  return accfft_execute_c2r((accfft_plantd*)plan, data, data_out, timer, xyz);
+}
+void accfft_execute_r2c(accfft_plan* plan, double * data,
+		Complex * data_out, double * timer, std::bitset<3> xyz){
+  return accfft_execute_r2c((accfft_plantd*)plan, data, data_out, timer, xyz);
+}
+void accfft_execute_c2c(accfft_plan* plan, int direction, Complex * data,
+		Complex * data_out, double * timer, std::bitset<3> xyz) {
+  return accfft_execute_c2c((accfft_plantd*)plan, direction, data, data_out, timer, xyz);
+}
+
+/**
+ * Destroy AccFFT CPU plan.
+ * @param plan Input plan to be destroyed.
+ */
+void accfft_destroy_plan(accfft_plan * plan) {
+  return accfft_destroy_plan((accfft_plantd*)plan);
+}
+
+void accfft_execute(accfft_plan* plan, int direction, double * data,
+		double * data_out, double * timer, std::bitset<3> XYZ) {
+  return accfft_execute((accfft_plantd*)plan, direction, data, data_out, timer, XYZ);
+}

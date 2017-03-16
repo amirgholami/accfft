@@ -199,12 +199,12 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				(fftwf_complex*) data_out, (fftwf_complex*) data_out, -1,
 				fftw_flags);
 		if (plan->fplan_1 == NULL)
-			std::cout << "!!! fplan1 not created in r2c plan!!!" << std::endl;
+			std::cout << "!!! fplan1f not created in r2c plan!!!" << std::endl;
 		plan->iplan_1 = fftwf_plan_guru_dft(1, &dims, 2, howmany_dims,
 				(fftwf_complex*) data_out, (fftwf_complex*) data_out, 1,
 				fftw_flags);
 		if (plan->iplan_1 == NULL)
-			std::cout << "!!! iplan1 not created in r2c plan !!!" << std::endl;
+			std::cout << "!!! iplan1f not created in r2c plan !!!" << std::endl;
 
 		// ----
 		dims, howmany_dims[2];
@@ -224,7 +224,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				(float*) dummy_data, (fftwf_complex*) data_out,
 				fftw_flags);
 		if (plan->fplan_y == NULL)
-			std::cout << "!!! fplan1 not created in r2c plan!!!" << std::endl;
+			std::cout << "!!! fplan1f not created in r2c plan!!!" << std::endl;
 
 		dims, howmany_dims[2];
 		dims.n = osize_y[1];
@@ -243,7 +243,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				(fftwf_complex*) data_out, (float*) dummy_data,
 				fftw_flags);
 		if (plan->iplan_y == NULL)
-			std::cout << "!!! iplan1 not created in r2c plan !!!" << std::endl;
+			std::cout << "!!! iplan1f not created in r2c plan !!!" << std::endl;
 
 		// ----
 
@@ -254,7 +254,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				osize_2[2] * osize_2[1], 1,        // int ostride, int odist,
 				FFTW_FORWARD, fftw_flags);
 		if (plan->fplan_2 == NULL)
-			std::cout << "!!! fplan2 not created in r2c plan !!!" << std::endl;
+			std::cout << "!!! fplan2f not created in r2c plan !!!" << std::endl;
 
 		plan->iplan_2 = fftwf_plan_many_dft(1, &n[0], osize_2[2] * osize_2[1], //int rank, const int *n, int howmany
 		(fftwf_complex*) data_out, NULL,        //float *in, const int *inembed,
@@ -263,7 +263,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				osize_2[2] * osize_2[1], 1,        // int ostride, int odist,
 				FFTW_BACKWARD, fftw_flags);
 		if (plan->iplan_2 == NULL)
-			std::cout << "!!! iplan2 not created in r2c plan !!!" << std::endl;
+			std::cout << "!!! iplan2f not created in r2c plan !!!" << std::endl;
     // fplan_x
 		plan->fplan_x = fftwf_plan_many_dft_r2c(1, &n[0],
 				osize_x[1] * osize_x[2], //int rank, const int *n, int howmany
@@ -273,7 +273,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				osize_xi[1] * osize_xi[2], 1,        // int ostride, int odist,
 				fftw_flags);
 		if (plan->fplan_x == NULL)
-			std::cout << "!!! fplan_x not created in r2c plan!!!" << std::endl;
+			std::cout << "!!! fplan_xf not created in r2c plan!!!" << std::endl;
 
 		plan->iplan_x = fftwf_plan_many_dft_c2r(1, &n[0],
 				osize_xi[1] * osize_xi[2], //int rank, const int *n, int howmany
@@ -283,7 +283,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 			  osize_x[1] * osize_x[2], 1,        // int ostride, int odist,
 				fftw_flags);
 		if (plan->iplan_x == NULL)
-			std::cout << "!!! iplan_x not created in r2c plan!!!" << std::endl;
+			std::cout << "!!! iplan_xf not created in r2c plan!!!" << std::endl;
     accfft_free(dummy_data);
 	}
 
@@ -406,7 +406,11 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 
 } // end accfft_plan_dft_3d_r2c
 
-void accfft_executef(accfft_planf* plan, int direction, float * data,
+accfft_planf* accfft_plan_dft_3d_r2c(int * n, float * data, float * data_out,
+		MPI_Comm c_comm, unsigned flags) {
+  return accfft_plan_dft_3d_r2cf(n, data, data_out, c_comm, flags);
+}
+void accfft_execute(accfft_plantf* plan, int direction, float * data,
 		float* data_out, double * timer, std::bitset<3> XYZ) {
 
 	if (data == NULL)
@@ -780,10 +784,10 @@ accfft_planf* accfft_plan_dft_3d_c2cf(int * n, Complexf * data,
  * @param timer See \ref timer for more details.
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-void accfft_execute_r2cf(accfft_planf* plan, float * data, Complexf * data_out,
+void accfft_execute_r2c(accfft_plantf* plan, float * data, Complexf * data_out,
 		double * timer, std::bitset<3> XYZ) {
 	if (plan->r2c_plan_baked) {
-		accfft_executef(plan, -1, data, (float*) data_out, timer, XYZ);
+		accfft_execute(plan, -1, data, (float*) data_out, timer, XYZ);
 	} else {
 		if (plan->procid == 0)
 			std::cout
@@ -803,10 +807,10 @@ void accfft_execute_r2cf(accfft_planf* plan, float * data, Complexf * data_out,
  * @param timer See \ref timer for more details.
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-void accfft_execute_c2rf(accfft_planf* plan, Complexf * data, float * data_out,
+void accfft_execute_c2r(accfft_plantf* plan, Complexf * data, float * data_out,
 		double * timer, std::bitset<3> XYZ) {
 	if (plan->r2c_plan_baked) {
-		accfft_executef(plan, 1, (float*) data, data_out, timer, XYZ);
+		accfft_execute(plan, 1, (float*) data, data_out, timer, XYZ);
 	} else {
 		if (plan->procid == 0)
 			std::cout
@@ -826,7 +830,7 @@ void accfft_execute_c2rf(accfft_planf* plan, Complexf * data, float * data_out,
  * @param timer See \ref timer for more details.
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-void accfft_execute_c2cf(accfft_planf* plan, int direction, Complexf * data,
+void accfft_execute_c2c(accfft_plantf* plan, int direction, Complexf * data,
 		Complexf * data_out, double * timer, std::bitset<3> XYZ) {
 	if (!plan->c2c_plan_baked) {
 		if (plan->procid == 0)
@@ -952,7 +956,7 @@ void accfft_execute_c2cf(accfft_planf* plan, int direction, Complexf * data,
  * Destroy single precision AccFFT CPU plan.
  * @param plan Input plan to be destroyed.
  */
-void accfft_destroy_plan(accfft_planf * plan) {
+void accfft_destroy_plan(accfft_plantf * plan) {
 
 	if (plan != NULL) {
 		if (plan->T_plan_1 != NULL)
@@ -1301,3 +1305,27 @@ template void accfft_execute_r2c_x_t<float, Complexf>(accfft_planf* plan,
 		float* data, Complexf* data_out, double * timer);
 template void accfft_execute_c2r_x_t<Complexf, float>(accfft_planf* plan,
 		Complexf* data, float* data_out, double * timer);
+
+
+void accfft_executef(accfft_planf* plan, int direction, float * data,
+		float* data_out, double * timer,
+		std::bitset<3> xyz) {
+  return accfft_execute((accfft_plantf*)plan, direction, data, data_out, timer, xyz);
+}
+void accfft_execute_c2cf(accfft_planf* plan, int direction, Complexf * data,
+    Complexf * data_out, double * timer,
+		std::bitset<3> xyz) {
+  return accfft_execute_c2c((accfft_plantf*)plan, direction, data, data_out, timer, xyz);
+}
+void accfft_destroy_plan(accfft_planf * plan) {
+  return accfft_destroy_plan((accfft_plantf*)plan);
+}
+void accfft_execute_r2cf(accfft_planf* plan, float * data,
+		Complexf * data_out, double * timer, std::bitset<3> xyz) {
+  return accfft_execute_r2c((accfft_plantf*)plan, data, data_out, timer, xyz);
+}
+void accfft_execute_c2rf(accfft_planf* plan, Complexf * data,
+		float * data_out, double * timer,
+		std::bitset<3> xyz) {
+  return accfft_execute_c2r((accfft_plantf*)plan, data, data_out, timer, xyz);
+}
