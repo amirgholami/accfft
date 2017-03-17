@@ -68,6 +68,28 @@ template void accfft_inv_laplace_t<double, accfft_plan>(double * invLA,
 template void accfft_inv_biharmonic_t<double, accfft_plan>(double * invBA,
 		double *A, accfft_plan *plan, double* timer);
 
+template void accfft_grad_slow_t<double, accfft_plantd>(double * A_x, double *A_y,
+		double *A_z, double *A, accfft_plantd *plan, std::bitset<3>* pXYZ,
+		double* timer);
+
+template void accfft_grad_t<double, accfft_plantd>(double * A_x, double *A_y,
+		double *A_z, double *A, accfft_plantd *plan, std::bitset<3>* pXYZ,
+		double* timer);
+template void accfft_divergence_t<double, accfft_plantd>(double* divA,
+		double * A_x, double *A_y, double *A_z, accfft_plantd *plan,
+		double* timer);
+template void accfft_laplace_t<double, accfft_plantd>(double * LA, double *A,
+		accfft_plantd *plan, double* timer);
+template void accfft_biharmonic_t<double, accfft_plantd>(double * LA, double *A,
+		accfft_plantd *plan, double* timer);
+template void accfft_divergence_slow_t<double, accfft_plantd>(double* divA,
+		double * A_x, double *A_y, double *A_z, accfft_plantd *plan,
+		double* timer);
+template void accfft_inv_laplace_t<double, accfft_plantd>(double * invLA,
+		double *A, accfft_plantd *plan, double* timer);
+template void accfft_inv_biharmonic_t<double, accfft_plantd>(double * invBA,
+		double *A, accfft_plantd *plan, double* timer);
+
 /**
  * Computes double precision gradient of its input real data A, and returns the x, y, and z components
  * and writes the output into A_x, A_y, and A_z respectively.

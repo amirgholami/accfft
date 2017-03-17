@@ -63,6 +63,21 @@ template void accfft_divergence_t<float, accfft_planf>(float* divA, float* A_x,
 template void accfft_biharmonic_t<float, accfft_planf>(float * BA, float *A,
 		accfft_planf *plan, double* timer);
 
+template void accfft_grad_slow_t<float, accfft_plantf>(float * A_x, float *A_y,
+		float* A_z, float* A, accfft_plantf *plan, std::bitset<3>* pXYZ,
+		double* timer);
+template void accfft_grad_t<float, accfft_plantf>(float * A_x, float *A_y,
+		float* A_z, float* A, accfft_plantf *plan, std::bitset<3>* pXYZ,
+		double* timer);
+template void accfft_divergence_t<float, accfft_plantf>(float* divA, float* A_x,
+		float* A_y, float*A_z, accfft_plantf *plan, double* timer);
+template void accfft_laplace_t<float, accfft_plantf>(float * LA, float *A,
+		accfft_plantf *plan, double* timer);
+template void accfft_divergence_slow_t<float, accfft_plantf>(float* divA, float* A_x,
+		float* A_y, float*A_z, accfft_plantf *plan, double* timer);
+template void accfft_biharmonic_t<float, accfft_plantf>(float * BA, float *A,
+		accfft_plantf *plan, double* timer);
+
 /**
  * Computes single precision gradient of its input real data A, and returns the x, y, and z components
  * and writes the output into A_x, A_y, and A_z respectively.

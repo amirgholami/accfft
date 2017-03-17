@@ -1004,28 +1004,32 @@ void accfft_destroy_plan(accfft_plantf * plan) {
 	}
 }
 
-template<typename T, typename Tc>
-void accfft_execute_r2c_t(accfft_planf* plan, T* data, Tc* data_out,
+template<typename T, typename Tc, typename Tp>
+void accfft_execute_r2c_t(Tp* plan, T* data, Tc* data_out,
 		double* timer, std::bitset<3> XYZ) {
-	accfft_execute_r2cf(plan, data, data_out, timer, XYZ);
+	accfft_execute_r2c((accfft_plantf*)plan, data, data_out, timer, XYZ);
 	return;
 }
-template<typename Tc, typename T>
-void accfft_execute_c2r_t(accfft_planf* plan, Tc* data, T* data_out,
+template<typename Tc, typename T, typename Tp>
+void accfft_execute_c2r_t(Tp* plan, Tc* data, T* data_out,
 		double * timer, std::bitset<3> XYZ) {
-	accfft_execute_c2rf(plan, data, data_out, timer, XYZ);
+	accfft_execute_c2r((accfft_plantf*)plan, data, data_out, timer, XYZ);
 	return;
 }
 
-template void accfft_execute_r2c_t<float, Complexf>(accfft_planf* plan,
+template void accfft_execute_r2c_t<float, Complexf, accfft_plantf>(accfft_plantf* plan,
 		float* data, Complexf* data_out, double * timer, std::bitset<3> XYZ);
-template void accfft_execute_c2r_t<Complexf, float>(accfft_planf* plan,
+template void accfft_execute_c2r_t<Complexf, float, accfft_plantf>(accfft_plantf* plan,
+		Complexf* data, float* data_out, double * timer, std::bitset<3> XYZ);
+template void accfft_execute_r2c_t<float, Complexf, accfft_planf>(accfft_planf* plan,
+		float* data, Complexf* data_out, double * timer, std::bitset<3> XYZ);
+template void accfft_execute_c2r_t<Complexf, float, accfft_planf>(accfft_planf* plan,
 		Complexf* data, float* data_out, double * timer, std::bitset<3> XYZ);
 
 
 
 // templates for execution only in z direction
-void accfft_execute_zf(accfft_planf* plan, int direction, float * data,
+void accfft_execute_zf(accfft_plantf* plan, int direction, float * data,
 		float* data_out, double * timer) {
 
 	if (data == NULL)
@@ -1073,11 +1077,11 @@ void accfft_execute_zf(accfft_planf* plan, int direction, float * data,
 
 	return;
 }
-template<typename T, typename Tc>
-void accfft_execute_r2c_z_t(accfft_planf* plan, T* data, Tc* data_out,
+template<typename T, typename Tc, typename Tp>
+void accfft_execute_r2c_z_t(Tp* plan, T* data, Tc* data_out,
 		double* timer) {
 	if (plan->r2c_plan_baked) {
-		accfft_execute_zf(plan, -1, data, (float*) data_out, timer);
+		accfft_execute_zf((accfft_plantf*)plan, -1, data, (float*) data_out, timer);
 	} else {
 		if (plan->procid == 0)
 			std::cout
@@ -1086,11 +1090,11 @@ void accfft_execute_r2c_z_t(accfft_planf* plan, T* data, Tc* data_out,
 	}
 	return;
 }
-template<typename Tc, typename T>
-void accfft_execute_c2r_z_t(accfft_planf* plan, Tc* data, T* data_out,
+template<typename Tc, typename T, typename Tp>
+void accfft_execute_c2r_z_t(Tp* plan, Tc* data, T* data_out,
 		double * timer) {
 	if (plan->r2c_plan_baked) {
-		accfft_execute_zf(plan, 1, (float*) data, (float*) data_out, timer);
+		accfft_execute_zf((accfft_plantf*)plan, 1, (float*) data, (float*) data_out, timer);
 	} else {
 		if (plan->procid == 0)
 			std::cout
@@ -1100,13 +1104,17 @@ void accfft_execute_c2r_z_t(accfft_planf* plan, Tc* data, T* data_out,
 	return;
 }
 
-template void accfft_execute_r2c_z_t<float, Complexf>(accfft_planf* plan,
+template void accfft_execute_r2c_z_t<float, Complexf,accfft_plantf>(accfft_plantf* plan,
 		float* data, Complexf* data_out, double * timer);
-template void accfft_execute_c2r_z_t<Complexf, float>(accfft_planf* plan,
+template void accfft_execute_c2r_z_t<Complexf, float,accfft_plantf>(accfft_plantf* plan,
+		Complexf* data, float* data_out, double * timer);
+template void accfft_execute_r2c_z_t<float, Complexf,accfft_planf>(accfft_planf* plan,
+		float* data, Complexf* data_out, double * timer);
+template void accfft_execute_c2r_z_t<Complexf, float,accfft_planf>(accfft_planf* plan,
 		Complexf* data, float* data_out, double * timer);
 
 // templates for execution only in y direction
-void accfft_execute_yf(accfft_planf* plan, int direction, float * data,
+void accfft_execute_yf(accfft_plantf* plan, int direction, float * data,
 		float* data_out, double * timer) {
 
 	if (data == NULL)
@@ -1177,11 +1185,11 @@ void accfft_execute_yf(accfft_planf* plan, int direction, float * data,
 	return;
 }
 
-template<typename T, typename Tc>
-void accfft_execute_r2c_y_t(accfft_planf* plan, T* data, Tc* data_out,
+template<typename T, typename Tc, typename Tp>
+void accfft_execute_r2c_y_t(Tp* plan, T* data, Tc* data_out,
 		double* timer) {
 	if (plan->r2c_plan_baked) {
-		accfft_execute_yf(plan, -1, data, (float*) data_out, timer);
+		accfft_execute_yf((accfft_plantf*)plan, -1, data, (float*) data_out, timer);
 	} else {
 		if (plan->procid == 0)
 			std::cout
@@ -1190,11 +1198,11 @@ void accfft_execute_r2c_y_t(accfft_planf* plan, T* data, Tc* data_out,
 	}
 	return;
 }
-template<typename Tc, typename T>
-void accfft_execute_c2r_y_t(accfft_planf* plan, Tc* data, T* data_out,
+template<typename Tc, typename T, typename Tp>
+void accfft_execute_c2r_y_t(Tp* plan, Tc* data, T* data_out,
 		double * timer) {
 	if (plan->r2c_plan_baked) {
-		accfft_execute_yf(plan, 1, (float*) data, (float*) data_out, timer);
+		accfft_execute_yf((accfft_plantf*)plan, 1, (float*) data, (float*) data_out, timer);
 	} else {
 		if (plan->procid == 0)
 			std::cout
@@ -1204,13 +1212,17 @@ void accfft_execute_c2r_y_t(accfft_planf* plan, Tc* data, T* data_out,
 	return;
 }
 
-template void accfft_execute_r2c_y_t<float, Complexf>(accfft_planf* plan,
+template void accfft_execute_r2c_y_t<float, Complexf,accfft_plantf>(accfft_plantf* plan,
 		float* data, Complexf* data_out, double * timer);
-template void accfft_execute_c2r_y_t<Complexf, float>(accfft_planf* plan,
+template void accfft_execute_c2r_y_t<Complexf, float,accfft_plantf>(accfft_plantf* plan,
+		Complexf* data, float* data_out, double * timer);
+template void accfft_execute_r2c_y_t<float, Complexf,accfft_planf>(accfft_planf* plan,
+		float* data, Complexf* data_out, double * timer);
+template void accfft_execute_c2r_y_t<Complexf, float,accfft_planf>(accfft_planf* plan,
 		Complexf* data, float* data_out, double * timer);
 
 // templates for execution only in x direction
-void accfft_execute_xf(accfft_planf* plan, int direction, float * data,
+void accfft_execute_xf(accfft_plantf* plan, int direction, float * data,
 		float* data_out, double * timer) {
 
 	if (data == NULL)
@@ -1274,11 +1286,11 @@ void accfft_execute_xf(accfft_planf* plan, int direction, float * data,
 	return;
 }
 
-template<typename T, typename Tc>
-void accfft_execute_r2c_x_t(accfft_planf* plan, T* data, Tc* data_out,
+template<typename T, typename Tc, typename Tp>
+void accfft_execute_r2c_x_t(Tp* plan, T* data, Tc* data_out,
 		double* timer) {
 	if (plan->r2c_plan_baked) {
-		accfft_execute_xf(plan, -1, data, (float*) data_out, timer);
+		accfft_execute_xf((accfft_plantf*)plan, -1, data, (float*) data_out, timer);
 	} else {
 		if (plan->procid == 0)
 			std::cout
@@ -1287,11 +1299,11 @@ void accfft_execute_r2c_x_t(accfft_planf* plan, T* data, Tc* data_out,
 	}
 	return;
 }
-template<typename Tc, typename T>
-void accfft_execute_c2r_x_t(accfft_planf* plan, Tc* data, T* data_out,
+template<typename Tc, typename T, typename Tp>
+void accfft_execute_c2r_x_t(Tp* plan, Tc* data, T* data_out,
 		double * timer) {
 	if (plan->r2c_plan_baked) {
-		accfft_execute_xf(plan, 1, (float*) data, (float*) data_out, timer);
+		accfft_execute_xf((accfft_plantf*)plan, 1, (float*) data, (float*) data_out, timer);
 	} else {
 		if (plan->procid == 0)
 			std::cout
@@ -1301,9 +1313,13 @@ void accfft_execute_c2r_x_t(accfft_planf* plan, Tc* data, T* data_out,
 	return;
 }
 
-template void accfft_execute_r2c_x_t<float, Complexf>(accfft_planf* plan,
+template void accfft_execute_r2c_x_t<float, Complexf,accfft_plantf>(accfft_plantf* plan,
 		float* data, Complexf* data_out, double * timer);
-template void accfft_execute_c2r_x_t<Complexf, float>(accfft_planf* plan,
+template void accfft_execute_c2r_x_t<Complexf, float,accfft_plantf>(accfft_plantf* plan,
+		Complexf* data, float* data_out, double * timer);
+template void accfft_execute_r2c_x_t<float, Complexf,accfft_planf>(accfft_planf* plan,
+		float* data, Complexf* data_out, double * timer);
+template void accfft_execute_c2r_x_t<Complexf, float,accfft_planf>(accfft_planf* plan,
 		Complexf* data, float* data_out, double * timer);
 
 

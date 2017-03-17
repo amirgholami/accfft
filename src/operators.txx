@@ -434,7 +434,7 @@ void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* p
 	MPI_Barrier(c_comm);
 
 	/* Forward transform */
-	accfft_execute_r2c_t<T, Tc>(plan, A, A_hat, timings);
+	accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
 
 	/* Multiply x Wave Numbers */
 	if (XYZ[0]) {
@@ -443,20 +443,20 @@ void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* p
 		MPI_Barrier(c_comm);
 
 		/* Backward transform */
-		accfft_execute_c2r_t<Tc, T>(plan, tmp, A_x, timings);
+		accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, A_x, timings);
 	}
 	/* Multiply y Wave Numbers */
 	if (XYZ[1]) {
 		grad_mult_wave_numbery<Tc>(tmp, A_hat, N, c_comm, osize, ostart, scale_xyz);
 		/* Backward transform */
-		accfft_execute_c2r_t<Tc, T>(plan, tmp, A_y, timings);
+		accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, A_y, timings);
 	}
 
 	/* Multiply z Wave Numbers */
 	if (XYZ[2]) {
 		grad_mult_wave_numberz<Tc>(tmp, A_hat, N, c_comm, osize, ostart, scale_xyz);
 		/* Backward transform */
-		accfft_execute_c2r_t<Tc, T>(plan, tmp, A_z, timings);
+		accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, A_z, timings);
 	}
 
 	accfft_free(A_hat);
@@ -624,14 +624,14 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
   MPI_Barrier(c_comm);
 
   /* Forward transform */
-  accfft_execute_r2c_t<T, Tc>(plan, A, A_hat, timings);
+  accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
 
   /* Multiply x Wave Numbers */
   grad_mult_wave_number_laplace<Tc>(tmp, A_hat, N, c_comm);
   MPI_Barrier(c_comm);
 
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T>(plan, tmp, LA, timings);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, LA, timings);
 
   accfft_free(A_hat);
   accfft_free(tmp);
@@ -685,12 +685,12 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   xyz[0] = 1;
   xyz[1] = 0;
   xyz[2] = 1;
-  accfft_execute_r2c_t<T, Tc>(plan, A_x, A_hat, timings, xyz);
+  accfft_execute_r2c_t<T, Tc, Tp>(plan, A_x, A_hat, timings, xyz);
   /* Multiply x Wave Numbers */
   grad_mult_wave_numberx<T[2]>(tmp, A_hat, N, c_comm, osize, ostart, xyz);
   MPI_Barrier(c_comm);
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T>(plan, tmp, div_A, timings, xyz);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, div_A, timings, xyz);
 
   // memcpy(div_A, tmp2, isize[0] * isize[1] * isize[2] * sizeof(T));
 
@@ -698,12 +698,12 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   xyz[0] = 0;
   xyz[1] = 1;
   xyz[2] = 1;
-  accfft_execute_r2c_t<T, Tc>(plan, A_y, A_hat, timings, xyz);
+  accfft_execute_r2c_t<T, Tc, Tp>(plan, A_y, A_hat, timings, xyz);
   /* Multiply y Wave Numbers */
   grad_mult_wave_numbery<T[2]>(tmp, A_hat, N, c_comm, osize, ostart, xyz);
   MPI_Barrier(c_comm);
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T>(plan, tmp, tmp2, timings, xyz);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, tmp2, timings, xyz);
 
   for (int i = 0; i < isize[0] * isize[1] * isize[2]; ++i)
     div_A[i] += tmp2[i];
@@ -712,12 +712,12 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   xyz[0] = 0;
   xyz[1] = 0;
   xyz[2] = 1;
-  accfft_execute_r2c_t<T, Tc>(plan, A_z, A_hat, timings, xyz);
+  accfft_execute_r2c_t<T, Tc, Tp>(plan, A_z, A_hat, timings, xyz);
   /* Multiply z Wave Numbers */
   grad_mult_wave_numberz<T[2]>(tmp, A_hat, N, c_comm, osize, ostart, xyz);
   MPI_Barrier(c_comm);
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T>(plan, tmp, tmp2, timings, xyz);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, tmp2, timings, xyz);
 
   for (int i = 0; i < isize[0] * isize[1] * isize[2]; ++i)
     div_A[i] += tmp2[i];
@@ -862,14 +862,14 @@ void accfft_biharmonic_t(T* LA, T* A, Tp* plan, double* timer) {
   MPI_Barrier(c_comm);
 
   /* Forward transform */
-  accfft_execute_r2c_t<T, Tc>(plan, A, A_hat, timings);
+  accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
 
   /* Multiply x Wave Numbers */
   biharmonic_mult_wave_number<Tc>(tmp, A_hat, N, c_comm);
   MPI_Barrier(c_comm);
 
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T>(plan, tmp, LA, timings);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, LA, timings);
 
   accfft_free(A_hat);
   accfft_free(tmp);
@@ -917,14 +917,14 @@ void accfft_inv_laplace_t(T* invLA, T* A, Tp* plan, double* timer) {
   MPI_Barrier(c_comm);
 
   /* Forward transform */
-  accfft_execute_r2c_t<T, Tc>(plan, A, A_hat, timings);
+  accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
 
   /* Multiply x Wave Numbers */
   mult_wave_number_inv_laplace<Tc>(tmp, A_hat, N, c_comm);
   MPI_Barrier(c_comm);
 
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T>(plan, tmp, invLA, timings);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, invLA, timings);
 
   accfft_free(A_hat);
   accfft_free(tmp);
@@ -972,14 +972,14 @@ void accfft_inv_biharmonic_t(T* invBA, T* A, Tp* plan, double* timer) {
   MPI_Barrier(c_comm);
 
   /* Forward transform */
-  accfft_execute_r2c_t<T, Tc>(plan, A, A_hat, timings);
+  accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
 
   /* Multiply x Wave Numbers */
   mult_wave_number_inv_biharmonic<Tc>(tmp, A_hat, N, c_comm);
   MPI_Barrier(c_comm);
 
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T>(plan, tmp, invBA, timings);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, invBA, timings);
 
   accfft_free(A_hat);
   accfft_free(tmp);

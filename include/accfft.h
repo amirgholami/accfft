@@ -139,36 +139,26 @@ void accfft_destroy_plan(accfft_plantd * plan);
 void accfft_destroy_plan(accfft_plan * plan);
 void accfft_cleanup();
 
-template<typename T, typename Tc>
-void accfft_execute_r2c_t(accfft_plan* plan, T* data, Tc* data_out,
-		double * timer = NULL, std::bitset<3> XYZ = 111);
-template<typename Tc, typename T>
-void accfft_execute_c2r_t(accfft_plan* plan, Tc* data, T* data_out,
-		double * timer = NULL, std::bitset<3> XYZ = 111);
 
 
-// templates for execution in z direction only
-template<typename T, typename Tc>
-void accfft_execute_r2c_z_t(accfft_plan* plan, T* data, Tc* data_out,
-		double * timer = NULL);
-template<typename Tc, typename T>
-void accfft_execute_c2r_z_t(accfft_plan* plan, Tc* data, T* data_out,
-		double * timer = NULL);
-// templates for execution in y direction only
-template<typename T, typename Tc>
-void accfft_execute_r2c_y_t(accfft_plan* plan, T* data, Tc* data_out,
-		double * timer = NULL);
-template<typename Tc, typename T>
-void accfft_execute_c2r_y_t(accfft_plan* plan, Tc* data, T* data_out,
-		double * timer = NULL);
-// templates for execution in x direction only
-template<typename T, typename Tc>
-void accfft_execute_r2c_x_t(accfft_plan* plan, T* data, Tc* data_out,
-		double * timer = NULL);
-template<typename Tc, typename T>
-void accfft_execute_c2r_x_t(accfft_plan* plan, Tc* data, T* data_out,
-		double * timer = NULL);
-
+//template<typename T, typename Tc>
+//void accfft_execute_r2c_z_t(accfft_plantd* plan, T* data, Tc* data_out,
+//		double * timer = NULL);
+//template<typename Tc, typename T>
+//void accfft_execute_c2r_z_t(accfft_plantd* plan, Tc* data, T* data_out,
+//		double * timer = NULL);
+//template<typename T, typename Tc>
+//void accfft_execute_r2c_y_t(accfft_plantd* plan, T* data, Tc* data_out,
+//		double * timer = NULL);
+//template<typename Tc, typename T>
+//void accfft_execute_c2r_y_t(accfft_plantd* plan, Tc* data, T* data_out,
+//		double * timer = NULL);
+//template<typename T, typename Tc>
+//void accfft_execute_r2c_x_t(accfft_plantd* plan, T* data, Tc* data_out,
+//		double * timer = NULL);
+//template<typename Tc, typename T>
+//void accfft_execute_c2r_x_t(accfft_plantd* plan, Tc* data, T* data_out,
+//		double * timer = NULL);
 
 void accfft_execute(accfft_plantd* plan, int direction, double * data = NULL,
 		double * data_out = NULL, double * timer = NULL, std::bitset<3> xyz =
@@ -176,6 +166,9 @@ void accfft_execute(accfft_plantd* plan, int direction, double * data = NULL,
 void accfft_execute(accfft_plan* plan, int direction, double * data = NULL,
 		double * data_out = NULL, double * timer = NULL, std::bitset<3> xyz =
 				111);
+
+
+
 
 
 
