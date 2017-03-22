@@ -1136,7 +1136,7 @@ void accfft_execute_yf(accfft_plantf* plan, int direction, float * data,
   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
 
 	if (direction == -1) {
-    memcpy(cwork, data, plan->alloc_max);
+    memcpy(cwork, data, N_local * sizeof(float));
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/

@@ -392,7 +392,7 @@ static void mult_wave_number_inv_biharmonic(Tc* wA, Tc* A, int* N,
 }
 
 template<typename T, typename Tp>
-void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
+void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 		double* timer) {
 	typedef T Tc[2];
 	int procid;
@@ -476,7 +476,7 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 }
 
 template<typename T, typename Tp>
-void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
+void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 		double* timer) {
 	typedef T Tc[2];
 	int procid;
@@ -650,7 +650,7 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
 }
 
 template<typename T, typename Tp>
-void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
+void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
     double* timer) {
   typedef T Tc[2];
   int procid;
@@ -740,7 +740,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
 }
 
 template<typename T, typename Tp>
-void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
+void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
     double* timer) {
   typedef T Tc[2];
   int procid;

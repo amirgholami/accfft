@@ -1352,7 +1352,7 @@ void accfft_execute_y_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
-    cudaMemcpy(cwork_d, data_d, alloc_max, cudaMemcpyDeviceToDevice);
+    cudaMemcpy(cwork_d, data_d, N_local * sizeof(double), cudaMemcpyDeviceToDevice);
 		if (!plan->oneD) {
 			plan->T_plan_y->execute_gpu(plan->T_plan_y, cwork_d, timings, 2,
 					osize_y[0], coords[0]);

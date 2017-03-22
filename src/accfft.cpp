@@ -1030,7 +1030,7 @@ void accfft_execute_y(accfft_plantd* plan, int direction, double * data,
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
-    memcpy(cwork, data, plan->alloc_max);
+    memcpy(cwork, data, N_local * sizeof(double));
 		if (!plan->oneD) {
 			plan->T_plan_y->execute(plan->T_plan_y, cwork, timings, 2,
 					plan->osize_y[0], coords[0]);
