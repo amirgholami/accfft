@@ -36,11 +36,11 @@ static void grad_mult_wave_numberx(Tc* wA, Tc* A, int* N, MPI_Comm c_comm,
 		scale *= N[2];
 	scale = 1. / scale;
 
-#pragma omp parallel
+//#pragma omp parallel
 	{
 		long int X, wave;
 		long int ptr = 0;
-#pragma omp for
+//#pragma omp for
 		for (int i = 0; i < size[0]; i++) {
       ptr = i * size[1] * size[2];
 			for (int j = 0; j < size[1] * size[2]; j++) {
@@ -81,11 +81,11 @@ static void grad_mult_wave_numbery(Tc* wA, Tc* A, int* N, MPI_Comm c_comm,
 	scale = 1. / scale;
 
 
-#pragma omp parallel
+//#pragma omp parallel
 	{
 		long int X, Y, Z, wave;
 		long int ptr;
-#pragma omp for
+//#pragma omp for
 		for (int i = 0; i < size[0]; i++) {
 			for (int j = 0; j < size[1]; j++) {
 				for (int k = 0; k < size[2]; k++) {
@@ -131,11 +131,11 @@ static void grad_mult_wave_numberz(Tc* wA, Tc* A, int* N, MPI_Comm c_comm,
 	// accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
 	//PCOUT<<osize[0]<<'\t'<<osize[1]<<'\t'<<osize[2]<<std::endl;
 
-#pragma omp parallel
+//#pragma omp parallel
 	{
 		long int  Z, wave;
 		long int ptr;
-#pragma omp for
+//#pragma omp for
 		for (int i = 0; i < size[0]; i++) {
 			for (int j = 0; j < size[1]; j++) {
 				for (int k = 0; k < size[2]; k++) {
@@ -392,7 +392,7 @@ static void mult_wave_number_inv_biharmonic(Tc* wA, Tc* A, int* N,
 }
 
 template<typename T, typename Tp>
-void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
+void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 		double* timer) {
 	typedef T Tc[2];
 	int procid;
@@ -438,7 +438,6 @@ void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* p
 
 	/* Multiply x Wave Numbers */
 	if (XYZ[0]) {
-    PCOUT << "XYZ = " << XYZ << std::endl;
 		grad_mult_wave_numberx<Tc>(tmp, A_hat, N, c_comm, osize, ostart, scale_xyz);
 		MPI_Barrier(c_comm);
 
@@ -477,7 +476,7 @@ void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* p
 }
 
 template<typename T, typename Tp>
-void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
+void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 		double* timer) {
 	typedef T Tc[2];
 	int procid;
@@ -651,7 +650,7 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
 }
 
 template<typename T, typename Tp>
-void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
+void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
     double* timer) {
   typedef T Tc[2];
   int procid;
@@ -741,7 +740,7 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
 }
 
 template<typename T, typename Tp>
-void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
+void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
     double* timer) {
   typedef T Tc[2];
   int procid;
