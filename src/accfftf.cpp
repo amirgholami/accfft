@@ -1136,7 +1136,9 @@ void accfft_execute_yf(accfft_plantf* plan, int direction, float * data,
   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
 
 	if (direction == -1) {
+    timings[0] += -MPI_Wtime();
     memcpy(cwork, data, N_local * sizeof(float));
+    timings[0] += +MPI_Wtime();
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
@@ -1166,7 +1168,9 @@ void accfft_execute_yf(accfft_plantf* plan, int direction, float * data,
 			plan->T_plan_yi->execute(plan->T_plan_yi, cwork, timings, 1,
 					osize_1i[0], coords[0]);
 		}
+    timings[0] += -MPI_Wtime();
     memcpy(data_out, cwork, N_local * sizeof(float));
+    timings[0] += +MPI_Wtime();
 		MPI_Barrier(plan->c_comm);
 	}
 
@@ -1244,7 +1248,9 @@ void accfft_execute_xf(accfft_plantf* plan, int direction, float * data,
 
   float* cwork = plan->Mem_mgr->buffer_3;
 	if (direction == -1) {
+    timings[0] += -MPI_Wtime();
     memcpy(cwork, data, N_local * sizeof(float));
+    timings[0] += +MPI_Wtime();
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
@@ -1269,7 +1275,9 @@ void accfft_execute_xf(accfft_plantf* plan, int direction, float * data,
 
 		plan->T_plan_xi->execute(plan->T_plan_xi, data, timings, 1);
 		MPI_Barrier(plan->c_comm);
+    timings[0] += -MPI_Wtime();
     memcpy(data_out, data, N_local * sizeof(float));
+    timings[0] += +MPI_Wtime();
 	}
 	timings[4] += fft_time;
 	if (timer == NULL) {

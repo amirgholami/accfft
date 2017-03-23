@@ -1352,7 +1352,9 @@ void accfft_execute_y_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
+    timings[0] += -MPI_Wtime();
     cudaMemcpy(cwork_d, data_d, N_local * sizeof(double), cudaMemcpyDeviceToDevice);
+    timings[0] += +MPI_Wtime();
 		if (!plan->oneD) {
 			plan->T_plan_y->execute_gpu(plan->T_plan_y, cwork_d, timings, 2,
 					osize_y[0], coords[0]);
@@ -1402,7 +1404,9 @@ void accfft_execute_y_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 					timings, 1, osize_yi[0], coords[0]);
 		}
 		MPI_Barrier(plan->c_comm);
+    timings[0] += -MPI_Wtime();
     cudaMemcpy(data_out_d, cwork_d, N_local * sizeof(float), cudaMemcpyDeviceToDevice);
+    timings[0] += +MPI_Wtime();
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
@@ -1499,7 +1503,9 @@ void accfft_execute_x_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
+    timings[0] += -MPI_Wtime();
     cudaMemcpy(cwork_d, data_d, N_local * sizeof(float), cudaMemcpyDeviceToDevice);
+    timings[0] += +MPI_Wtime();
 		plan->T_plan_x->execute_gpu(plan->T_plan_x, cwork_d, timings, 2);
 		/**************************************************************/
 		/*******************  N0/P0 x N1 x N2/P1 **********************/
@@ -1534,7 +1540,9 @@ void accfft_execute_x_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 
 		plan->T_plan_xi->execute_gpu(plan->T_plan_xi, data_d, timings, 1);
 		MPI_Barrier(plan->c_comm);
+    timings[0] += -MPI_Wtime();
     cudaMemcpy(data_out_d, data_d, N_local * sizeof(float), cudaMemcpyDeviceToDevice);
+    timings[0] += +MPI_Wtime();
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/

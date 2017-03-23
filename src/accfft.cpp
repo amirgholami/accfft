@@ -1030,7 +1030,9 @@ void accfft_execute_y(accfft_plantd* plan, int direction, double * data,
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
+    timings[0] += -MPI_Wtime();
     memcpy(cwork, data, N_local * sizeof(double));
+    timings[0] += +MPI_Wtime();
 		if (!plan->oneD) {
 			plan->T_plan_y->execute(plan->T_plan_y, cwork, timings, 2,
 					plan->osize_y[0], coords[0]);
@@ -1055,7 +1057,9 @@ void accfft_execute_y(accfft_plantd* plan, int direction, double * data,
 			plan->T_plan_yi->execute(plan->T_plan_yi, cwork, timings, 1,
 					plan->osize_yi[0], coords[0]);
 		}
+    timings[0] += -MPI_Wtime();
     memcpy(data_out, cwork, N_local * sizeof(double));
+    timings[0] += +MPI_Wtime();
 	}
 
 	MPI_Barrier(plan->c_comm);
@@ -1137,7 +1141,9 @@ void accfft_execute_x(accfft_plantd* plan, int direction, double * data,
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
+    timings[0] += -MPI_Wtime();
     memcpy(cwork, data, N_local * sizeof(double));
+    timings[0] += +MPI_Wtime();
 		plan->T_plan_x->execute(plan->T_plan_x, cwork, timings, 2);
     //memcpy(data_out, cwork, plan->alloc_max); //snafu
 		/**************************************************************/
@@ -1156,7 +1162,9 @@ void accfft_execute_x(accfft_plantd* plan, int direction, double * data,
     int* osize_x = plan->osize_x;
     // memcpy(data_out, data, 2 * osize_xi[0] * osize_xi[1] * osize_xi[2] * sizeof(double)); //snafu
 		plan->T_plan_xi->execute(plan->T_plan_xi, data, timings, 1);
+    timings[0] += -MPI_Wtime();
     memcpy(data_out, data, N_local * sizeof(double));
+    timings[0] += +MPI_Wtime();
 	}
 
   //free(cwork);
