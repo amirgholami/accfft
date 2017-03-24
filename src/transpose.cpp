@@ -109,10 +109,14 @@ Mem_Mgr<T>::Mem_Mgr(int N0, int N1, int tuples, MPI_Comm Comm, int howmany,
 	err = posix_memalign((void **) &buffer, 64, alloc_local);
 	err = posix_memalign((void **) &buffer_2, 64, alloc_local);
 	err = posix_memalign((void **) &buffer_3, 64, alloc_local);
+	err = posix_memalign((void **) &operator_buffer_1, 64, alloc_local);
+	err = posix_memalign((void **) &operator_buffer_2, 64, alloc_local); // exclusive to div
 	assert(err == 0 && "posix_memalign failed to allocate memory in Mem_Mgr");
 	memset(buffer, 0, alloc_local);
 	memset(buffer_2, 0, alloc_local);
 	memset(buffer_3, 0, alloc_local);
+	memset(operator_buffer_1, 0, alloc_local);
+	memset(operator_buffer_2, 0, alloc_local);
 
 }
 
@@ -122,6 +126,8 @@ Mem_Mgr<T>::~Mem_Mgr() {
 	free(buffer);
 	free(buffer_2);
 	free(buffer_3);
+	free(operator_buffer_1);
+	free(operator_buffer_2);
 }
 
 void mytestfunctiondouble() {

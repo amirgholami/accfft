@@ -391,6 +391,386 @@ static void mult_wave_number_inv_biharmonic(Tc* wA, Tc* A, int* N,
 	return;
 }
 
+template<typename Tc>
+static void grad_mult_wave_numberx_inplace(Tc* A, int* N, MPI_Comm c_comm,
+	int* size, int* start,	std::bitset<3> xyz) {
+
+	int procid;
+	MPI_Comm_rank(c_comm, &procid);
+	double scale = 1;
+	if (xyz[0])
+		scale *= N[0];
+	if (xyz[1])
+		scale *= N[1];
+	if (xyz[2])
+		scale *= N[2];
+	scale = 1. / scale;
+
+//#pragma omp parallel
+	{
+		long int X, wave;
+		long int ptr = 0;
+    Tc tmp_c;
+//#pragma omp for
+		for (int i = 0; i < size[0]; i++) {
+      ptr = i * size[1] * size[2];
+			for (int j = 0; j < size[1] * size[2]; j++) {
+					X = (i + start[0]);
+					wave = X;
+
+					if (X > N[0] / 2)
+						wave -= N[0];
+					if (X == N[0] / 2)
+						wave = 0; // Filter Nyquist
+
+					//ptr = (i * size[1] + j) * size[2] + k;
+          tmp_c[0] = A[ptr][0];
+          tmp_c[1] = A[ptr][1];
+					A[ptr][0] = -scale * wave * tmp_c[1];
+					A[ptr][1] = scale * wave * tmp_c[0];
+          ++ptr;
+			}
+		}
+	}
+
+	return;
+}
+
+template<typename Tc>
+static void grad_mult_wave_numbery_inplace(Tc* A, int* N, MPI_Comm c_comm,
+		int* size, int* start, std::bitset<3> xyz) {
+
+	int procid;
+	MPI_Comm_rank(c_comm, &procid);
+
+	double scale = 1;
+	if (xyz[0])
+		scale *= N[0];
+	if (xyz[1])
+		scale *= N[1];
+	if (xyz[2])
+		scale *= N[2];
+	//PCOUT<<scale<<std::endl;
+	scale = 1. / scale;
+
+
+//#pragma omp parallel
+	{
+		long int X, Y, Z, wave;
+		long int ptr;
+    Tc tmp_c;
+//#pragma omp for
+		for (int i = 0; i < size[0]; i++) {
+			for (int j = 0; j < size[1]; j++) {
+				for (int k = 0; k < size[2]; k++) {
+					//X = (i + start[0]);
+					Y = (j + start[1]);
+					//Z = (k + start[2]);
+
+					wave = Y;
+
+					if (Y > N[1] / 2)
+						wave -= N[1];
+					if (Y == N[1] / 2)
+						wave = 0; // Filter Nyquist
+
+					ptr = (i * size[1] + j) * size[2] + k;
+          tmp_c[0] = A[ptr][0];
+          tmp_c[1] = A[ptr][1];
+					A[ptr][0] = -scale * wave * tmp_c[1];
+					A[ptr][1] = scale * wave * tmp_c[0];
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+template<typename Tc>
+static void grad_mult_wave_numberz_inplace(Tc* A, int* N, MPI_Comm c_comm,
+		int* size, int* start, std::bitset<3> xyz) {
+
+	int procid;
+	MPI_Comm_rank(c_comm, &procid);
+	double scale = 1;
+	if (xyz[0])
+		scale *= N[0];
+	if (xyz[1])
+		scale *= N[1];
+	if (xyz[2])
+		scale *= N[2];
+	//PCOUT<<scale<<std::endl;
+	scale = 1. / scale;
+
+	// int istart[3], isize[3], osize[3], ostart[3];
+	// accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	//PCOUT<<osize[0]<<'\t'<<osize[1]<<'\t'<<osize[2]<<std::endl;
+
+//#pragma omp parallel
+	{
+		long int  Z, wave;
+		long int ptr;
+    Tc tmp_c;
+//#pragma omp for
+		for (int i = 0; i < size[0]; i++) {
+			for (int j = 0; j < size[1]; j++) {
+				for (int k = 0; k < size[2]; k++) {
+					//X = (i + start[0]);
+					//Y = (j + start[1]);
+					Z = (k + start[2]);
+
+					wave = Z;
+
+					if (Z > N[2] / 2)
+						wave -= N[2];
+					if (Z == N[2] / 2)
+						wave = 0; // Filter Nyquist
+
+					ptr = (i * size[1] + j) * size[2] + k;
+          tmp_c[0] = A[ptr][0];
+          tmp_c[1] = A[ptr][1];
+					A[ptr][0] = -scale * wave * tmp_c[1];
+					A[ptr][1] = scale * wave * tmp_c[0];
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+template<typename Tc>
+static void grad_mult_wave_number_laplace_inplace(Tc* A, int* N,
+		MPI_Comm c_comm) {
+
+	int procid;
+	MPI_Comm_rank(c_comm, &procid);
+	const double scale = 1. / (N[0] * N[1] * N[2]);
+
+	int istart[3], isize[3], osize[3], ostart[3];
+	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+
+//#pragma omp parallel
+	{
+		long int X, Y, Z, wx, wy, wz, wave;
+		long int ptr;
+//#pragma omp for
+		for (int i = 0; i < osize[0]; i++) {
+			for (int j = 0; j < osize[1]; j++) {
+				for (int k = 0; k < osize[2]; k++) {
+					X = (i + ostart[0]);
+					Y = (j + ostart[1]);
+					Z = (k + ostart[2]);
+
+					wx = X;
+					wy = Y;
+					wz = Z;
+
+					if (X > N[0] / 2)
+						wx -= N[0];
+					if (X == N[0] / 2)
+						wx = 0;
+
+					if (Y > N[1] / 2)
+						wy -= N[1];
+					if (Y == N[1] / 2)
+						wy = 0;
+
+					if (Z > N[2] / 2)
+						wz -= N[2];
+					if (Z == N[2] / 2)
+						wz = 0;
+
+					wave = -wx * wx - wy * wy - wz * wz;
+
+					ptr = (i * osize[1] + j) * osize[2] + k;
+					A[ptr][0] *= scale * wave;
+					A[ptr][1] *= scale * wave;
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+template<typename Tc>
+static void biharmonic_mult_wave_number_inplace(Tc* A, int* N,
+		MPI_Comm c_comm) {
+
+	int procid;
+	MPI_Comm_rank(c_comm, &procid);
+	const double scale = 1. / (N[0] * N[1] * N[2]);
+
+	int istart[3], isize[3], osize[3], ostart[3];
+	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+
+//#pragma omp parallel
+	{
+		long int X, Y, Z, wx, wy, wz, wave;
+		long int ptr;
+//#pragma omp for
+		for (int i = 0; i < osize[0]; i++) {
+			for (int j = 0; j < osize[1]; j++) {
+				for (int k = 0; k < osize[2]; k++) {
+					X = (i + ostart[0]);
+					Y = (j + ostart[1]);
+					Z = (k + ostart[2]);
+
+					wx = X;
+					wy = Y;
+					wz = Z;
+
+					if (X > N[0] / 2)
+						wx -= N[0];
+					if (X == N[0] / 2)
+						wx = 0;
+
+					if (Y > N[1] / 2)
+						wy -= N[1];
+					if (Y == N[1] / 2)
+						wy = 0;
+
+					if (Z > N[2] / 2)
+						wz -= N[2];
+					if (Z == N[2] / 2)
+						wz = 0;
+
+					wave = -wx * wx - wy * wy - wz * wz;
+					wave *= wave;
+
+					ptr = (i * osize[1] + j) * osize[2] + k;
+					A[ptr][0] *= scale * wave;
+					A[ptr][1] *= scale * wave;
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+template<typename Tc>
+static void mult_wave_number_inv_laplace_inplace(Tc* A, int* N,
+		MPI_Comm c_comm) {
+
+	int procid;
+	MPI_Comm_rank(c_comm, &procid);
+	const double scale = 1. / (N[0] * N[1] * N[2]);
+
+	int istart[3], isize[3], osize[3], ostart[3];
+	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+
+//#pragma omp parallel
+	{
+		long int X, Y, Z, wx, wy, wz;
+		double wave;
+		long int ptr;
+//#pragma omp for
+		for (int i = 0; i < osize[0]; i++) {
+			for (int j = 0; j < osize[1]; j++) {
+				for (int k = 0; k < osize[2]; k++) {
+					X = (i + ostart[0]);
+					Y = (j + ostart[1]);
+					Z = (k + ostart[2]);
+
+					wx = X;
+					wy = Y;
+					wz = Z;
+
+					if (X > N[0] / 2)
+						wx -= N[0];
+					if(X == N[0] / 2)
+					  wx=0;
+
+					if (Y > N[1] / 2)
+						wy -= N[1];
+					if(Y == N[1] / 2)
+					  wy=0;
+
+					if (Z > N[2] / 2)
+						wz -= N[2];
+					if(Z == N[2] / 2)
+					  wz=0;
+
+					wave = -wx * wx - wy * wy - wz * wz;
+					if (wave == 0)
+						wave = 0;
+          else
+					  wave = 1. / wave;
+
+					ptr = (i * osize[1] + j) * osize[2] + k;
+					A[ptr][0] *= scale * wave;
+					A[ptr][1] *= scale * wave;
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+
+template<typename Tc>
+static void mult_wave_number_inv_biharmonic_inplace(Tc* A, int* N,
+		MPI_Comm c_comm) {
+
+	int procid;
+	MPI_Comm_rank(c_comm, &procid);
+	const double scale = 1. / (N[0] * N[1] * N[2]);
+
+	int istart[3], isize[3], osize[3], ostart[3];
+	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+
+//#pragma omp parallel
+	{
+		long int X, Y, Z, wx, wy, wz;
+		double wave;
+		long int ptr;
+//#pragma omp for
+		for (int i = 0; i < osize[0]; i++) {
+			for (int j = 0; j < osize[1]; j++) {
+				for (int k = 0; k < osize[2]; k++) {
+					X = (i + ostart[0]);
+					Y = (j + ostart[1]);
+					Z = (k + ostart[2]);
+
+					wx = X;
+					wy = Y;
+					wz = Z;
+
+					if (X > N[0] / 2)
+						wx -= N[0];
+					//if(X==N[0]/2)
+					//  wx=0;
+
+					if (Y > N[1] / 2)
+						wy -= N[1];
+					//if(Y==N[1]/2)
+					//  wy=0;
+
+					if (Z > N[2] / 2)
+						wz -= N[2];
+					//if(Z==N[2]/2)
+					//  wz=0;
+
+					wave = -wx * wx - wy * wy - wz * wz;
+					wave *= wave;
+					if (wave == 0)
+						wave = 1;
+					wave = 1. / wave;
+					ptr = (i * osize[1] + j) * osize[2] + k;
+					A[ptr][0] *= scale * wave;
+					A[ptr][1] *= scale * wave;
+				}
+			}
+		}
+	}
+
+	return;
+}
+
 template<typename T, typename Tp>
 void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 		double* timer) {
@@ -480,7 +860,7 @@ void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* p
 		timer[6] += timings[6];
 	}
 	return;
-}
+} // end of accfft_grad_slow_t
 
 template<typename T, typename Tp>
 void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
@@ -512,19 +892,8 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 	/* Get the local pencil size and the allocation size */
 	alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
 			c_comm);
-    if(0){
-      std::cout << " osize[0] = " << osize[0]
-                << " osize[1] = " << osize[1]
-                << " osize[2] = " << osize[2] << std::endl;
-      std::cout << " ostart[0] = " << ostart[0]
-                << " ostart[1] = " << ostart[1]
-                << " ostart[2] = " << ostart[2] << std::endl;
-    }
-	//PCOUT<<"istart[0]= "<<istart[0]<<" istart[1]= "<<istart[1]<<" istart[2]="<<istart[2]<<std::endl;
-	//PCOUT<<"ostart[0]= "<<ostart[0]<<" ostart[1]= "<<ostart[1]<<" ostart[2]="<<ostart[2]<<std::endl;
 
-	Tc* A_hat = (Tc*) accfft_alloc(alloc_max);
-	Tc* tmp = (Tc*) accfft_alloc(alloc_max);
+  Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 	std::bitset < 3 > scale_xyz(0);
 	MPI_Barrier(c_comm);
 
@@ -550,11 +919,11 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 	  scale_xyz[1] = 0;
 	  scale_xyz[2] = 0;
     timings[6] += -MPI_Wtime();
-    grad_mult_wave_numberx<Tc>(tmp, A_hat, N, c_comm, plan->osize_xi, plan->ostart_2, scale_xyz);
+    grad_mult_wave_numberx_inplace<Tc>(A_hat, N, c_comm, plan->osize_xi, plan->ostart_2, scale_xyz);
     timings[6] += +MPI_Wtime();
 
     /* Backward transform */
-    accfft_execute_c2r_x_t<Tc, T>(plan, tmp, A_x, timings);
+    accfft_execute_c2r_x_t<Tc, T>(plan, A_hat, A_x, timings);
     // if(procid == 0) {
     //   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
     //   double err = 0;
@@ -570,11 +939,11 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
     scale_xyz[1] = 1;
     scale_xyz[2] = 0;
     timings[6] += -MPI_Wtime();
-    grad_mult_wave_numbery<Tc>(tmp, A_hat, N, c_comm,
+    grad_mult_wave_numbery_inplace<Tc>(A_hat, N, c_comm,
         plan->osize_yi, plan->ostart_y, scale_xyz);
     timings[6] += +MPI_Wtime();
     /* Backward transform */
-    accfft_execute_c2r_y_t<Tc, T>(plan, tmp, A_y, timings);
+    accfft_execute_c2r_y_t<Tc, T>(plan, A_hat, A_y, timings);
   }
 
   /* Multiply z Wave Numbers */
@@ -584,15 +953,12 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
     scale_xyz[1] = 0;
     scale_xyz[2] = 1;
     timings[6] += -MPI_Wtime();
-    grad_mult_wave_numberz<Tc>(tmp, A_hat, N, c_comm,
+    grad_mult_wave_numberz_inplace<Tc>(A_hat, N, c_comm,
         plan->osize_0, plan->ostart_0, scale_xyz);
     timings[6] += +MPI_Wtime();
     /* Backward transform */
-    accfft_execute_c2r_z_t<Tc, T>(plan, tmp, A_z, timings);
+    accfft_execute_c2r_z_t<Tc, T>(plan, A_hat, A_z, timings);
   }
-  accfft_free(A_hat);
-  accfft_free(tmp);
-
   self_exec_time += MPI_Wtime();
 
   if (timer == NULL) {
@@ -631,8 +997,7 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
   alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
       c_comm);
 
-  Tc* A_hat = (Tc*) accfft_alloc(alloc_max);
-  Tc* tmp = (Tc*) accfft_alloc(alloc_max);
+  Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 
   MPI_Barrier(c_comm);
 
@@ -641,15 +1006,12 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
 
   /* Multiply x Wave Numbers */
   timings[6] += -MPI_Wtime();
-  grad_mult_wave_number_laplace<Tc>(tmp, A_hat, N, c_comm);
+  grad_mult_wave_number_laplace_inplace<Tc>(A_hat, N, c_comm);
   timings[6] += +MPI_Wtime();
   MPI_Barrier(c_comm);
 
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, LA, timings);
-
-  accfft_free(A_hat);
-  accfft_free(tmp);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, A_hat, LA, timings);
 
   self_exec_time += MPI_Wtime();
 
@@ -765,7 +1127,7 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
 		timer[6] += timings[6];
   }
   return;
-}
+}// end of accfft_divergence_slow_t
 
 template<typename T, typename Tp>
 void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
@@ -791,9 +1153,8 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
       c_comm);
 
-  Tc* A_hat = (Tc*) accfft_alloc(alloc_max);
-  Tc* tmp = (Tc*) accfft_alloc(alloc_max);
-  T* tmp2 = (T*) accfft_alloc(alloc_max);
+  Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
+  T* tmp2 = (T*)plan->Mem_mgr->operator_buffer_2;
   std::bitset < 3 > xyz(0);
 
   MPI_Barrier(c_comm);
@@ -805,14 +1166,12 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   xyz[1] = 0;
   xyz[2] = 0;
   timings[6] += -MPI_Wtime();
-  grad_mult_wave_numberx<T[2]>(tmp, A_hat, N, c_comm, plan->osize_xi,
+  grad_mult_wave_numberx_inplace<T[2]>(A_hat, N, c_comm, plan->osize_xi,
       plan->ostart_2, xyz);
   timings[6] += +MPI_Wtime();
   MPI_Barrier(c_comm);
   /* Backward transform */
-  accfft_execute_c2r_x_t<Tc, T>(plan, tmp, div_A, timings);
-
-  // memcpy(div_A, tmp2, isize[0] * isize[1] * isize[2] * sizeof(T));
+  accfft_execute_c2r_x_t<Tc, T>(plan, A_hat, div_A, timings);
 
   /* Forward transform in y direction*/
   accfft_execute_r2c_y_t<T, Tc>(plan, A_y, A_hat, timings);
@@ -821,12 +1180,12 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   xyz[1] = 1;
   xyz[2] = 0;
   timings[6] += -MPI_Wtime();
-  grad_mult_wave_numbery<T[2]>(tmp, A_hat, N, c_comm, plan->osize_yi,
+  grad_mult_wave_numbery_inplace<T[2]>(A_hat, N, c_comm, plan->osize_yi,
       plan->ostart_y, xyz);
   timings[6] += +MPI_Wtime();
   MPI_Barrier(c_comm);
   /* Backward transform */
-  accfft_execute_c2r_y_t<Tc, T>(plan, tmp, tmp2, timings);
+  accfft_execute_c2r_y_t<Tc, T>(plan, A_hat, tmp2, timings);
 
   timings[6] += -MPI_Wtime();
   for (int i = 0; i < isize[0] * isize[1] * isize[2]; ++i)
@@ -840,21 +1199,17 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   accfft_execute_r2c_z_t<T, Tc>(plan, A_z, A_hat, timings);
   /* Multiply z Wave Numbers */
   timings[6] += -MPI_Wtime();
-  grad_mult_wave_numberz<T[2]>(tmp, A_hat, N, c_comm, plan->osize_0,
+  grad_mult_wave_numberz_inplace<T[2]>(A_hat, N, c_comm, plan->osize_0,
       plan->ostart_0, xyz);
   timings[6] += +MPI_Wtime();
   MPI_Barrier(c_comm);
   /* Backward transform */
-  accfft_execute_c2r_z_t<Tc, T>(plan, tmp, tmp2, timings);
+  accfft_execute_c2r_z_t<Tc, T>(plan, A_hat, tmp2, timings);
 
   timings[6] += -MPI_Wtime();
   for (int i = 0; i < isize[0] * isize[1] * isize[2]; ++i)
     div_A[i] += tmp2[i];
   timings[6] += +MPI_Wtime();
-
-  accfft_free(A_hat);
-  accfft_free(tmp);
-  accfft_free(tmp2);
 
   self_exec_time += MPI_Wtime();
 
@@ -894,8 +1249,7 @@ void accfft_biharmonic_t(T* LA, T* A, Tp* plan, double* timer) {
   alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
       c_comm);
 
-  Tc* A_hat = (Tc*) accfft_alloc(alloc_max);
-  Tc* tmp = (Tc*) accfft_alloc(alloc_max);
+  Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 
   MPI_Barrier(c_comm);
 
@@ -904,15 +1258,12 @@ void accfft_biharmonic_t(T* LA, T* A, Tp* plan, double* timer) {
 
   /* Multiply x Wave Numbers */
   timings[6] += -MPI_Wtime();
-  biharmonic_mult_wave_number<Tc>(tmp, A_hat, N, c_comm);
+  biharmonic_mult_wave_number_inplace<Tc>(A_hat, N, c_comm);
   timings[6] += +MPI_Wtime();
   MPI_Barrier(c_comm);
 
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, LA, timings);
-
-  accfft_free(A_hat);
-  accfft_free(tmp);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, A_hat, LA, timings);
 
   self_exec_time += MPI_Wtime();
 
@@ -952,8 +1303,7 @@ void accfft_inv_laplace_t(T* invLA, T* A, Tp* plan, double* timer) {
   alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
       c_comm);
 
-  Tc* A_hat = (Tc*) accfft_alloc(alloc_max);
-  Tc* tmp = (Tc*) accfft_alloc(alloc_max);
+  Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 
   MPI_Barrier(c_comm);
 
@@ -962,15 +1312,12 @@ void accfft_inv_laplace_t(T* invLA, T* A, Tp* plan, double* timer) {
 
   /* Multiply x Wave Numbers */
   timings[6] += -MPI_Wtime();
-  mult_wave_number_inv_laplace<Tc>(tmp, A_hat, N, c_comm);
+  mult_wave_number_inv_laplace_inplace<Tc>(A_hat, N, c_comm);
   timings[6] += +MPI_Wtime();
   MPI_Barrier(c_comm);
 
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, invLA, timings);
-
-  accfft_free(A_hat);
-  accfft_free(tmp);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, A_hat, invLA, timings);
 
   self_exec_time += MPI_Wtime();
 
@@ -1010,8 +1357,7 @@ void accfft_inv_biharmonic_t(T* invBA, T* A, Tp* plan, double* timer) {
   alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
       c_comm);
 
-  Tc* A_hat = (Tc*) accfft_alloc(alloc_max);
-  Tc* tmp = (Tc*) accfft_alloc(alloc_max);
+  Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 
   MPI_Barrier(c_comm);
 
@@ -1020,15 +1366,13 @@ void accfft_inv_biharmonic_t(T* invBA, T* A, Tp* plan, double* timer) {
 
   /* Multiply x Wave Numbers */
   timings[6] += -MPI_Wtime();
-  mult_wave_number_inv_biharmonic<Tc>(tmp, A_hat, N, c_comm);
+  mult_wave_number_inv_biharmonic_inplace<Tc>(A_hat, N, c_comm);
   timings[6] += +MPI_Wtime();
   MPI_Barrier(c_comm);
 
   /* Backward transform */
-  accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, invBA, timings);
+  accfft_execute_c2r_t<Tc, T, Tp>(plan, A_hat, invBA, timings);
 
-  accfft_free(A_hat);
-  accfft_free(tmp);
 
   self_exec_time += MPI_Wtime();
 

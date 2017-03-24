@@ -41,6 +41,8 @@ public:
 	T * buffer_2;
 	T * buffer_3; // used for fast operators
 	T * buffer_d;
+	T * operator_buffer_1; // for operators
+	T * operator_buffer_2; // exclusive to div
 	//T * data_cpu;
 	//MPI_Comm comm;
 	// Deconstructor
