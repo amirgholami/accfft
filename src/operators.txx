@@ -811,7 +811,7 @@ void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* p
 	scale_xyz[1] = 1;
 	scale_xyz[2] = 1;
 
-	MPI_Barrier(c_comm);
+	//MPI_Barrier(c_comm);
 
 	/* Forward transform */
 	accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
@@ -821,7 +821,7 @@ void accfft_grad_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* p
     timings[6] += -MPI_Wtime();
 		grad_mult_wave_numberx<Tc>(tmp, A_hat, N, c_comm, osize, ostart, scale_xyz);
     timings[6] += +MPI_Wtime();
-		MPI_Barrier(c_comm);
+		//MPI_Barrier(c_comm);
 
 		/* Backward transform */
 		accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, A_x, timings);
@@ -895,7 +895,7 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 	std::bitset < 3 > scale_xyz(0);
-	MPI_Barrier(c_comm);
+	//MPI_Barrier(c_comm);
 
 	/* Multiply x Wave Numbers */
 	if (XYZ[0]) {
@@ -999,7 +999,7 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Forward transform */
   accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
@@ -1008,7 +1008,7 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
   timings[6] += -MPI_Wtime();
   grad_mult_wave_number_laplace_inplace<Tc>(A_hat, N, c_comm);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Backward transform */
   accfft_execute_c2r_t<Tc, T, Tp>(plan, A_hat, LA, timings);
@@ -1057,7 +1057,7 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   T* tmp2 = (T*) accfft_alloc(alloc_max);
   std::bitset < 3 > xyz(0);
 
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Forward transform in x direction*/
   xyz[0] = 1;
@@ -1068,7 +1068,7 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numberx<T[2]>(tmp, A_hat, N, c_comm, osize, ostart, xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, div_A, timings, xyz);
 
@@ -1083,7 +1083,7 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numbery<T[2]>(tmp, A_hat, N, c_comm, osize, ostart, xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, tmp2, timings, xyz);
 
@@ -1101,7 +1101,7 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numberz<T[2]>(tmp, A_hat, N, c_comm, osize, ostart, xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, tmp2, timings, xyz);
 
@@ -1157,7 +1157,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   T* tmp2 = (T*)plan->Mem_mgr->operator_buffer_2;
   std::bitset < 3 > xyz(0);
 
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Forward transform in x direction*/
   accfft_execute_r2c_x_t<T, Tc>(plan, A_x, A_hat, timings);
@@ -1169,7 +1169,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   grad_mult_wave_numberx_inplace<T[2]>(A_hat, N, c_comm, plan->osize_xi,
       plan->ostart_2, xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_x_t<Tc, T>(plan, A_hat, div_A, timings);
 
@@ -1183,7 +1183,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   grad_mult_wave_numbery_inplace<T[2]>(A_hat, N, c_comm, plan->osize_yi,
       plan->ostart_y, xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_y_t<Tc, T>(plan, A_hat, tmp2, timings);
 
@@ -1202,7 +1202,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   grad_mult_wave_numberz_inplace<T[2]>(A_hat, N, c_comm, plan->osize_0,
       plan->ostart_0, xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_z_t<Tc, T>(plan, A_hat, tmp2, timings);
 
@@ -1251,7 +1251,7 @@ void accfft_biharmonic_t(T* LA, T* A, Tp* plan, double* timer) {
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Forward transform */
   accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
@@ -1260,7 +1260,7 @@ void accfft_biharmonic_t(T* LA, T* A, Tp* plan, double* timer) {
   timings[6] += -MPI_Wtime();
   biharmonic_mult_wave_number_inplace<Tc>(A_hat, N, c_comm);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Backward transform */
   accfft_execute_c2r_t<Tc, T, Tp>(plan, A_hat, LA, timings);
@@ -1305,7 +1305,7 @@ void accfft_inv_laplace_t(T* invLA, T* A, Tp* plan, double* timer) {
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Forward transform */
   accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
@@ -1314,7 +1314,7 @@ void accfft_inv_laplace_t(T* invLA, T* A, Tp* plan, double* timer) {
   timings[6] += -MPI_Wtime();
   mult_wave_number_inv_laplace_inplace<Tc>(A_hat, N, c_comm);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Backward transform */
   accfft_execute_c2r_t<Tc, T, Tp>(plan, A_hat, invLA, timings);
@@ -1359,7 +1359,7 @@ void accfft_inv_biharmonic_t(T* invBA, T* A, Tp* plan, double* timer) {
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Forward transform */
   accfft_execute_r2c_t<T, Tc, Tp>(plan, A, A_hat, timings);
@@ -1368,7 +1368,7 @@ void accfft_inv_biharmonic_t(T* invBA, T* A, Tp* plan, double* timer) {
   timings[6] += -MPI_Wtime();
   mult_wave_number_inv_biharmonic_inplace<Tc>(A_hat, N, c_comm);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
+  //MPI_Barrier(c_comm);
 
   /* Backward transform */
   accfft_execute_c2r_t<Tc, T, Tp>(plan, A_hat, invBA, timings);
