@@ -774,7 +774,6 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -809,7 +808,6 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 
 #endif
@@ -831,7 +829,6 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -863,7 +860,6 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -951,7 +947,6 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -987,7 +982,6 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1017,7 +1011,6 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -1052,7 +1045,6 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1074,7 +1066,6 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -1094,7 +1085,6 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1177,7 +1167,6 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1203,7 +1192,6 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1232,13 +1220,11 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		fast_transpose_v_hi(T_plan, (T*) data, timings, kway, flags, howmany,
 				tag, method);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -1275,7 +1261,6 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -1296,7 +1281,6 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -1331,7 +1315,6 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 
 #endif
@@ -1426,7 +1409,6 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1454,7 +1436,6 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1477,7 +1458,6 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (howmany == 1) {
@@ -1486,7 +1466,6 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		fast_transpose_v_hi(T_plan, (T*) data, timings, kway, flags, howmany,
 				tag, method);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -1523,7 +1502,6 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1550,7 +1528,6 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -1594,7 +1571,6 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 
 #endif
@@ -1688,7 +1664,6 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1742,7 +1717,6 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			}
 		}
 		std::cout<<'\n';
-		MPI_Barrier(T_plan->comm);
 	}
 #endif
 
@@ -1769,12 +1743,10 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -1811,7 +1783,6 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -1834,7 +1805,6 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -1868,7 +1838,6 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -1880,7 +1849,6 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 	int* soffset_proc = T_plan->soffset_proc;
 	int* roffset_proc = T_plan->roffset_proc;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -1923,7 +1891,6 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 		MPI_Wait(&s_request[proc], &ierr);
 	}
 
-	MPI_Barrier(T_plan->comm);
 
 	comm_time += MPI_Wtime();
 
@@ -1942,7 +1909,6 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -1968,11 +1934,9 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	delete[] request;
 	delete[] s_request;
 
@@ -1998,12 +1962,10 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_v6(T_plan, (T*) data, timings, flags, howmany);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -2040,7 +2002,6 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2063,7 +2024,6 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -2097,7 +2057,6 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2109,7 +2068,6 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 	int* soffset_proc_f = T_plan->soffset_proc_f;
 	int* roffset_proc_f = T_plan->roffset_proc_f;
 
-	MPI_Barrier(T_plan->comm);
 
 	T *s_buf, *r_buf;
 	if (Flags[1] == 1) {
@@ -2146,7 +2104,6 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2172,11 +2129,9 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
@@ -2201,12 +2156,10 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_v7(T_plan, (T*) data, timings, kway, flags, howmany);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -2243,7 +2196,6 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2268,7 +2220,6 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -2304,7 +2255,6 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2315,7 +2265,6 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	int* soffset_proc_f = T_plan->soffset_proc_f;
 	int* roffset_proc_f = T_plan->roffset_proc_f;
 
-	MPI_Barrier(T_plan->comm);
 	T *s_buf, *r_buf;
 	if (Flags[1] == 1) {
 		s_buf = send_recv;
@@ -2353,7 +2302,6 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2381,13 +2329,11 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	reshuffle_time += MPI_Wtime();
 	if (VERBOSE >= 1)
 		PCOUT << " done\n";
-	MPI_Barrier(T_plan->comm);
 
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
@@ -2409,7 +2355,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (howmany == 1) {
@@ -2417,7 +2362,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -2455,7 +2399,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2481,7 +2424,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -2525,7 +2467,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2537,7 +2478,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 	int* soffset_proc = T_plan->soffset_proc;
 	int* roffset_proc = T_plan->roffset_proc;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -2591,7 +2531,6 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2643,11 +2582,9 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	delete[] request;
 	delete[] s_request;
 
@@ -2671,7 +2608,6 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (howmany == 1) {
@@ -2679,7 +2615,6 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_v6(T_plan, (T*) data, timings, flags, howmany);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -2717,7 +2652,6 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2743,7 +2677,6 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -2787,7 +2720,6 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2799,7 +2731,6 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 	int* soffset_proc_f = T_plan->soffset_proc_f;
 	int* roffset_proc_f = T_plan->roffset_proc_f;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -2838,7 +2769,6 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2887,13 +2817,11 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
@@ -2915,7 +2843,6 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (howmany == 1) {
@@ -2924,7 +2851,6 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_v7(T_plan, (T*) data, timings, kway, flags, howmany);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -2962,7 +2888,6 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2988,7 +2913,6 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3032,7 +2956,6 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3044,7 +2967,6 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	int* soffset_proc_f = T_plan->soffset_proc_f;
 	int* roffset_proc_f = T_plan->roffset_proc_f;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -3082,7 +3004,6 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3131,13 +3052,11 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
@@ -3159,7 +3078,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -3195,7 +3113,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3228,7 +3145,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
@@ -3240,7 +3156,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3255,7 +3170,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 
 	MPI_Datatype *stype = T_plan->stype;
 	MPI_Datatype *rtype = T_plan->rtype;
-	MPI_Barrier(T_plan->comm);
 
 	comm_time -= MPI_Wtime();
 
@@ -3311,7 +3225,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3359,7 +3272,6 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	if (Flags[1] == 1) { // Transpose output
@@ -3389,9 +3301,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
-	MPI_Barrier(T_plan->comm);
 
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
@@ -3413,7 +3323,6 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -3448,7 +3357,6 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3482,7 +3390,6 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
@@ -3493,7 +3400,6 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3508,7 +3414,6 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 	MPI_Datatype *stype = T_plan->stype;
 	MPI_Datatype *rtype = T_plan->rtype;
 
-	MPI_Barrier(T_plan->comm);
 
 	comm_time -= MPI_Wtime();
 
@@ -3542,7 +3447,6 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3591,7 +3495,6 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	if (Flags[1] == 1) { // Transpose output
@@ -3613,13 +3516,11 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 							}
 						}
 					std::cout << '\n';
-					MPI_Barrier(T_plan->comm);
 				}
 
 	}
 	reshuffle_time += MPI_Wtime();
 
-	MPI_Barrier(T_plan->comm);
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -3639,7 +3540,6 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		unsigned flags, int howmany) {
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3672,7 +3572,6 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 				}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3702,7 +3601,6 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 				}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
 		local_transpose(local_n1, N[0], n_tuples, data);
@@ -3713,7 +3611,6 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3749,7 +3646,6 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 				}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3796,14 +3692,12 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 				}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 
 	if (Flags[1] == 1) { // Transpose output
 		local_transpose(local_n1, N[0], n_tuples, data);
 	}
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -3823,7 +3717,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -3860,7 +3753,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3882,7 +3774,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3906,7 +3797,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 							}
 						}
 					std::cout << '\n';
-					MPI_Barrier(T_plan->comm);
 				}
 	}
 	shuffle_time += MPI_Wtime();
@@ -3924,7 +3814,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 
 	MPI_Datatype* stype = T_plan->stype_v8;
 	MPI_Datatype* rtype = T_plan->rtype_v8;
-	MPI_Barrier(T_plan->comm);
 	comm_time -= MPI_Wtime();
 
 	int soffset = 0, roffset = 0;
@@ -3969,7 +3858,6 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -4006,13 +3894,11 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 							}
 						}
 					std::cout << '\n';
-					MPI_Barrier(T_plan->comm);
 				}
 	}
 	reshuffle_time += MPI_Wtime();
 	delete[] request;
 	delete[] s_request;
-	MPI_Barrier(T_plan->comm);
 
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;

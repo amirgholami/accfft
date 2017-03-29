@@ -820,7 +820,7 @@ void accfft_execute_c2c(accfft_plantd* plan, int direction, Complex * data,
 			plan->T_plan_1i->execute(plan->T_plan_1i, (double*) data, timings,
 					1, osize_1i[0], coords[0]);
 		}
-		MPI_Barrier(plan->c_comm);
+		//MPI_Barrier(plan->c_comm);
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
@@ -845,7 +845,7 @@ void accfft_execute_c2c(accfft_plantd* plan, int direction, Complex * data,
 		timer[3] += timings[3];
 		timer[4] += timings[4];
 	}
-	MPI_Barrier(plan->c_comm);
+	//MPI_Barrier(plan->c_comm);
 
 	return;
 }
@@ -952,7 +952,7 @@ void accfft_execute_z(accfft_plantd* plan, int direction, double * data,
 		fft_time += MPI_Wtime();
 	}
 
-	MPI_Barrier(plan->c_comm);
+	//MPI_Barrier(plan->c_comm);
 	timings[4] += fft_time;
 	if (timer == NULL) {
 		//delete [] timings;
@@ -1062,7 +1062,7 @@ void accfft_execute_y(accfft_plantd* plan, int direction, double * data,
     timings[0] += +MPI_Wtime();
 	}
 
-	MPI_Barrier(plan->c_comm);
+	//MPI_Barrier(plan->c_comm);
 	timings[4] += fft_time;
 	if (timer == NULL) {
 		//delete [] timings;
@@ -1168,7 +1168,7 @@ void accfft_execute_x(accfft_plantd* plan, int direction, double * data,
 	}
 
   //free(cwork);
-	MPI_Barrier(plan->c_comm);
+	//MPI_Barrier(plan->c_comm);
 	timings[4] += fft_time;
 	if (timer == NULL) {
 		//delete [] timings;
@@ -1321,7 +1321,7 @@ void accfft_execute(accfft_plantd* plan, int direction, double * data,
 
 	}
 
-	MPI_Barrier(plan->c_comm);
+	//MPI_Barrier(plan->c_comm);
 	timings[4] += fft_time;
 	if (timer == NULL) {
 		//delete [] timings;

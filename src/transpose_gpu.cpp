@@ -563,7 +563,6 @@ void T_Plan_gpu<T>::which_method_gpu(T_Plan_gpu* T_plan,T* data_d) {
 	}
 	free(time);
 	free(g_time);
-	MPI_Barrier(T_plan->comm);
 
 	return;
 }
@@ -754,7 +753,6 @@ void fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -792,7 +790,6 @@ void fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 				}
 			}
 			std::cout<<'\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 #endif
@@ -816,7 +813,6 @@ void fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -849,7 +845,6 @@ void fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 				}
 			}
 			std::cout<<'\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 #endif
@@ -1049,7 +1044,6 @@ void fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 				}
 			}
 			std::cout<<'\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 #endif
@@ -1090,7 +1084,6 @@ void fast_transpose_cuda_v_hi(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 				}
 			}
 			std::cout<<'\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 
@@ -1123,7 +1116,6 @@ void fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -1160,7 +1152,6 @@ void fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 				}
 			}
 			std::cout<<'\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 #endif
@@ -1184,7 +1175,6 @@ void fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -1208,7 +1198,6 @@ void fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 				}
 			}
 			std::cout<<'\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 #endif
@@ -1410,7 +1399,6 @@ void fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 				}
 			}
 			std::cout<<'\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 #endif
@@ -1438,7 +1426,6 @@ void fast_transpose_cuda_v_i(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 				}
 			}
 			std::cout<<'\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 #endif
@@ -1472,7 +1459,6 @@ void fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
@@ -1515,7 +1501,6 @@ void fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -1538,7 +1523,6 @@ void fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -1566,7 +1550,6 @@ void fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -1768,7 +1751,6 @@ void fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -1795,7 +1777,6 @@ void fast_transpose_cuda_v(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -1831,12 +1812,10 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	procid = T_plan->procid;
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If nprocs==1 and Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -1874,7 +1853,6 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -1901,7 +1879,6 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -1931,7 +1908,6 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 
@@ -2131,7 +2107,6 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2160,7 +2135,6 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	// Right now the data is in transposed out format.
@@ -2186,13 +2160,11 @@ void fast_transpose_cuda_v_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 							}
 						}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 		}
 	}
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	delete[] request;
 	delete[] s_request;
 
@@ -2223,12 +2195,10 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	procid = T_plan->procid;
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If nprocs==1 and Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -2266,7 +2236,6 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2293,7 +2262,6 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -2336,7 +2304,6 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 
@@ -2349,7 +2316,6 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	int* soffset_proc = T_plan->soffset_proc;
 	int* roffset_proc = T_plan->roffset_proc;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -2422,7 +2388,6 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2466,7 +2431,6 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	// Right now the data is in transposed out format.
@@ -2492,13 +2456,11 @@ void fast_transpose_cuda_v1_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 							}
 						}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 		}
 	}
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	delete[] request;
 	delete[] s_request;
 
@@ -2526,12 +2488,10 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If nprocs==1 and Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -2572,7 +2532,6 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2599,7 +2558,6 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -2642,7 +2600,6 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 
@@ -2655,7 +2612,6 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data,
 	int* soffset_proc = T_plan->soffset_proc;
 	int* roffset_proc = T_plan->roffset_proc;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -2747,7 +2703,6 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2791,7 +2746,6 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	// Right now the data is in transposed out format.
@@ -2817,13 +2771,11 @@ void fast_transpose_cuda_v1_2_h(T_Plan_gpu<T>* T_plan, T * data,
 							}
 						}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 		}
 	}
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	delete[] request;
 	delete[] s_request;
 
@@ -2851,12 +2803,10 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan, T * data,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If nprocs==1 and Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -2897,7 +2847,6 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan, T * data,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -2923,7 +2872,6 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan, T * data,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -2966,7 +2914,6 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan, T * data,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 
@@ -2979,7 +2926,6 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan, T * data,
 	int* soffset_proc = T_plan->soffset_proc;
 	int* roffset_proc = T_plan->roffset_proc;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -3042,7 +2988,6 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan, T * data,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3086,7 +3031,6 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan, T * data,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	// Right now the data is in transposed out format.
@@ -3112,13 +3056,11 @@ void fast_transpose_cuda_v1_3_h(T_Plan_gpu<T>* T_plan, T * data,
 							}
 						}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 		}
 	}
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
@@ -3144,12 +3086,10 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -3188,7 +3128,6 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3211,7 +3150,6 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3239,7 +3177,6 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -3252,7 +3189,6 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	int* soffset_proc = T_plan->soffset_proc;
 	int* roffset_proc = T_plan->roffset_proc;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -3335,7 +3271,6 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3362,7 +3297,6 @@ void fast_transpose_cuda_v1(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -3395,12 +3329,10 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -3439,7 +3371,6 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3462,7 +3393,6 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3490,7 +3420,6 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -3503,7 +3432,6 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	int* soffset_proc = T_plan->soffset_proc;
 	int* roffset_proc = T_plan->roffset_proc;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -3594,7 +3522,6 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3621,7 +3548,6 @@ void fast_transpose_cuda_v1_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -3654,12 +3580,10 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -3698,7 +3622,6 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3721,7 +3644,6 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3749,7 +3671,6 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -3762,7 +3683,6 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	int* soffset_proc = T_plan->soffset_proc;
 	int* roffset_proc = T_plan->roffset_proc;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -3837,7 +3757,6 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3864,7 +3783,6 @@ void fast_transpose_cuda_v1_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -3899,12 +3817,10 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v6(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -3943,7 +3859,6 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -3966,7 +3881,6 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -3994,7 +3908,6 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -4007,7 +3920,6 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	int* soffset_proc_f = T_plan->soffset_proc_f;
 	int* roffset_proc_f = T_plan->roffset_proc_f;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -4060,7 +3972,6 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -4087,7 +3998,6 @@ void fast_transpose_cuda_v2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -4122,12 +4032,10 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v5(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -4166,7 +4074,6 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -4189,7 +4096,6 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -4217,7 +4123,6 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -4230,7 +4135,6 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	int* soffset_proc_f = T_plan->soffset_proc_f;
 	int* roffset_proc_f = T_plan->roffset_proc_f;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -4282,7 +4186,6 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -4309,7 +4212,6 @@ void fast_transpose_cuda_v3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -4343,19 +4245,16 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v7_2(T_plan, (T*) data, timings, kway, flags, howmany,
 				tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[1] == 0) { // because in the communicator part it will need another gpu array.
 		fast_transpose_cuda_v3(T_plan, (T*) data, timings, kway, flags, howmany,
 				tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -4394,7 +4293,6 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -4417,7 +4315,6 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -4445,7 +4342,6 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -4458,7 +4354,6 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	int* soffset_proc_f = T_plan->soffset_proc_f;
 	int* roffset_proc_f = T_plan->roffset_proc_f;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -4508,7 +4403,6 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -4535,7 +4429,6 @@ void fast_transpose_cuda_v3_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -4568,12 +4461,10 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If nprocs==1 and Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v6(T_plan, (T*) data, timings, flags, howmany, tag);
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -4614,7 +4505,6 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -4640,7 +4530,6 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -4689,7 +4578,6 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 
@@ -4702,7 +4590,6 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	int* soffset_proc_f = T_plan->soffset_proc_f;
 	int* roffset_proc_f = T_plan->roffset_proc_f;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -4745,7 +4632,6 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -4794,7 +4680,6 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	// Right now the data is in transposed out format.
@@ -4820,13 +4705,11 @@ void fast_transpose_cuda_v2_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 							}
 						}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 		}
 	}
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
@@ -4852,12 +4735,10 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	}
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If nprocs==1 and Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	if (Flags[0] == 1) { // If Flags==Transposed_In This function can not handle it, call other versions
 		transpose_cuda_v6(T_plan, (T*) data, timings, flags, howmany, tag); //snafu
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -4898,7 +4779,6 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -4924,7 +4804,6 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 		timings[1] += shuffle_time;
 		timings[2] += 0;
 		timings[3] += 0;
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 
@@ -4973,7 +4852,6 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 
@@ -4986,7 +4864,6 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	int* soffset_proc_f = T_plan->soffset_proc_f;
 	int* roffset_proc_f = T_plan->roffset_proc_f;
 
-	MPI_Barrier(T_plan->comm);
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 	comm_time -= MPI_Wtime();
@@ -5035,7 +4912,6 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -5084,7 +4960,6 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 			std::cout << '\n';
-			MPI_Barrier(T_plan->comm);
 		}
 	}
 	// Right now the data is in transposed out format.
@@ -5110,13 +4985,11 @@ void fast_transpose_cuda_v3_h(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 							}
 						}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 		}
 	}
 
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	delete[] request;
 	delete[] s_request;
 
@@ -5140,7 +5013,6 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -5178,7 +5050,6 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -5209,7 +5080,6 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -5245,7 +5115,6 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	MPI_Datatype *stype = T_plan->stype;
 	MPI_Datatype *rtype = T_plan->rtype;
-	MPI_Barrier(T_plan->comm);
 
 	// Post Receives
 	for (int proc = 0; proc < nprocs; ++proc) {
@@ -5296,7 +5165,6 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -5348,7 +5216,6 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	if (Flags[1] == 1) { // Transpose output
@@ -5356,7 +5223,6 @@ void transpose_cuda_v5(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 			local_transpose_cuda(local_n1, N[0], n_tuples, &data[h * odist]);
 	}
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -5377,7 +5243,6 @@ void transpose_cuda_v5_2(T_Plan_gpu<T>* T_plan, T* data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -5415,7 +5280,6 @@ void transpose_cuda_v5_2(T_Plan_gpu<T>* T_plan, T* data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -5446,7 +5310,6 @@ void transpose_cuda_v5_2(T_Plan_gpu<T>* T_plan, T* data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
@@ -5550,7 +5413,6 @@ void transpose_cuda_v5_2(T_Plan_gpu<T>* T_plan, T* data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -5602,7 +5464,6 @@ void transpose_cuda_v5_2(T_Plan_gpu<T>* T_plan, T* data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	if (Flags[1] == 1) { // Transpose output
@@ -5610,7 +5471,6 @@ void transpose_cuda_v5_2(T_Plan_gpu<T>* T_plan, T* data, double *timings,
 			local_transpose_cuda(local_n1, N[0], n_tuples, &data[h * odist]);
 	}
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -5631,7 +5491,6 @@ void transpose_cuda_v5_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -5669,7 +5528,6 @@ void transpose_cuda_v5_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -5700,7 +5558,6 @@ void transpose_cuda_v5_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
@@ -5778,7 +5635,6 @@ void transpose_cuda_v5_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 
@@ -5830,7 +5686,6 @@ void transpose_cuda_v5_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	if (Flags[1] == 1) { // Transpose output
@@ -5838,7 +5693,6 @@ void transpose_cuda_v5_3(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 			local_transpose_cuda(local_n1, N[0], n_tuples, &data[h * odist]);
 	}
 	reshuffle_time += MPI_Wtime();
-	MPI_Barrier(T_plan->comm);
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -5859,7 +5713,6 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -5896,7 +5749,6 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 					}
 				}
 		std::cout << '\n';
-		MPI_Barrier(T_plan->comm);
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -5925,7 +5777,6 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
@@ -5950,7 +5801,6 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	MPI_Datatype *stype = T_plan->stype;
 	MPI_Datatype *rtype = T_plan->rtype;
-	MPI_Barrier(T_plan->comm);
 	comm_time -= MPI_Wtime();
 	// SEND
 	cudaMemcpy(data_cpu, data, T_plan->alloc_local, cudaMemcpyDeviceToHost);
@@ -5985,7 +5835,6 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -6037,7 +5886,6 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	if (Flags[1] == 1) { // Transpose output
@@ -6046,7 +5894,6 @@ void transpose_cuda_v6(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 	}
 	reshuffle_time += MPI_Wtime();
 
-	MPI_Barrier(T_plan->comm);
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -6067,7 +5914,6 @@ void transpose_cuda_v7(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -6105,7 +5951,6 @@ void transpose_cuda_v7(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -6136,7 +5981,6 @@ void transpose_cuda_v7(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
@@ -6197,7 +6041,6 @@ void transpose_cuda_v7(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -6254,10 +6097,8 @@ void transpose_cuda_v7(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
-	MPI_Barrier(T_plan->comm);
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -6278,7 +6119,6 @@ void transpose_cuda_v7_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
-		MPI_Barrier(T_plan->comm);
 		return;
 	}
 	timings[0] -= MPI_Wtime();
@@ -6316,7 +6156,6 @@ void transpose_cuda_v7_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -6347,7 +6186,6 @@ void transpose_cuda_v7_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
@@ -6407,7 +6245,6 @@ void transpose_cuda_v7_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 
 	//PCOUT<<" ============================================= "<<std::endl;
@@ -6464,10 +6301,8 @@ void transpose_cuda_v7_2(T_Plan_gpu<T>* T_plan, T * data, double *timings,
 						}
 					}
 				std::cout << '\n';
-				MPI_Barrier(T_plan->comm);
 			}
 	}
-	MPI_Barrier(T_plan->comm);
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;

@@ -74,19 +74,15 @@ int dfft_get_local_size_t(int N0, int N1, int tuple, int * isize, int * istart,
 	}
 
 	if (VERBOSE >= 2) {
-		MPI_Barrier(c_comm);
 		for (int r = 0; r < np[0]; r++)
 			for (int c = 0; c < np[1]; c++) {
-				MPI_Barrier(c_comm);
 				if ((coords[0] == r) && (coords[1] == c))
 					std::cout << coords[0] << "," << coords[1] << " isize[0]= "
 							<< isize[0] << " isize[1]= " << isize[1]
 							<< " isize[2]= " << isize[2] << " istart[0]= "
 							<< istart[0] << " istart[1]= " << istart[1]
 							<< " istart[2]= " << istart[2] << std::endl;
-				MPI_Barrier(c_comm);
 			}
-		MPI_Barrier(c_comm);
 	}
 	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(T);
 

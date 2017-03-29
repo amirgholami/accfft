@@ -170,7 +170,6 @@ void accfft_grad_gpu_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 	scale_xyz[1] = 1;
 	scale_xyz[2] = 1;
 
-	MPI_Barrier(c_comm);
 
 	/* Forward transform */
 	accfft_execute_r2c_gpu_t<T, Tc>(plan, A, A_hat, timings);
@@ -188,7 +187,6 @@ void accfft_grad_gpu_slow_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
     timings[6] += -MPI_Wtime();
 		grad_mult_wave_numberx_gpu<Tc>(tmp, A_hat, N, osize, ostart, scale_xyz);
     timings[6] += +MPI_Wtime();
-		MPI_Barrier(c_comm);
 
 		/* Backward transform */
 		accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, A_x, timings);
@@ -269,7 +267,6 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 	scale_xyz[1] = 1;
 	scale_xyz[2] = 1;
 
-	MPI_Barrier(c_comm);
 
 	/* Multiply x Wave Numbers */
 	if (XYZ[0]) {
@@ -290,7 +287,6 @@ void accfft_grad_gpu_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
     timings[6] += -MPI_Wtime();
 		grad_mult_wave_numberx_gpu<Tc>(tmp, A_hat, N, plan->osize_xi, plan->ostart_2, scale_xyz);
     timings[6] += +MPI_Wtime();
-		MPI_Barrier(c_comm);
 
 		/* Backward transform */
 		accfft_execute_c2r_x_gpu_t<Tc, T>(plan, tmp, A_x, timings);
@@ -365,7 +361,6 @@ void accfft_laplace_gpu_t(T* LA, T* A, Tp* plan, double* timer) {
   Tc* tmp;  //=(Tc*) accfft_alloc(alloc_max);
   cudaMalloc((void**) &A_hat, alloc_max);
   cudaMalloc((void**) &tmp, alloc_max);
-  MPI_Barrier(c_comm);
 
   /* Forward transform */
   accfft_execute_r2c_gpu_t<T, Tc>(plan, A, A_hat, timings);
@@ -374,7 +369,6 @@ void accfft_laplace_gpu_t(T* LA, T* A, Tp* plan, double* timer) {
   timings[6] += -MPI_Wtime();
   laplace_mult_wave_number_gpu<Tc>(tmp, A_hat, N, osize, ostart);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
 
   /* Backward transform */
   accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, LA, timings);
@@ -434,7 +428,6 @@ void accfft_divergence_gpu_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   scale_xyz[1] = 1;
   scale_xyz[2] = 1;
 
-  MPI_Barrier(c_comm);
 
   /* Forward transform in x direction*/
   xyz[0] = 1;
@@ -445,7 +438,6 @@ void accfft_divergence_gpu_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numberx_gpu<Tc>(tmp, A_hat, N, osize, ostart, xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, tmp2, timings, xyz);
 
@@ -463,7 +455,6 @@ void accfft_divergence_gpu_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numbery_gpu<Tc>(tmp, A_hat, N, osize, ostart, xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, tmp2, timings, xyz);
 
@@ -484,7 +475,6 @@ void accfft_divergence_gpu_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numberz_gpu<Tc>(tmp, A_hat, N, osize, ostart, xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, tmp2, timings, xyz);
 
@@ -547,7 +537,6 @@ void accfft_divergence_gpu_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   scale_xyz[1] = 1;
   scale_xyz[2] = 1;
 
-  MPI_Barrier(c_comm);
 
   /* Forward transform in x direction*/
   accfft_execute_r2c_x_gpu_t<T, Tc>(plan, A_x, A_hat, timings);
@@ -558,7 +547,6 @@ void accfft_divergence_gpu_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numberx_gpu<Tc>(tmp, A_hat, N, plan->osize_xi, plan->ostart_2, scale_xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_x_gpu_t<Tc, T>(plan, tmp, div_A, timings);
 
@@ -574,7 +562,6 @@ void accfft_divergence_gpu_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numbery_gpu<Tc>(tmp, A_hat, N, plan->osize_yi, plan->ostart_y, scale_xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_y_gpu_t<Tc, T>(plan, tmp, tmp2, timings);
 
@@ -595,7 +582,6 @@ void accfft_divergence_gpu_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numberz_gpu<Tc>(tmp, A_hat, N, plan->osize_0, plan->ostart_0, scale_xyz);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
   /* Backward transform */
   accfft_execute_c2r_z_gpu_t<Tc, T>(plan, tmp, tmp2, timings);
 
@@ -650,7 +636,6 @@ void accfft_biharmonic_gpu_t(T* LA, T* A, Tp* plan, double* timer) {
   Tc* tmp;  //=(Tc*) accfft_alloc(alloc_max);
   cudaMalloc((void**) &A_hat, alloc_max);
   cudaMalloc((void**) &tmp, alloc_max);
-  MPI_Barrier(c_comm);
 
   /* Forward transform */
   accfft_execute_r2c_gpu_t<T, Tc>(plan, A, A_hat, timings);
@@ -659,7 +644,6 @@ void accfft_biharmonic_gpu_t(T* LA, T* A, Tp* plan, double* timer) {
   timings[6] += -MPI_Wtime();
   biharmonic_mult_wave_number_gpu<Tc>(tmp, A_hat, N, osize, ostart);
   timings[6] += +MPI_Wtime();
-  MPI_Barrier(c_comm);
 
   /* Backward transform */
   accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, LA, timings);

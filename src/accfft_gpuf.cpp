@@ -342,7 +342,6 @@ accfft_plan_gpuf* accfft_plan_dft_3d_r2c_gpuf(int * n, float * data_d,
 			plan->T_plan_2->kway = 2;
 		}
 		checkCuda_accfft(cudaDeviceSynchronize());
-		MPI_Barrier(plan->c_comm);
 
 		plan->T_plan_2i->method = -plan->T_plan_2->method;
 		plan->T_plan_2i->kway = plan->T_plan_2->kway;
@@ -393,7 +392,6 @@ accfft_plan_gpuf* accfft_plan_dft_3d_r2c_gpuf(int * n, float * data_d,
 		MPI_Bcast(&plan->T_plan_1->kway_async, 1, MPI::BOOL, 0, c_comm);
 
 		checkCuda_accfft(cudaDeviceSynchronize());
-		MPI_Barrier(plan->c_comm);
 		plan->T_plan_1->method = plan->T_plan_1->method;
 		plan->T_plan_2->method = plan->T_plan_1->method;
 		plan->T_plan_2i->method = -plan->T_plan_1->method;
@@ -513,7 +511,6 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d,
 					cudaEventElapsedTime(&dummy_time, fft_startEvent,
 							fft_stopEvent));
 			fft_time += dummy_time / 1000;
-			MPI_Barrier(plan->c_comm);
 		}
 
 		if (plan->oneD) {
@@ -522,7 +519,6 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d,
 			plan->T_plan_2->execute_gpu(plan->T_plan_2, data_out_d, timings, 2,
 					1, coords[1]);
 		}
-		MPI_Barrier(plan->c_comm);
 		/**************************************************************/
 		/*******************  N0 x N1/P0 x N2/P1 **********************/
 		/**************************************************************/
@@ -550,7 +546,6 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d,
 					cudaEventElapsedTime(&dummy_time, fft_startEvent,
 							fft_stopEvent));
 			fft_time += dummy_time / 1000;
-			MPI_Barrier(plan->c_comm);
 		}
 
 		if (plan->oneD) {
@@ -560,7 +555,6 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d,
 			plan->T_plan_2i->execute_gpu(plan->T_plan_2i, (float*) data_d,
 					timings, 1, 1, coords[1]);
 		}
-		MPI_Barrier(plan->c_comm);
 		/**************************************************************/
 		/*******************  N0/P0 x N1 x N2/P1 **********************/
 		/**************************************************************/
@@ -579,14 +573,12 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d,
 					cudaEventElapsedTime(&dummy_time, fft_startEvent,
 							fft_stopEvent));
 			fft_time += dummy_time / 1000;
-			MPI_Barrier(plan->c_comm);
 		}
 
 		if (!plan->oneD) {
 			plan->T_plan_1i->execute_gpu(plan->T_plan_1i, (float*) data_d,
 					timings, 1, osize_1i[0], coords[0]);
 		}
-		MPI_Barrier(plan->c_comm);
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
@@ -622,7 +614,6 @@ void accfft_execute_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d,
 		timer[3] += timings[3];
 		timer[4] += timings[4];
 	}
-	MPI_Barrier(plan->c_comm);
 
 	return;
 }
@@ -861,7 +852,6 @@ accfft_plan_gpuf* accfft_plan_dft_3d_c2c_gpuf(int * n, Complexf * data_d,
 			plan->T_plan_2->kway = 2;
 		}
 		checkCuda_accfft(cudaDeviceSynchronize());
-		MPI_Barrier(plan->c_comm);
 
 		plan->T_plan_2i->method = -plan->T_plan_2->method;
 		plan->T_plan_2i->kway = plan->T_plan_2->kway;
@@ -909,7 +899,6 @@ accfft_plan_gpuf* accfft_plan_dft_3d_c2c_gpuf(int * n, Complexf * data_d,
 		MPI_Bcast(&plan->T_plan_1->kway, 1, MPI_INT, 0, c_comm);
 		MPI_Bcast(&plan->T_plan_1->kway_async, 1, MPI::BOOL, 0, c_comm);
 		checkCuda_accfft(cudaDeviceSynchronize());
-		MPI_Barrier(plan->c_comm);
 
 		plan->T_plan_1->method = plan->T_plan_1->method;
 		plan->T_plan_2->method = plan->T_plan_1->method;
@@ -1003,7 +992,6 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,
 					timings, 2, osize_0[0], coords[0]);
 		}
 		checkCuda_accfft(cudaDeviceSynchronize());
-		MPI_Barrier(plan->c_comm);
 		/**************************************************************/
 		/*******************  N0/P0 x N1 x N2/P1 **********************/
 		/**************************************************************/
@@ -1025,7 +1013,6 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,
 			fft_time += dummy_time / 1000;
 		}
 
-		MPI_Barrier(plan->c_comm);
 
 		if (plan->oneD) {
 			plan->T_plan_2->execute_gpu(plan->T_plan_2, (float*) data_out_d,
@@ -1034,7 +1021,6 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,
 			plan->T_plan_2->execute_gpu(plan->T_plan_2, (float*) data_out_d,
 					timings, 2, 1, coords[1]);
 		}
-		MPI_Barrier(plan->c_comm);
 		/**************************************************************/
 		/*******************  N0 x N1/P0 x N2/P1 **********************/
 		/**************************************************************/
@@ -1064,7 +1050,6 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,
 					cudaEventElapsedTime(&dummy_time, fft_startEvent,
 							fft_stopEvent));
 			fft_time += dummy_time / 1000;
-			MPI_Barrier(plan->c_comm);
 		}
 
 		if (plan->oneD) {
@@ -1074,7 +1059,6 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,
 			plan->T_plan_2i->execute_gpu(plan->T_plan_2i, (float*) data_d,
 					timings, 1, 1, coords[1]);
 		}
-		MPI_Barrier(plan->c_comm);
 		/**************************************************************/
 		/*******************  N0/P0 x N1 x N2/P1 **********************/
 		/**************************************************************/
@@ -1094,13 +1078,11 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,
 							fft_stopEvent));
 			fft_time += dummy_time / 1000;
 		}
-		MPI_Barrier(plan->c_comm);
 
 		if (!plan->oneD) {
 			plan->T_plan_1i->execute_gpu(plan->T_plan_1i, (float*) data_d,
 					timings, 1, osize_1i[0], coords[0]);
 		}
-		MPI_Barrier(plan->c_comm);
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
@@ -1135,7 +1117,6 @@ void accfft_execute_c2c_gpuf(accfft_plan_gpuf* plan, int direction,
 		timer[3] += timings[3];
 		timer[4] += timings[4];
 	}
-	MPI_Barrier(plan->c_comm);
 
 	return;
 }
@@ -1276,7 +1257,6 @@ void accfft_execute_z_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
     timer[3] += timings[3];
     timer[4] += timings[4];
   }
-  MPI_Barrier(plan->c_comm);
 
   return;
 }
@@ -1377,7 +1357,6 @@ void accfft_execute_y_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 					cudaEventElapsedTime(&dummy_time, fft_startEvent,
 							fft_stopEvent));
 			fft_time += dummy_time / 1000;
-			MPI_Barrier(plan->c_comm);
 	} else if (direction == 1) {
 		/**************************************************************/
 		/*******************  N0/P0 x N1 x N2/P1 **********************/
@@ -1397,13 +1376,11 @@ void accfft_execute_y_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 					cudaEventElapsedTime(&dummy_time, fft_startEvent,
 							fft_stopEvent));
 			fft_time += dummy_time / 1000;
-			MPI_Barrier(plan->c_comm);
 
 		if (!plan->oneD) {
 			plan->T_plan_yi->execute_gpu(plan->T_plan_yi, (float*) cwork_d,
 					timings, 1, osize_yi[0], coords[0]);
 		}
-		MPI_Barrier(plan->c_comm);
     timings[0] += -MPI_Wtime();
     cudaMemcpy(data_out_d, cwork_d, N_local * sizeof(float), cudaMemcpyDeviceToDevice);
     timings[0] += +MPI_Wtime();
@@ -1426,7 +1403,6 @@ void accfft_execute_y_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 		timer[3] += timings[3];
 		timer[4] += timings[4];
 	}
-	MPI_Barrier(plan->c_comm);
 
 	return;
 }
@@ -1520,7 +1496,6 @@ void accfft_execute_x_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 					cudaEventElapsedTime(&dummy_time, fft_startEvent,
 							fft_stopEvent));
 			fft_time += dummy_time / 1000;
-			MPI_Barrier(plan->c_comm);
 
 	} else if (direction == 1) {
 		/**************************************************************/
@@ -1536,10 +1511,8 @@ void accfft_execute_x_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 					cudaEventElapsedTime(&dummy_time, fft_startEvent,
 							fft_stopEvent));
 			fft_time += dummy_time / 1000;
-			MPI_Barrier(plan->c_comm);
 
 		plan->T_plan_xi->execute_gpu(plan->T_plan_xi, data_d, timings, 1);
-		MPI_Barrier(plan->c_comm);
     timings[0] += -MPI_Wtime();
     cudaMemcpy(data_out_d, data_d, N_local * sizeof(float), cudaMemcpyDeviceToDevice);
     timings[0] += +MPI_Wtime();
@@ -1562,7 +1535,6 @@ void accfft_execute_x_gpuf(accfft_plan_gpuf* plan, int direction, float * data_d
 		timer[3] += timings[3];
 		timer[4] += timings[4];
 	}
-	MPI_Barrier(plan->c_comm);
 
 	return;
 }
