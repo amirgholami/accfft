@@ -27,7 +27,6 @@
 #include "accfftf.h"
 #include "accfft_common.h"
 #define VERBOSE 0
-#define PCOUT if(procid==0) std::cout
 
 
 /**
