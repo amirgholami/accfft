@@ -72,7 +72,7 @@ int dfft_get_local_size_t(int N0, int N1, int tuple, int * isize, int * istart,
 		isize[1] *= (int) isize[1] > 0;
 		istart[1] = N1 - isize[1];
 	}
-
+#ifdef VERBOSE2
 	if (VERBOSE >= 2) {
 		for (int r = 0; r < np[0]; r++)
 			for (int c = 0; c < np[1]; c++) {
@@ -84,6 +84,7 @@ int dfft_get_local_size_t(int N0, int N1, int tuple, int * isize, int * istart,
 							<< " istart[2]= " << istart[2] << std::endl;
 			}
 	}
+#endif
 	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(T);
 
 	return alloc_local;

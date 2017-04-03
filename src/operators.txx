@@ -866,11 +866,11 @@ template<typename T, typename Tp>
 void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 		double* timer) {
 	typedef T Tc[2];
-	int procid;
+	// int procid;
 	MPI_Comm c_comm = plan->c_comm;
-	MPI_Comm_rank(c_comm, &procid);
+	// MPI_Comm_rank(c_comm, &procid);
 	if (!plan->r2c_plan_baked) {
-		PCOUT << "Error in accfft_grad! plan is not correctly made."
+    std::cout << "Error in accfft_grad! plan is not correctly made."
 				<< std::endl;
 		return;
 	}
@@ -887,11 +887,6 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 	double self_exec_time = -MPI_Wtime();
 	int *N = plan->N;
 
-	int isize[3], osize[3], istart[3], ostart[3];
-	long long int alloc_max;
-	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
-			c_comm);
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 	std::bitset < 3 > scale_xyz(0);
@@ -977,11 +972,11 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 template<typename T, typename Tp>
 void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
   typedef T Tc[2];
-  int procid;
+  // int procid;
   MPI_Comm c_comm = plan->c_comm;
-  MPI_Comm_rank(c_comm, &procid);
+  // MPI_Comm_rank(c_comm, &procid);
   if (!plan->r2c_plan_baked) {
-    PCOUT << "Error in accfft_grad! plan is not correctly made."
+    std::cout << "Error in accfft_grad! plan is not correctly made."
       << std::endl;
     return;
   }
@@ -990,12 +985,6 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
 
   double self_exec_time = -MPI_Wtime();
   int *N = plan->N;
-
-  int isize[3], osize[3], istart[3], ostart[3];
-  long long int alloc_max;
-  /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
-      c_comm);
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
 
@@ -1133,11 +1122,11 @@ template<typename T, typename Tp>
 void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
     double* timer) {
   typedef T Tc[2];
-  int procid;
+  // int procid;
   MPI_Comm c_comm = plan->c_comm;
-  MPI_Comm_rank(c_comm, &procid);
+  // MPI_Comm_rank(c_comm, &procid);
   if (!plan->r2c_plan_baked) {
-    PCOUT << "Error in accfft_grad! plan is not correctly made."
+    std::cout << "Error in accfft_grad! plan is not correctly made."
       << std::endl;
     return;
   }
@@ -1147,11 +1136,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   double self_exec_time = -MPI_Wtime();
   int *N = plan->N;
 
-  int isize[3], osize[3], istart[3], ostart[3];
-  long long int alloc_max;
-  /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
-      c_comm);
+  int* isize = plan->isize;
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
   T* tmp2 = (T*)plan->Mem_mgr->operator_buffer_2;
