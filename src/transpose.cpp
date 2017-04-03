@@ -987,6 +987,7 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 
 	reshuffle_time += MPI_Wtime();
 
+#ifdef VERBOSE1
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -994,6 +995,7 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -1197,6 +1199,7 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 
 	reshuffle_time += MPI_Wtime();
 
+#ifdef VERBOSE1
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -1204,6 +1207,7 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -1720,6 +1724,7 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	}
 #endif
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -1727,6 +1732,7 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -1768,6 +1774,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -1784,6 +1791,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -1824,6 +1832,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 
 	shuffle_time += MPI_Wtime();
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "Local Transpose:" << std::endl;
 	if (VERBOSE >= 2)
@@ -1839,6 +1848,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
@@ -1895,6 +1905,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 	comm_time += MPI_Wtime();
 
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -1910,6 +1921,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
@@ -1919,6 +1931,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 	if (Flags[1] == 0)
 		local_transpose(N[0], local_n1, n_tuples, send_recv, data);
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "2nd Transpose" << std::endl;
 	if (VERBOSE >= 2)
@@ -1935,11 +1948,13 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	reshuffle_time += MPI_Wtime();
 	delete[] request;
 	delete[] s_request;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -1947,6 +1962,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -1987,6 +2003,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2003,6 +2020,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -2043,6 +2061,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 
 	shuffle_time += MPI_Wtime();
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "Local Transpose:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2058,6 +2077,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
@@ -2090,6 +2110,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 	comm_time += MPI_Wtime();
 
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2105,6 +2126,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
@@ -2114,6 +2136,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 	if (Flags[1] == 0)
 		local_transpose(N[0], local_n1, n_tuples, send_recv, data);
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "2nd Transpose" << std::endl;
 	if (VERBOSE >= 2)
@@ -2130,9 +2153,11 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	reshuffle_time += MPI_Wtime();
 
+#ifdef VERBOSE1
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -2140,6 +2165,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -2181,6 +2207,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2197,13 +2224,16 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
 	//PCOUT<<" ============================================= "<<std::endl;
 	int ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 1)
 		PCOUT << "Performing shuffle ....";
+#endif
 	shuffle_time -= MPI_Wtime();
 
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
@@ -2238,6 +2268,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	}
 
 	shuffle_time += MPI_Wtime();
+#ifdef VERBOSE2
 	if (VERBOSE >= 1)
 		PCOUT << " done\n";
 	ptr = 0;
@@ -2256,6 +2287,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
@@ -2274,8 +2306,10 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		r_buf = send_recv;
 	}
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
+#ifdef VERBOSE1
 	if (VERBOSE >= 1)
 		PCOUT << "Performing alltoall ....";
+#endif
 	comm_time -= MPI_Wtime();
 	if (T_plan->kway_async)
 		par::Mpi_Alltoallv_dense<T, true>(s_buf, scount_proc_f, soffset_proc_f,
@@ -2284,10 +2318,13 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		par::Mpi_Alltoallv_dense<T, false>(s_buf, scount_proc_f, soffset_proc_f,
 				r_buf, rcount_proc_f, roffset_proc_f, T_plan->comm, kway);
 	comm_time += MPI_Wtime();
+#ifdef VERBOSE1
 	if (VERBOSE >= 1)
 		PCOUT << "done\n";
+#endif
 
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2303,17 +2340,21 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
 	//PCOUT<<" ============================================= "<<std::endl;
+#ifdef VERBOSE1
 	if (VERBOSE >= 1)
 		PCOUT << "Performing reshuffle ....";
+#endif
 	reshuffle_time -= MPI_Wtime();
 	ptr = 0;
 	if (Flags[1] == 0)
 		local_transpose(N[0], local_n1, n_tuples, send_recv, data);
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "2nd Transpose" << std::endl;
 	if (VERBOSE >= 2)
@@ -2330,8 +2371,10 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	reshuffle_time += MPI_Wtime();
+#ifdef VERBOSE1
 	if (VERBOSE >= 1)
 		PCOUT << " done\n";
 
@@ -2342,6 +2385,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -2384,6 +2428,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
 	int ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2400,6 +2445,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -2452,6 +2498,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 
 	shuffle_time += MPI_Wtime();
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "Local Transpose:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2468,6 +2515,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
@@ -2516,6 +2564,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 	comm_time += MPI_Wtime();
 
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2532,6 +2581,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
@@ -2567,6 +2617,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 			local_transpose(N[0], local_n1, n_tuples, &data[h * odist]);
 	}
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "2nd Transpose" << std::endl;
 	if (VERBOSE >= 2)
@@ -2583,11 +2634,13 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 			std::cout << '\n';
 		}
+#endif
 
 	reshuffle_time += MPI_Wtime();
 	delete[] request;
 	delete[] s_request;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -2595,6 +2648,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -2637,6 +2691,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
 	int ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2653,6 +2708,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -2705,6 +2761,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 
 	shuffle_time += MPI_Wtime();
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "Local Transpose:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2721,6 +2778,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
@@ -2754,6 +2812,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 	comm_time += MPI_Wtime();
 
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2770,6 +2829,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
@@ -2802,6 +2862,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 			local_transpose(N[0], local_n1, n_tuples, &data[h * odist]);
 	}
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "2nd Transpose" << std::endl;
 	if (VERBOSE >= 2)
@@ -2818,11 +2879,13 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 					}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 
 	reshuffle_time += MPI_Wtime();
 
+#ifdef VERBOSE1
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -2830,6 +2893,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -2873,6 +2937,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
 	int ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2889,6 +2954,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -2941,6 +3007,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 
 	shuffle_time += MPI_Wtime();
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "Local Transpose:" << std::endl;
 	if (VERBOSE >= 2)
@@ -2957,6 +3024,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   MPIALLTOALL  =============== "<<std::endl;
@@ -2989,6 +3057,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	comm_time += MPI_Wtime();
 
 	ptr = 0;
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3005,6 +3074,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
@@ -3037,6 +3107,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 			local_transpose(N[0], local_n1, n_tuples, &data[h * odist]);
 	}
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "2nd Transpose" << std::endl;
 	if (VERBOSE >= 2)
@@ -3053,11 +3124,13 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 					}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<"nprocs_0= "<<nprocs_0<<" nprocs_1= "<<nprocs_1<<std::endl;
 
 	reshuffle_time += MPI_Wtime();
 
+#ifdef VERBOSE1
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -3065,6 +3138,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -3098,6 +3172,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3114,6 +3189,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -3130,6 +3206,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		}
 	}
 	shuffle_time += MPI_Wtime();
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "Local Transpose:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3146,7 +3223,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
-
+#endif
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
 		for (int h = 0; h < howmany; h++)
 			local_transpose(local_n1, N[0], n_tuples, &data[h * idist]);
@@ -3210,6 +3287,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 	}
 	comm_time += MPI_Wtime();
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3226,6 +3304,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
@@ -3257,6 +3336,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		}
 	}
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "2nd Transpose" << std::endl;
 	if (VERBOSE >= 2)
@@ -3273,6 +3353,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	if (Flags[1] == 1) { // Transpose output
 		if (howmany == 1)
@@ -3286,6 +3367,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 	delete[] request;
 	delete[] s_request;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "Transposed Out" << std::endl;
 	if (VERBOSE >= 2)
@@ -3302,7 +3384,9 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
+#ifdef VERBOSE1
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -3310,6 +3394,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -3342,6 +3427,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3358,6 +3444,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -3372,6 +3459,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 	}
 
 	shuffle_time += MPI_Wtime();
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "Local Transpose:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3391,6 +3479,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
 		local_transpose(local_n1, N[0], n_tuples, data);
@@ -3432,6 +3521,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 
 	comm_time += MPI_Wtime();
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3448,6 +3538,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
@@ -3480,6 +3571,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		}
 	}
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "2nd Transpose" << std::endl;
 	if (VERBOSE >= 2)
@@ -3496,11 +3588,13 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	if (Flags[1] == 1) { // Transpose output
 		for (int h = 0; h < howmany; h++)
 			local_transpose(local_n1, N[0], n_tuples, &data[odist * h]);
 
+#ifdef VERBOSE2
 		if (VERBOSE >= 2)
 			PCOUT << "Transposed Out" << std::endl;
 		if (VERBOSE >= 2)
@@ -3517,10 +3611,12 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					std::cout << '\n';
 				}
+#endif
 
 	}
 	reshuffle_time += MPI_Wtime();
 
+#ifdef VERBOSE1
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -3528,6 +3624,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -3560,6 +3657,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3573,6 +3671,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 				}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -3587,6 +3686,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	}
 
 	shuffle_time += MPI_Wtime();
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "Local Transpose:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3602,6 +3702,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 				}
 			std::cout << '\n';
 		}
+#endif
 	if (nprocs == 1 && Flags[0] == 1 && Flags[1] == 1) {
 		local_transpose(local_n1, N[0], n_tuples, data);
 	}
@@ -3633,6 +3734,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 				send_recv, rcount_proc, roffset_proc, T_plan->comm, kway);
 	comm_time += MPI_Wtime();
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3647,6 +3749,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 				}
 			std::cout << '\n';
 		}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
@@ -3680,6 +3783,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		}
 	}
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "2nd Transpose" << std::endl;
 	if (VERBOSE >= 2)
@@ -3693,11 +3797,13 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 				}
 			std::cout << '\n';
 		}
+#endif
 
 	if (Flags[1] == 1) { // Transpose output
 		local_transpose(local_n1, N[0], n_tuples, data);
 	}
 	reshuffle_time += MPI_Wtime();
+#ifdef VERBOSE2
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -3705,6 +3811,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
@@ -3738,6 +3845,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 
 	double comm_time = 0, shuffle_time = 0, reshuffle_time = 0, total_time = 0;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "INPUT:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3754,6 +3862,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ==============   Local Transpose============= "<<std::endl;
@@ -3782,6 +3891,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 	if (Flags[0] == 1) {
 		for (int i = 0; i < howmany; i++)
 			local_transpose(local_n0, N[1], n_tuples, &data[i * idist]);
+#ifdef VERBOSE2
 		if (VERBOSE >= 2)
 			PCOUT << "Local Transpose:" << std::endl;
 		if (VERBOSE >= 2)
@@ -3798,6 +3908,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					std::cout << '\n';
 				}
+#endif
 	}
 	shuffle_time += MPI_Wtime();
 
@@ -3839,10 +3950,8 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		MPI_Wait(&s_request[proc], &ierr);
 	}
 	comm_time += MPI_Wtime();
-	if (0)
-		for (int i = 0; i < local_n1 * N[0]; i++)
-			std::cout << " " << send_recv[i * n_tuples] << std::endl;
 
+#ifdef VERBOSE2
 	if (VERBOSE >= 2)
 		PCOUT << "MPIAlltoAll:" << std::endl;
 	if (VERBOSE >= 2)
@@ -3859,6 +3968,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 					}
 				std::cout << '\n';
 			}
+#endif
 
 	//PCOUT<<" ============================================= "<<std::endl;
 	//PCOUT<<" ============== 2nd Local Trnaspose ========== "<<std::endl;
@@ -3879,6 +3989,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 				local_transpose(local_n1, N[0], n_tuples, &data[h * odist]);
 		}
 
+#ifdef VERBOSE2
 		if (VERBOSE >= 2)
 			PCOUT << "Transposed Out" << std::endl;
 		if (VERBOSE >= 2)
@@ -3895,11 +4006,13 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 						}
 					std::cout << '\n';
 				}
+#endif
 	}
 	reshuffle_time += MPI_Wtime();
 	delete[] request;
 	delete[] s_request;
 
+#ifdef VERBOSE1
 	if (VERBOSE >= 1) {
 		PCOUT << "Shuffle Time= " << shuffle_time << std::endl;
 		PCOUT << "Alltoall Time= " << comm_time << std::endl;
@@ -3907,6 +4020,7 @@ void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 		PCOUT << "Total Time= " << (shuffle_time + comm_time + reshuffle_time)
 				<< std::endl;
 	}
+#endif
 	timings[0] += MPI_Wtime(); //timings[0]+=shuffle_time+comm_time+reshuffle_time;
 	timings[1] += shuffle_time;
 	timings[2] += comm_time;
