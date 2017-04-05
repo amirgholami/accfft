@@ -866,6 +866,7 @@ template<typename T, typename Tp>
 void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 		double* timer) {
 	typedef T Tc[2];
+	double self_exec_time = -MPI_Wtime();
 	// int procid;
 	MPI_Comm c_comm = plan->c_comm;
 	// MPI_Comm_rank(c_comm, &procid);
@@ -883,8 +884,6 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 		XYZ[2] = 1;
 	}
 	double timings[7] = { 0 };
-
-	double self_exec_time = -MPI_Wtime();
 	int *N = plan->N;
 
 
@@ -964,6 +963,7 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
     timer[2] += timings[2];
     timer[3] += timings[3];
     timer[4] += timings[4];
+    timer[5] += self_exec_time;
 		timer[6] += timings[6];
   }
   return;
@@ -1020,6 +1020,7 @@ void accfft_laplace_t(T* LA, T* A, Tp* plan, double* timer) {
 template<typename T, typename Tp>
 void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
     double* timer) {
+  double self_exec_time = -MPI_Wtime();
   typedef T Tc[2];
   int procid;
   MPI_Comm c_comm = plan->c_comm;
@@ -1032,7 +1033,6 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
 
   double timings[7] = { 0 };
 
-  double self_exec_time = -MPI_Wtime();
   int *N = plan->N;
 
   int isize[3], osize[3], istart[3], ostart[3];
@@ -1077,6 +1077,7 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, tmp2, timings, xyz);
 
   timings[6] += -MPI_Wtime();
+#pragma ivdep
   for (int i = 0; i < isize[0] * isize[1] * isize[2]; ++i)
     div_A[i] += tmp2[i];
   timings[6] += +MPI_Wtime();
@@ -1095,6 +1096,7 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   accfft_execute_c2r_t<Tc, T, Tp>(plan, tmp, tmp2, timings, xyz);
 
   timings[6] += -MPI_Wtime();
+#pragma ivdep
   for (int i = 0; i < isize[0] * isize[1] * isize[2]; ++i)
     div_A[i] += tmp2[i];
   timings[6] += +MPI_Wtime();
@@ -1121,6 +1123,7 @@ void accfft_divergence_slow_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
 template<typename T, typename Tp>
 void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
     double* timer) {
+  double self_exec_time = -MPI_Wtime();
   typedef T Tc[2];
   // int procid;
   MPI_Comm c_comm = plan->c_comm;
@@ -1133,7 +1136,6 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
 
   double timings[7] = { 0 };
 
-  double self_exec_time = -MPI_Wtime();
   int *N = plan->N;
 
   int* isize = plan->isize;
@@ -1206,6 +1208,7 @@ void accfft_divergence_t(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
     timer[2] += timings[2];
     timer[3] += timings[3];
     timer[4] += timings[4];
+    timer[5] += self_exec_time;
 		timer[6] += timings[6];
   }
   return;
