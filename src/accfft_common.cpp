@@ -157,6 +157,7 @@ int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
   osize_x[1] = osize_x[0];
   osize_x[0] = osize_x[2];
   osize_x[2] = 1;
+  std::swap(osize_x[0], osize_x[1]); // switch to (N1/P1xN2 )/P0 x N0 x 1
   ostart_x[0] = 0;
   ostart_x[1] = -1<<8; // starts have no meaning in this approach
   ostart_x[2] = -1<<8;
@@ -167,6 +168,7 @@ int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
   osize_xi[1] = osize_xi[0];
   osize_xi[0] = osize_xi[2];
   osize_xi[2] = 1;
+  std::swap(osize_xi[0], osize_xi[1]); // switch to (N1/P1xN2 )/P0 x N0 x 1
 	alloc_local = osize_xi[0] * osize_xi[1] * osize_xi[2] * sizeof(T);
 	alloc_max = std::max(alloc_max, 2 * alloc_local);
   ostart_xi[0] = 0;

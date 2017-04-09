@@ -28,6 +28,9 @@
 #include "accfft_common.h"
 #define VERBOSE 0
 #define PCOUT if(procid==0) std::cout
+#ifdef ACCFFT_MKL
+#include "mkl.h"
+#endif
 
 
 /**
@@ -135,17 +138,21 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
   osize_yi[1] = osize_y[1] / 2 + 1;
   osize_yi[2] = osize_y[2];
 
+	std::swap(osize_y[1], osize_y[2]); // N0/P0 x N2/P1 x N1
+	std::swap(osize_yi[1], osize_yi[2]);
   // for x only fft. The strategy is to divide (N1/P1 x N2) by P0 completely.
   // So we treat the last size to be just 1.
 	dfft_get_local_size_t<float>(isize[1] * n[2], n[2], n[0], osize_x, ostart_x, c_comm);
   osize_x[1] = osize_x[0];
   osize_x[0] = osize_x[2];
   osize_x[2] = 1;
+  std::swap(osize_x[0], osize_x[1]); // switch to (N1/P1xN2 )/P0 x N0 x 1
 
 	dfft_get_local_size_t<float>(isize[1] * n[2], n[2], n[0] / 2 + 1, osize_xi, ostart_x, c_comm);
   osize_xi[1] = osize_xi[0];
   osize_xi[0] = osize_xi[2];
   osize_xi[2] = 1;
+  std::swap(osize_xi[0], osize_xi[1]); // switch to (N1/P1xN2 )/P0 x N0 x 1
   ostart_x[0] = 0;
   ostart_x[1] = -1<<8; // starts have no meaning in this approach
   ostart_x[2] = -1<<8;
@@ -195,6 +202,26 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 		howmany_dims[1].is = osize_1[1] * osize_1[2];
 		howmany_dims[1].os = osize_1[1] * osize_1[2];
 
+#ifdef ACCFFT_MKL
+		plan->fplan_1 = fftwf_plan_many_dft(1, &n[1], osize_1[2] * osize_1[0], //int rank, const int *n, int howmany
+		(fftwf_complex*) data_out, NULL,        //double *in, const int *inembed,
+				1, n[1],      //int istride, int idist,
+				(fftwf_complex*) data_out, NULL, //fftw_complex *out, const int *onembed,
+				1, n[1],        // int ostride, int odist,
+				FFTW_FORWARD, fftw_flags);
+		if (plan->fplan_1 == NULL)
+			std::cout << "!!! fplan1 not created in r2c plan !!!" << std::endl;
+
+		plan->iplan_1 = fftwf_plan_many_dft(1, &n[1], osize_1[2] * osize_1[0], //int rank, const int *n, int howmany
+		(fftwf_complex*) data_out, NULL,        //double *in, const int *inembed,
+				1, n[1],      //int istride, int idist,
+				(fftwf_complex*) data_out, NULL, //fftw_complex *out, const int *onembed,
+				1, n[1],        // int ostride, int odist,
+				FFTW_BACKWARD, fftw_flags);
+		if (plan->iplan_1 == NULL)
+			std::cout << "!!! iplan1 not created in r2c plan !!!" << std::endl;
+
+#else
 		plan->fplan_1 = fftwf_plan_guru_dft(1, &dims, 2, howmany_dims,
 				(fftwf_complex*) data_out, (fftwf_complex*) data_out, -1,
 				fftw_flags);
@@ -205,48 +232,47 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				fftw_flags);
 		if (plan->iplan_1 == NULL)
 			std::cout << "!!! iplan1f not created in r2c plan !!!" << std::endl;
+#endif
 
-		// ----
-		dims, howmany_dims[2];
-		dims.n = osize_y[1];
-		dims.is = osize_y[2];
-		dims.os = osize_y[2];
-
-		howmany_dims[0].n = osize_y[2];
-		howmany_dims[0].is = 1;
-		howmany_dims[0].os = 1;
-
-		howmany_dims[1].n = osize_y[0];
-		howmany_dims[1].is = osize_y[1] * osize_y[2];
-		howmany_dims[1].os = (osize_y[1] /2 + 1) * osize_y[2];
-
-		plan->fplan_y = fftwf_plan_guru_dft_r2c(1, &dims, 2, howmany_dims,
-				(float*) dummy_data, (fftwf_complex*) data_out,
+		// fplan_y ----
+		plan->fplan_y = fftwf_plan_many_dft_r2c(1, &n[1],
+				osize_y[0]*osize_y[1], //int rank, const int *n, int howmany
+				dummy_data, NULL,         //double *in, const int *inembed,
+				1, n[1],      //int istride, int idist,
+				(fftwf_complex*) data_out, NULL, //fftw_complex *out, const int *onembed,
+				1,n[1]/2+1,        // int ostride, int odist,
 				fftw_flags);
 		if (plan->fplan_y == NULL)
-			std::cout << "!!! fplan1f not created in r2c plan!!!" << std::endl;
-
-		dims, howmany_dims[2];
-		dims.n = osize_y[1];
-		dims.os = osize_y[2];
-		dims.is = osize_y[2];
-
-		howmany_dims[0].n = osize_y[2];
-		howmany_dims[0].os = 1;
-		howmany_dims[0].is = 1;
-
-		howmany_dims[1].n = osize_y[0];
-		howmany_dims[1].os = osize_y[1] * osize_y[2];
-		howmany_dims[1].is = (osize_y[1] /2 + 1) * osize_y[2];
-
-		plan->iplan_y = fftwf_plan_guru_dft_c2r(1, &dims, 2, howmany_dims,
-				(fftwf_complex*) data_out, (float*) dummy_data,
+			std::cout << "!!! fplan_y not created in r2c plan!!!" << std::endl;
+		plan->iplan_y = fftwf_plan_many_dft_c2r(1, &n[1],
+				osize_y[0]*osize_y[1], //int rank, const int *n, int howmany
+				(fftwf_complex*) data_out, NULL, //double *in, const int *inembed,
+				1, n[1]/2+1,      //int istride, int idist,
+				data_out, NULL, //fftw_complex *out, const int *onembed,
+			  1, n[1],        // int ostride, int odist,
 				fftw_flags);
 		if (plan->iplan_y == NULL)
-			std::cout << "!!! iplan1f not created in r2c plan !!!" << std::endl;
-
+			std::cout << "!!! iplan_y not created in r2c plan!!!" << std::endl;
 		// ----
 
+#ifdef ACCFFT_MKL
+		plan->fplan_2 = fftwf_plan_many_dft(1, &n[0], osize_2[2] * osize_2[1], //int rank, const int *n, int howmany
+		    (fftwf_complex*) data_out, NULL,        //double *in, const int *inembed,
+				1,n[0],      //int istride, int idist,
+				(fftwf_complex*) data_out, NULL, //fftw_complex *out, const int *onembed,
+				1,n[0],        // int ostride, int odist,
+				FFTW_FORWARD, fftw_flags);
+		if (plan->fplan_2 == NULL)
+			std::cout << "!!! fplan2 not created in r2c plan !!!" << std::endl;
+		plan->iplan_2 = fftwf_plan_many_dft(1, &n[0], osize_2[2] * osize_2[1], //int rank, const int *n, int howmany
+		    (fftwf_complex*) data_out, NULL,        //double *in, const int *inembed,
+				1,n[0],      //int istride, int idist,
+				(fftwf_complex*) data_out, NULL, //fftw_complex *out, const int *onembed,
+				1,n[0],        // int ostride, int odist,
+				FFTW_BACKWARD, fftw_flags);
+		if (plan->iplan_2 == NULL)
+			std::cout << "!!! iplan2 not created in r2c plan !!!" << std::endl;
+#else
 		plan->fplan_2 = fftwf_plan_many_dft(1, &n[0], osize_2[2] * osize_2[1], //int rank, const int *n, int howmany
 		(fftwf_complex*) data_out, NULL,        //float *in, const int *inembed,
 				osize_2[2] * osize_2[1], 1,      //int istride, int idist,
@@ -264,26 +290,48 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				FFTW_BACKWARD, fftw_flags);
 		if (plan->iplan_2 == NULL)
 			std::cout << "!!! iplan2f not created in r2c plan !!!" << std::endl;
-    // fplan_x
-		plan->fplan_x = fftwf_plan_many_dft_r2c(1, &n[0],
-				osize_x[1] * osize_x[2], //int rank, const int *n, int howmany
-				dummy_data, NULL,         //double *in, const int *inembed,
-				osize_x[1] * osize_x[2], 1,      //int istride, int idist,
-				(fftwf_complex*) data_out, NULL, //fftw_complex *out, const int *onembed,
-				osize_xi[1] * osize_xi[2], 1,        // int ostride, int odist,
-				fftw_flags);
-		if (plan->fplan_x == NULL)
-			std::cout << "!!! fplan_xf not created in r2c plan!!!" << std::endl;
+#endif
 
+    // fplan_x
+    PCOUT << "osize_x[0] = " << osize_x[0] << " osize_x[1] = " << osize_x[1] << " osize_x[2] = " << osize_x[2] << std::endl;
+		plan->fplan_x = fftwf_plan_many_dft_r2c(1, &n[0],
+		    osize_x[0], //int rank, const int *n, int howmany
+		    dummy_data, NULL,         //double *in, const int *inembed,
+		    1, n[0],      //int istride, int idist,
+		    (fftwf_complex*) data_out, NULL, //fftw_complex *out, const int *onembed,
+		    1,n[0]/2+1,        // int ostride, int odist,
+		    fftw_flags);
+		if (plan->fplan_x == NULL)
+		  std::cout << "!!! fplan_x not created in r2c plan!!!" << std::endl;
 		plan->iplan_x = fftwf_plan_many_dft_c2r(1, &n[0],
-				osize_xi[1] * osize_xi[2], //int rank, const int *n, int howmany
-				(fftwf_complex*) data_out, NULL, //double *in, const int *inembed,
-				osize_xi[1] * osize_xi[2], 1,      //int istride, int idist,
-				data_out, NULL, //fftw_complex *out, const int *onembed,
-			  osize_x[1] * osize_x[2], 1,        // int ostride, int odist,
-				fftw_flags);
+		    osize_x[0], //int rank, const int *n, int howmany
+		    (fftwf_complex*) data_out, NULL, //double *in, const int *inembed,
+		    1, n[0]/2+1,      //int istride, int idist,
+		    data_out, NULL, //fftw_complex *out, const int *onembed,
+		    1, n[0],        // int ostride, int odist,
+		    fftw_flags);
 		if (plan->iplan_x == NULL)
-			std::cout << "!!! iplan_xf not created in r2c plan!!!" << std::endl;
+		  std::cout << "!!! iplan_x not created in r2c plan!!!" << std::endl;
+
+    //plan->fplan_x = fftwf_plan_many_dft_r2c(1, &n[0],
+		//		osize_x[0] * osize_x[2], //int rank, const int *n, int howmany
+		//		dummy_data, NULL,         //double *in, const int *inembed,
+		//		osize_x[0] * osize_x[2], 1,      //int istride, int idist,
+		//		(fftwf_complex*) data_out, NULL, //fftw_complex *out, const int *onembed,
+		//		osize_xi[0] * osize_xi[2], 1,        // int ostride, int odist,
+		//		fftw_flags);
+		//if (plan->fplan_x == NULL)
+		//	std::cout << "!!! fplan_xf not created in r2c plan!!!" << std::endl;
+
+		//plan->iplan_x = fftwf_plan_many_dft_c2r(1, &n[0],
+		//		osize_xi[0] * osize_xi[2], //int rank, const int *n, int howmany
+		//		(fftwf_complex*) data_out, NULL, //double *in, const int *inembed,
+		//		osize_xi[0] * osize_xi[2], 1,      //int istride, int idist,
+		//		data_out, NULL, //fftw_complex *out, const int *onembed,
+		//	  osize_x[0] * osize_x[2], 1,        // int ostride, int odist,
+		//		fftw_flags);
+		//if (plan->iplan_x == NULL)
+		//	std::cout << "!!! iplan_xf not created in r2c plan!!!" << std::endl;
     accfft_free(dummy_data);
 	}
 
@@ -327,12 +375,6 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 				plan->Mem_mgr, plan->col_comm);
 		plan->T_plan_1i = new T_Plan<float>(n_tuples_o / 2, n[1], 2,
 				plan->Mem_mgr, plan->row_comm, osize_1i[0]);
-    // to transpose N0/P0 x N1/P1 x N2 -> N0/P0 x N1 x N2/P1
-		plan->T_plan_y = new T_Plan<float>(n[1], n[2], 1,
-				plan->Mem_mgr, plan->row_comm, plan->isize[0]);
-    // to transpose N0/P0 x N1 x N2/P1 -> N0/P0 x N1/P1 x N2
-		plan->T_plan_yi = new T_Plan<float>(n[2], n[1], 1,
-				plan->Mem_mgr, plan->row_comm, plan->isize[0]);
 
 
 		plan->T_plan_1->alloc_local = plan->alloc_max;
@@ -340,8 +382,6 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 		plan->T_plan_2i->alloc_local = plan->alloc_max;
 		plan->T_plan_1i->alloc_local = plan->alloc_max;
 
-		plan->T_plan_y->alloc_local = plan->alloc_max;
-		plan->T_plan_yi->alloc_local = plan->alloc_max;
 
 		if (flags == ACCFFT_MEASURE) {
 			if (coord[0] == 0) {
@@ -361,24 +401,18 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 
 		plan->T_plan_1->method = plan->T_plan_1->method;
 		plan->T_plan_2->method = plan->T_plan_1->method;
-		plan->T_plan_y->method = plan->T_plan_1->method;
 		plan->T_plan_2i->method = -plan->T_plan_1->method;
 		plan->T_plan_1i->method = -plan->T_plan_1->method;
-		plan->T_plan_yi->method = -plan->T_plan_1->method;
 
 		plan->T_plan_1->kway = plan->T_plan_1->kway;
 		plan->T_plan_2->kway = plan->T_plan_1->kway;
-		plan->T_plan_y->kway = plan->T_plan_1->kway;
 		plan->T_plan_2i->kway = plan->T_plan_1->kway;
 		plan->T_plan_1i->kway = plan->T_plan_1->kway;
-		plan->T_plan_yi->kway = plan->T_plan_1->kway;
 
 		plan->T_plan_1->kway_async = plan->T_plan_1->kway_async;
 		plan->T_plan_2->kway_async = plan->T_plan_1->kway_async;
-		plan->T_plan_y->kway_async = plan->T_plan_1->kway_async;
 		plan->T_plan_2i->kway_async = plan->T_plan_1->kway_async;
 		plan->T_plan_1i->kway_async = plan->T_plan_1->kway_async;
-		plan->T_plan_yi->kway_async = plan->T_plan_1->kway_async;
 
 		plan->data = data;
 	} // end 2D r2c
@@ -394,11 +428,27 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 	plan->T_plan_x->alloc_local = plan->alloc_max;
 	plan->T_plan_xi->alloc_local = plan->alloc_max;
 	plan->T_plan_x->method = plan->T_plan_2->method;
-	plan->T_plan_xi->method = -plan->T_plan_2->method;
+	plan->T_plan_xi->method = plan->T_plan_2->method; // notice that we do not use minus for T_planxi
 	plan->T_plan_x->kway = plan->T_plan_2->kway;
 	plan->T_plan_xi->kway = plan->T_plan_2->kway;
 	plan->T_plan_x->kway_async = plan->T_plan_2->kway_async;
 	plan->T_plan_xi->kway_async = plan->T_plan_2->kway_async;
+
+  // to transpose N0/P0 x N1/P1 x N2 -> N0/P0 x N1 x N2/P1
+	plan->T_plan_y = new T_Plan<float>(n[1], n[2], 1,
+			plan->Mem_mgr, plan->row_comm, plan->isize[0]);
+  // to transpose N0/P0 x N1 x N2/P1 -> N0/P0 x N1/P1 x N2
+	plan->T_plan_yi = new T_Plan<float>(n[2], n[1], 1,
+			plan->Mem_mgr, plan->row_comm, plan->isize[0]);
+	plan->T_plan_y->alloc_local = plan->alloc_max;
+	plan->T_plan_yi->alloc_local = plan->alloc_max;
+	plan->T_plan_y->method = plan->T_plan_2->method;
+	plan->T_plan_yi->method = plan->T_plan_2->method; // should not be set to minus
+	plan->T_plan_y->kway_async = plan->T_plan_2->kway_async;
+	plan->T_plan_yi->kway_async = plan->T_plan_2->kway_async;
+	plan->T_plan_y->kway = plan->T_plan_2->kway;
+	plan->T_plan_yi->kway = plan->T_plan_2->kway;
+
 
 	plan->r2c_plan_baked = true;
 
@@ -409,124 +459,6 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 accfft_planf* accfft_plan_dft_3d_r2c(int * n, float * data, float * data_out,
 		MPI_Comm c_comm, unsigned flags) {
   return accfft_plan_dft_3d_r2cf(n, data, data_out, c_comm, flags);
-}
-void accfft_execute(accfft_plantf* plan, int direction, float * data,
-		float* data_out, double * timer, std::bitset<3> XYZ) {
-
-	if (data == NULL)
-		data = plan->data;
-	if (data_out == NULL)
-		data_out = plan->data_out;
-	int * coords = plan->coord;
-	int procid = plan->procid;
-	double fft_time = 0;
-	double timings[5] = { 0 };
-
-	// 1D Decomposition
-	int *osize_0 = plan->osize_0, *ostart_0 = plan->ostart_0;
-	int *osize_1 = plan->osize_1, *ostart_1 = plan->ostart_1;
-	int *osize_2 = plan->osize_2, *ostart_2 = plan->ostart_2;
-	int *osize_1i = plan->osize_1i, *ostart_1i = plan->ostart_1i;
-	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
-
-	if (direction == -1) {
-		/**************************************************************/
-		/*******************  N0/P0 x N1/P1 x N2 **********************/
-		/**************************************************************/
-		// FFT in Z direction
-		fft_time -= MPI_Wtime();
-		if (XYZ[2])
-			fftwf_execute_dft_r2c(plan->fplan_0, (float*) data,
-					(fftwf_complex*) data_out);
-		else
-			data_out = data;
-		fft_time += MPI_Wtime();
-
-		// Perform N0/P0 transpose
-		if (!plan->oneD) {
-			plan->T_plan_1->execute(plan->T_plan_1, data_out, timings, 2,
-					osize_0[0], coords[0]);
-		}
-		/**************************************************************/
-		/*******************  N0/P0 x N1 x N2/P1 **********************/
-		/**************************************************************/
-		fft_time -= MPI_Wtime();
-		if (XYZ[1])
-			fftwf_execute_dft(plan->fplan_1, (fftwf_complex*) data_out,
-					(fftwf_complex*) data_out);
-		fft_time += MPI_Wtime();
-
-		if (plan->oneD) {
-			plan->T_plan_2->execute(plan->T_plan_2, data_out, timings, 2);
-		} else {
-			plan->T_plan_2->execute(plan->T_plan_2, data_out, timings, 2, 1,
-					coords[1]);
-		}
-		/**************************************************************/
-		/*******************  N0 x N1/P0 x N2/P1 **********************/
-		/**************************************************************/
-		fft_time -= MPI_Wtime();
-		if (XYZ[0])
-			fftwf_execute_dft(plan->fplan_2, (fftwf_complex*) data_out,
-					(fftwf_complex*) data_out);
-		fft_time += MPI_Wtime();
-	} else if (direction == 1) {
-		fft_time -= MPI_Wtime();
-		if (XYZ[0])
-			fftwf_execute_dft(plan->iplan_2, (fftwf_complex*) data,
-					(fftwf_complex*) data);
-		fft_time += MPI_Wtime();
-
-		if (plan->oneD) {
-			plan->T_plan_2i->execute(plan->T_plan_2i, data, timings, 1);
-		} else {
-			plan->T_plan_2i->execute(plan->T_plan_2i, data, timings, 1, 1,
-					coords[1]);
-		}
-
-		//MPI_Barrier(plan->c_comm);
-		/**************************************************************/
-		/*******************  N0/P0 x N1 x N2/P1 **********************/
-		/**************************************************************/
-		fft_time -= MPI_Wtime();
-		if (XYZ[1])
-			fftwf_execute_dft(plan->iplan_1, (fftwf_complex*) data,
-					(fftwf_complex*) data);
-		fft_time += MPI_Wtime();
-
-		if (!plan->oneD) {
-			plan->T_plan_1i->execute(plan->T_plan_1i, data, timings, 1,
-					osize_1i[0], coords[0]);
-		}
-		//MPI_Barrier(plan->c_comm);
-		/**************************************************************/
-		/*******************  N0/P0 x N1/P1 x N2 **********************/
-		/**************************************************************/
-		// IFFT in Z direction
-		fft_time -= MPI_Wtime();
-		if (XYZ[2])
-			fftwf_execute_dft_c2r(plan->iplan_0, (fftwf_complex*) data,
-					(float*) data_out);
-		else
-			data_out = data;
-		fft_time += MPI_Wtime();
-		//MPI_Barrier(plan->c_comm);
-
-	}
-
-	timings[4] += fft_time;
-	if (timer == NULL) {
-		//delete [] timings;
-	} else {
-		timer[0] += timings[0];
-		timer[1] += timings[1];
-		timer[2] += timings[2];
-		timer[3] += timings[3];
-		timer[4] += timings[4];
-	}
-	//MPI_Barrier(plan->c_comm);
-
-	return;
 }
 /**
  * Get the local sizes of the distributed global data for a C2C single precision transform
@@ -1143,10 +1075,13 @@ void accfft_execute_yf(accfft_plantf* plan, int direction, float * data,
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
 		// Perform N0/P0 transpose
+    if(0)
 		if (!plan->oneD) {
 			plan->T_plan_y->execute(plan->T_plan_y, cwork, timings, 2,
 					osize_0[0], coords[0]);
 		}
+		plan->T_plan_y->execute(plan->T_plan_y, cwork, timings, 0,
+				plan->osize_y[0], coords[0]);
 		/**************************************************************/
 		/*******************  N0/P0 x N1 x N2/P1 **********************/
 		/**************************************************************/
@@ -1164,10 +1099,15 @@ void accfft_execute_yf(accfft_plantf* plan, int direction, float * data,
 					(float*) cwork);
 		fft_time += MPI_Wtime();
 
+    if(0)
 		if (!plan->oneD) {
 			plan->T_plan_yi->execute(plan->T_plan_yi, cwork, timings, 1,
 					osize_1i[0], coords[0]);
 		}
+
+		plan->T_plan_yi->execute(plan->T_plan_yi, cwork, timings, 0,
+				plan->osize_yi[0], coords[0]);
+
     timings[0] += -MPI_Wtime();
     memcpy(data_out, cwork, N_local * sizeof(float));
     timings[0] += +MPI_Wtime();
@@ -1244,9 +1184,11 @@ void accfft_execute_xf(accfft_plantf* plan, int direction, float * data,
 	int *osize_2 = plan->osize_2, *ostart_2 = plan->ostart_2;
 	int *osize_1i = plan->osize_1i, *ostart_1i = plan->ostart_1i;
 	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
+  int* osize_x = plan->osize_x;
   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
 
   float* cwork = plan->Mem_mgr->buffer_3;
+  float alpha = 1;
 	if (direction == -1) {
     timings[0] += -MPI_Wtime();
     memcpy(cwork, data, N_local * sizeof(float));
@@ -1254,27 +1196,30 @@ void accfft_execute_xf(accfft_plantf* plan, int direction, float * data,
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
-		// Perform N0/P0 transpose
-		plan->T_plan_x->execute(plan->T_plan_x, cwork, timings, 2);
+    plan->T_plan_x->execute(plan->T_plan_x, cwork, timings);
 		/**************************************************************/
-		/*******************  N0/P0 x N1 x N2/P1 **********************/
+		/****************  (N1/P1 x N2)/P0 x N0 x 1 *******************/
 		/**************************************************************/
-		fft_time -= MPI_Wtime();
-		fftwf_execute_dft_r2c(plan->fplan_x, (float*) cwork,
-				(fftwf_complex*) data_out);
-		fft_time += MPI_Wtime();
+    fft_time -= MPI_Wtime();
+    fftwf_execute_dft_r2c(plan->fplan_x, (float*) cwork,
+        (fftwf_complex*) data_out);
+    fft_time += MPI_Wtime();
+    // memcpy(data_out, cwork, plan->alloc_max);
 
 	} else if (direction == 1) {
 		/**************************************************************/
-		/*******************  N0/P0 x N1 x N2/P1 **********************/
+		/****************  (N1/P1 x N2)/P0 x N0 x 1 *******************/
 		/**************************************************************/
-		fft_time -= MPI_Wtime();
-		fftwf_execute_dft_c2r(plan->iplan_x, (fftwf_complex*) data,
-				(float*) data);
-		fft_time += MPI_Wtime();
+    fft_time -= MPI_Wtime();
+    fftwf_execute_dft_c2r(plan->iplan_x, (fftwf_complex*) data,
+        (float*) data);
+    fft_time += MPI_Wtime();
 
-		plan->T_plan_xi->execute(plan->T_plan_xi, data, timings, 1);
-		//MPI_Barrier(plan->c_comm);
+    plan->T_plan_xi->execute(plan->T_plan_xi, data, timings);
+		/**************************************************************/
+		/*******************  N0/P0 x N1/P1 x N2 **********************/
+		/**************************************************************/
+
     timings[0] += -MPI_Wtime();
     memcpy(data_out, data, N_local * sizeof(float));
     timings[0] += +MPI_Wtime();
@@ -1336,20 +1281,250 @@ void accfft_executef(accfft_planf* plan, int direction, float * data,
 		std::bitset<3> xyz) {
   return accfft_execute((accfft_plantf*)plan, direction, data, data_out, timer, xyz);
 }
+
 void accfft_execute_c2cf(accfft_planf* plan, int direction, Complexf * data,
     Complexf * data_out, double * timer,
 		std::bitset<3> xyz) {
   return accfft_execute_c2c((accfft_plantf*)plan, direction, data, data_out, timer, xyz);
 }
+
 void accfft_destroy_plan(accfft_planf * plan) {
   return accfft_destroy_plan((accfft_plantf*)plan);
 }
+
 void accfft_execute_r2cf(accfft_planf* plan, float * data,
 		Complexf * data_out, double * timer, std::bitset<3> xyz) {
   return accfft_execute_r2c((accfft_plantf*)plan, data, data_out, timer, xyz);
 }
+
 void accfft_execute_c2rf(accfft_planf* plan, Complexf * data,
 		float * data_out, double * timer,
 		std::bitset<3> xyz) {
   return accfft_execute_c2r((accfft_plantf*)plan, data, data_out, timer, xyz);
+}
+
+void accfft_execute(accfft_plantf* plan, int direction, float * data,
+		float* data_out, double * timer, std::bitset<3> XYZ) {
+
+	if (data == NULL)
+		data = plan->data;
+	if (data_out == NULL)
+		data_out = plan->data_out;
+	int * coords = plan->coord;
+	int procid = plan->procid;
+	double fft_time = 0;
+	double timings[5] = { 0 };
+  PCOUT <<"in executef\n";
+
+	// 1D Decomposition
+	int *osize_0 = plan->osize_0, *ostart_0 = plan->ostart_0;
+	int *osize_1 = plan->osize_1, *ostart_1 = plan->ostart_1;
+	int *osize_2 = plan->osize_2, *ostart_2 = plan->ostart_2;
+	int *osize_1i = plan->osize_1i, *ostart_1i = plan->ostart_1i;
+	int *osize_2i = plan->osize_2i, *ostart_2i = plan->ostart_2i;
+
+	if (direction == -1) {
+		/**************************************************************/
+		/*******************  N0/P0 x N1/P1 x N2 **********************/
+		/**************************************************************/
+		// FFT in Z direction
+		fft_time -= MPI_Wtime();
+		if (XYZ[2])
+			fftwf_execute_dft_r2c(plan->fplan_0, (float*) data,
+					(fftwf_complex*) data_out);
+		else
+			data_out = data;
+		fft_time += MPI_Wtime();
+
+		// Perform N0/P0 transpose
+		if (!plan->oneD) {
+			plan->T_plan_1->execute(plan->T_plan_1, data_out, timings, 2,
+					osize_0[0], coords[0]);
+		}
+		/**************************************************************/
+		/*******************  N0/P0 x N1 x N2/P1 **********************/
+		/**************************************************************/
+#ifdef ACCFFT_MKL
+		if (XYZ[1]){
+      MKL_Complex8 alpha;
+      alpha.real = 1.0;
+      alpha.imag = 0;
+      timings[0] += -MPI_Wtime();
+      for(int i = 0; i < osize_1[0]; ++i)
+        mkl_cimatcopy ('r', 't',  //const char ordering, const char trans,
+                       osize_1[1], osize_1[2], //size_t rows, size_t cols,
+                       alpha, (MKL_Complex8*)&data_out[2*i*osize_1[1]*osize_1[2]], //const MKL_Complex16 alpha, MKL_Complex16 * AB,
+                       osize_1[2],osize_1[1]); //size_t lda, size_t ldb
+      timings[0] += +MPI_Wtime();
+
+		  fft_time -= MPI_Wtime();
+		  fftwf_execute_dft(plan->fplan_1, (fftwf_complex*) data_out,
+				(fftwf_complex*) data_out);
+		  fft_time += MPI_Wtime();
+
+      timings[0] += -MPI_Wtime();
+      for(int i = 0; i < osize_1[0]; ++i)
+        mkl_cimatcopy ('r', 't',  //const char ordering, const char trans,
+                       osize_1[2], osize_1[1],//size_t rows, size_t cols,
+                       alpha, (MKL_Complex8*)&data_out[2*i*(osize_1[1])*osize_1[2]], //const MKL_Complex16 alpha, MKL_Complex16 * AB,
+                       osize_1[1],osize_1[2]); //size_t lda, size_t ldb
+      timings[0] += +MPI_Wtime();
+    }
+#else
+		fft_time -= MPI_Wtime();
+		if (XYZ[1])
+			fftwf_execute_dft(plan->fplan_1, (fftwf_complex*) data_out,
+					(fftwf_complex*) data_out);
+		fft_time += MPI_Wtime();
+#endif
+
+		if (plan->oneD) {
+			plan->T_plan_2->execute(plan->T_plan_2, data_out, timings, 2);
+		} else {
+			plan->T_plan_2->execute(plan->T_plan_2, data_out, timings, 2, 1,
+					coords[1]);
+		}
+		/**************************************************************/
+		/*******************  N0 x N1/P0 x N2/P1 **********************/
+		/**************************************************************/
+#ifdef ACCFFT_MKL
+		if (XYZ[0]){
+      MKL_Complex8 alpha;
+      alpha.real = 1.0;
+      alpha.imag = 0;
+      timings[0] += -MPI_Wtime();
+      mkl_cimatcopy('r', 't',  //const char ordering, const char trans,
+                     osize_2[0], osize_2[1] * osize_2[2], //size_t rows, size_t cols,
+                     alpha, (MKL_Complex8*)data_out, //const MKL_Complex16 alpha, MKL_Complex16 * AB,
+                     osize_2[1] * osize_2[2], osize_2[0]); //size_t lda, size_t ldb
+      timings[0] += +MPI_Wtime();
+
+		  fft_time -= MPI_Wtime();
+			fftwf_execute_dft(plan->fplan_2, (fftwf_complex*) data_out,
+					(fftwf_complex*) data_out);
+		  fft_time += MPI_Wtime();
+
+      timings[0] += -MPI_Wtime();
+      mkl_cimatcopy('r', 't',  //const char ordering, const char trans,
+                     osize_2[1] * osize_2[2], osize_2[0],//size_t rows, size_t cols,
+                     alpha, (MKL_Complex8*)data_out, //const MKL_Complex16 alpha, MKL_Complex16 * AB,
+                     osize_2[0], osize_2[1] * osize_2[2]); //size_t lda, size_t ldb
+      timings[0] += +MPI_Wtime();
+
+    }
+#else
+		fft_time -= MPI_Wtime();
+		if (XYZ[0])
+			fftwf_execute_dft(plan->fplan_2, (fftwf_complex*) data_out,
+					(fftwf_complex*) data_out);
+		fft_time += MPI_Wtime();
+#endif
+	} else if (direction == 1) {
+#ifdef ACCFFT_MKL
+		if (XYZ[0]){
+      MKL_Complex8 alpha;
+      alpha.real = 1.0;
+      alpha.imag = 0;
+      timings[0] += -MPI_Wtime();
+      mkl_cimatcopy('r', 't',  //const char ordering, const char trans,
+                     osize_2[0], osize_2[1] * osize_2[2], //size_t rows, size_t cols,
+                     alpha, (MKL_Complex8*)data, //const MKL_Complex16 alpha, MKL_Complex16 * AB,
+                     osize_2[1] * osize_2[2], osize_2[0]); //size_t lda, size_t ldb
+      timings[0] += +MPI_Wtime();
+
+		  fft_time -= MPI_Wtime();
+			fftwf_execute_dft(plan->iplan_2, (fftwf_complex*) data,
+					(fftwf_complex*) data);
+		  fft_time += MPI_Wtime();
+
+      timings[0] += -MPI_Wtime();
+      mkl_cimatcopy('r', 't',  //const char ordering, const char trans,
+                     osize_2[1] * osize_2[2], osize_2[0],//size_t rows, size_t cols,
+                     alpha, (MKL_Complex8*)data, //const MKL_Complex16 alpha, MKL_Complex16 * AB,
+                     osize_2[0], osize_2[1] * osize_2[2]); //size_t lda, size_t ldb
+      timings[0] += +MPI_Wtime();
+    }
+#else
+		fft_time -= MPI_Wtime();
+		if (XYZ[0])
+			fftwf_execute_dft(plan->iplan_2, (fftwf_complex*) data,
+					(fftwf_complex*) data);
+		fft_time += MPI_Wtime();
+#endif
+
+		if (plan->oneD) {
+			plan->T_plan_2i->execute(plan->T_plan_2i, data, timings, 1);
+		} else {
+			plan->T_plan_2i->execute(plan->T_plan_2i, data, timings, 1, 1,
+					coords[1]);
+		}
+
+		//MPI_Barrier(plan->c_comm);
+		/**************************************************************/
+		/*******************  N0/P0 x N1 x N2/P1 **********************/
+		/**************************************************************/
+#ifdef ACCFFT_MKL
+		if (XYZ[1]){
+      MKL_Complex8 alpha;
+      alpha.real =1.0;
+      alpha.imag = 0;
+      for(int i = 0; i < osize_1[0]; ++i){
+        mkl_cimatcopy ('r','t',  //const char ordering, const char trans,
+                       osize_1i[1], osize_1i[2],//size_t rows, size_t cols,
+                       alpha, (MKL_Complex8*)&data[2*i*osize_1i[1]*osize_1i[2]], //const MKL_Complex16 alpha, MKL_Complex16 * AB,
+                       osize_1i[2], osize_1i[1]); //size_t lda, size_t ldb
+      }
+
+		  fft_time -= MPI_Wtime();
+		  fftwf_execute_dft(plan->iplan_1, (fftwf_complex*) data,
+				(fftwf_complex*) data);
+		  fft_time += MPI_Wtime();
+
+      for(int i = 0; i < osize_1[0]; ++i)
+        mkl_cimatcopy ('r','t',  //const char ordering, const char trans,
+                       osize_1i[2], osize_1i[1],//size_t rows, size_t cols,
+                       alpha, (MKL_Complex8*)&data[2*i*(osize_1i[1])*osize_1i[2]], //const MKL_Complex16 alpha, MKL_Complex16 * AB,
+                       osize_1i[1],osize_1i[2]); //size_t lda, size_t ldb
+    }
+#else
+		fft_time -= MPI_Wtime();
+		if (XYZ[1])
+			fftwf_execute_dft(plan->iplan_1, (fftwf_complex*) data,
+					(fftwf_complex*) data);
+		fft_time += MPI_Wtime();
+#endif
+
+		if (!plan->oneD) {
+			plan->T_plan_1i->execute(plan->T_plan_1i, data, timings, 1,
+					osize_1i[0], coords[0]);
+		}
+		//MPI_Barrier(plan->c_comm);
+		/**************************************************************/
+		/*******************  N0/P0 x N1/P1 x N2 **********************/
+		/**************************************************************/
+		// IFFT in Z direction
+		fft_time -= MPI_Wtime();
+		if (XYZ[2])
+			fftwf_execute_dft_c2r(plan->iplan_0, (fftwf_complex*) data,
+					(float*) data_out);
+		else
+			data_out = data;
+		fft_time += MPI_Wtime();
+		//MPI_Barrier(plan->c_comm);
+
+	}
+
+	timings[4] += fft_time;
+	if (timer == NULL) {
+		//delete [] timings;
+	} else {
+		timer[0] += timings[0];
+		timer[1] += timings[1];
+		timer[2] += timings[2];
+		timer[3] += timings[3];
+		timer[4] += timings[4];
+	}
+	//MPI_Barrier(plan->c_comm);
+
+	return;
 }

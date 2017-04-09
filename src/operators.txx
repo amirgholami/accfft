@@ -405,17 +405,16 @@ static void grad_mult_wave_numberx_inplace(Tc* A, int* N, MPI_Comm c_comm,
 	if (xyz[2])
 		scale *= N[2];
 	scale = 1. / scale;
-
-//#pragma omp parallel
+#pragma omp parallel
 	{
 		long int X, wave;
 		long int ptr = 0;
     Tc tmp_c;
-//#pragma omp for
-		for (int i = 0; i < size[0]; i++) {
-      ptr = i * size[1] * size[2];
-			for (int j = 0; j < size[1] * size[2]; j++) {
-					X = (i + start[0]);
+#pragma omp for
+		for (int i = 0; i < size[1]; i++) {
+			for (int j = 0; j < size[0] * size[2]; j++) {
+          ptr = i + j* size[1];
+					X = i;
 					wave = X;
 
 					if (X > N[0] / 2)
@@ -428,11 +427,35 @@ static void grad_mult_wave_numberx_inplace(Tc* A, int* N, MPI_Comm c_comm,
           tmp_c[1] = A[ptr][1];
 					A[ptr][0] = -scale * wave * tmp_c[1];
 					A[ptr][1] = scale * wave * tmp_c[0];
-          ++ptr;
 			}
 		}
 	}
 
+//	{
+//		long int X, wave;
+//		long int ptr = 0;
+//    Tc tmp_c;
+////#pragma omp for
+//		for (int i = 0; i < size[1]; i++) {
+//      ptr = i * size[0] * size[2];
+//			for (int j = 0; j < size[0] * size[2]; j++) {
+//					X = i;
+//					wave = X;
+//
+//					if (X > N[0] / 2)
+//						wave -= N[0];
+//					if (X == N[0] / 2)
+//						wave = 0; // Filter Nyquist
+//
+//					//ptr = (i * size[1] + j) * size[2] + k;
+//          tmp_c[0] = A[ptr][0];
+//          tmp_c[1] = A[ptr][1];
+//					A[ptr][0] = -scale * wave * tmp_c[1];
+//					A[ptr][1] = scale * wave * tmp_c[0];
+//          ++ptr;
+//			}
+//		}
+//	}
 	return;
 }
 
@@ -452,21 +475,16 @@ static void grad_mult_wave_numbery_inplace(Tc* A, int* N, MPI_Comm c_comm,
 		scale *= N[2];
 	//PCOUT<<scale<<std::endl;
 	scale = 1. / scale;
-
-
-//#pragma omp parallel
+#pragma omp parallel
 	{
-		long int X, Y, Z, wave;
-		long int ptr;
+		long int Y, wave;
+		long int ptr = 0;
     Tc tmp_c;
-//#pragma omp for
-		for (int i = 0; i < size[0]; i++) {
-			for (int j = 0; j < size[1]; j++) {
-				for (int k = 0; k < size[2]; k++) {
-					//X = (i + start[0]);
-					Y = (j + start[1]);
-					//Z = (k + start[2]);
-
+#pragma omp for
+		for (int i = 0; i < size[2]; i++) {
+			for (int j = 0; j < size[0] * size[1]; j++) {
+        ptr = i + j* size[2];
+					Y = i;
 					wave = Y;
 
 					if (Y > N[1] / 2)
@@ -474,15 +492,17 @@ static void grad_mult_wave_numbery_inplace(Tc* A, int* N, MPI_Comm c_comm,
 					if (Y == N[1] / 2)
 						wave = 0; // Filter Nyquist
 
-					ptr = (i * size[1] + j) * size[2] + k;
+					//ptr = (i * size[1] + j) * size[2] + k;
           tmp_c[0] = A[ptr][0];
           tmp_c[1] = A[ptr][1];
 					A[ptr][0] = -scale * wave * tmp_c[1];
 					A[ptr][1] = scale * wave * tmp_c[0];
-				}
+          ++ptr;
 			}
 		}
 	}
+
+
 
 	return;
 }
@@ -507,12 +527,12 @@ static void grad_mult_wave_numberz_inplace(Tc* A, int* N, MPI_Comm c_comm,
 	// accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
 	//PCOUT<<osize[0]<<'\t'<<osize[1]<<'\t'<<osize[2]<<std::endl;
 
-//#pragma omp parallel
+#pragma omp parallel
 	{
 		long int  Z, wave;
 		long int ptr;
     Tc tmp_c;
-//#pragma omp for
+#pragma omp for
 		for (int i = 0; i < size[0]; i++) {
 			for (int j = 0; j < size[1]; j++) {
 				for (int k = 0; k < size[2]; k++) {
@@ -899,21 +919,6 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 
 	/* Multiply x Wave Numbers */
 	if (XYZ[0]) {
-    // if(procid==2){
-    //   std::cout << " isize[0] = " << plan->isize[0]
-    //             << " isize[1] = " << plan->isize[1]
-    //             << " isize[2] = " << plan->isize[2] << std::endl;
-    //   int* osize_xi = plan->osize_xi;
-    //   int* osize_x = plan->osize_x;
-    //   int* ostart_xi = plan->ostart_2;
-    //   std::cout << " osize_x[0] = " << osize_x[0]
-    //             << " osize_x[1] = " << osize_x[1]
-    //             << " osize_x[2] = " << osize_x[2] << std::endl;
-    //   std::cout << " osize_xi[0] = " << osize_xi[0]
-    //             << " osize_xi[1] = " << osize_xi[1]
-    //             << " osize_xi[2] = " << osize_xi[2] << std::endl;
-    //   std::cout << "alloc_max = " << alloc_max << std::endl;
-    // }
 	  accfft_execute_r2c_x_t<T, Tc>(plan, A, A_hat, timings);
 	  scale_xyz[0] = 1;
 	  scale_xyz[1] = 0;
@@ -924,13 +929,6 @@ void accfft_grad_t(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXYZ,
 
     /* Backward transform */
     accfft_execute_c2r_x_t<Tc, T>(plan, A_hat, A_x, timings);
-    // if(procid == 0) {
-    //   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
-    //   double err = 0;
-    //   for(int i = 0; i < N_local; ++i)
-    //     err += A_x[i] - A[i];
-    //   std::cout << "err = " << err << std::endl;
-    // }
   }
   /* Multiply y Wave Numbers */
   if (XYZ[1]) {
