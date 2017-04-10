@@ -293,7 +293,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 #endif
 
     // fplan_x
-    PCOUT << "osize_x[0] = " << osize_x[0] << " osize_x[1] = " << osize_x[1] << " osize_x[2] = " << osize_x[2] << std::endl;
+    // PCOUT << "osize_x[0] = " << osize_x[0] << " osize_x[1] = " << osize_x[1] << " osize_x[2] = " << osize_x[2] << std::endl;
 		plan->fplan_x = fftwf_plan_many_dft_r2c(1, &n[0],
 		    osize_x[0], //int rank, const int *n, int howmany
 		    dummy_data, NULL,         //double *in, const int *inembed,
@@ -1314,7 +1314,6 @@ void accfft_execute(accfft_plantf* plan, int direction, float * data,
 	int procid = plan->procid;
 	double fft_time = 0;
 	double timings[5] = { 0 };
-  PCOUT <<"in executef\n";
 
 	// 1D Decomposition
 	int *osize_0 = plan->osize_0, *ostart_0 = plan->ostart_0;
