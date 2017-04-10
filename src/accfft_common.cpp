@@ -72,7 +72,7 @@ int dfft_get_local_size_t(int N0, int N1, int tuple, int * isize, int * istart,
 		isize[1] *= (int) isize[1] > 0;
 		istart[1] = N1 - isize[1];
 	}
-
+#ifdef VERBOSE2
 	if (VERBOSE >= 2) {
 		for (int r = 0; r < np[0]; r++)
 			for (int c = 0; c < np[1]; c++) {
@@ -84,6 +84,7 @@ int dfft_get_local_size_t(int N0, int N1, int tuple, int * isize, int * istart,
 							<< " istart[2]= " << istart[2] << std::endl;
 			}
 	}
+#endif
 	int alloc_local = isize[0] * isize[1] * isize[2] * sizeof(T);
 
 	return alloc_local;
@@ -175,6 +176,12 @@ int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
   ostart_xi[1] = -1<<8; // starts have no meaning in this approach
   ostart_xi[2] = -1<<8;
 
+  size_t tmp = isize[0] * isize[1]*isize[2];
+  if (tmp > 2147483647){
+    std::cout << "! Integer overflow detected in AccFFT. Try running on more processors\n";
+    std::cerr << "! Integer overflow detected in AccFFT. Try running on more processors\n";
+    return -1;
+  }
 
 	//isize[0]=osize_0[0];
 	//isize[1]=osize_0[1];
