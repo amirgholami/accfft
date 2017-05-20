@@ -129,41 +129,41 @@ public:
 };
 
 void mytestfunctiondouble();
-template<typename T> void transpose_v5(T_Plan<T>* T_plan, T * inout,
-		double *timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
-template<typename T> void transpose_v6(T_Plan<T>* T_plan, T * inout,
-		double *timings, unsigned flags = 0, int howmany = 1); // INPLACE local transpose + alltoallv+local transpose
+template<typename T> void transpose_v5(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void transpose_v6(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, unsigned flags = 0, int howmany = 1); // INPLACE local transpose + alltoallv+local transpose
 // note that tag is not needed here as the plan comm with mpialltoall is used
-template<typename T> void transpose_v7(T_Plan<T>* T_plan, T * inout,
-		double *timings, int kway, unsigned flags = 0, int howmany = 1); // INPLACE local transpose + paralltoallv+local transpose
+template<typename T> void transpose_v7(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, int kway, unsigned flags = 0, int howmany = 1); // INPLACE local transpose + paralltoallv+local transpose
 // note that tag is not needed here as the plan comm with mpialltoall is used
-template<typename T> void transpose_v8(T_Plan<T>* T_plan, T * inout,
-		double *timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
-template<typename T> void fast_transpose_v1(T_Plan<T>* T_plan, T * inout,
-		double *timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
-template<typename T> void fast_transpose_v2(T_Plan<T>* T_plan, T * inout,
-		double *timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
-template<typename T> void fast_transpose_v3(T_Plan<T>* T_plan, T * inout,
-		double *timings, int kway, unsigned flags = 0, int howmany = 1,
+template<typename T> void transpose_v8(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v1(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v2(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v3(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, int kway, unsigned flags = 0, int howmany = 1,
 		int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
-template<typename T> void fast_transpose_v1_h(T_Plan<T>* T_plan, T * inout,
-		double *timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
-template<typename T> void fast_transpose_v2_h(T_Plan<T>* T_plan, T * inout,
-		double *timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
-template<typename T> void fast_transpose_v3_h(T_Plan<T>* T_plan, T * inout,
-		double *timings, int kway, unsigned flags = 0, int howmany = 1,
+template<typename T> void fast_transpose_v1_h(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v2_h(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+template<typename T> void fast_transpose_v3_h(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, int kway, unsigned flags = 0, int howmany = 1,
 		int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
 
-template<typename T> void fast_transpose_v(T_Plan<T>* T_plan, T * inout,
-		double *timings, int kway = 2, unsigned flags = 0, int howmany = 1,
+template<typename T> void fast_transpose_v(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, int kway = 2, unsigned flags = 0, int howmany = 1,
 		int tag = 0, int method = 1, int comm_test = 0);
-template<typename T> void fast_transpose_v_h(T_Plan<T>* T_plan, T * inout,
-		double *timings, int kway = 2, unsigned flags = 0, int howmany = 1,
+template<typename T> void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, int kway = 2, unsigned flags = 0, int howmany = 1,
 		int tag = 0, int method = 1, int comm_test = 0);
-template<typename T> void fast_transpose_v_i(T_Plan<T>* T_plan, T * inout,
-		double *timings, int kway = 2, unsigned flags = 0, int howmany = 1,
+template<typename T> void fast_transpose_v_i(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, int kway = 2, unsigned flags = 0, int howmany = 1,
 		int tag = 0, int method = -1); // INPLACE local transpose + mpiIsendIrecv+local transpose
-template<typename T> void fast_transpose_v_hi(T_Plan<T>* T_plan, T * inout,
-		double *timings, int kway = 2, unsigned flags = 0, int howmany = 1,
+template<typename T> void fast_transpose_v_hi(T_Plan<T>* __restrict T_plan, T * __restrict inout,
+		double * __restrict timings, int kway = 2, unsigned flags = 0, int howmany = 1,
 		int tag = 0, int method = -1); // INPLACE local transpose + mpiIsendIrecv+local transpose
 #endif

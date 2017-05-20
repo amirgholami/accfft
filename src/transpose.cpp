@@ -662,7 +662,7 @@ T_Plan<T>::~T_Plan() {
 
 // outplace local transpose
 template<typename T>
-void local_transpose(int r, int c, int n_tuples, T * in, T *out) {
+void local_transpose(int r, int c, int n_tuples, T * __restrict in, T * __restrict out) {
 
 	if (r == 0 || c == 0)
 		return;
@@ -679,8 +679,8 @@ void local_transpose(int r, int c, int n_tuples, T * in, T *out) {
 }
 // outplace local transpose multiple n_tuples for the last row
 template<typename T>
-void local_transpose(int r, int c, int n_tuples, int n_tuples2, T * in,
-		T *out) {
+void local_transpose(int r, int c, int n_tuples, int n_tuples2, T * __restrict in,
+		T * __restrict out) {
 
 	if (r == 0 || c == 0)
 		return;
@@ -704,8 +704,8 @@ void local_transpose(int r, int c, int n_tuples, int n_tuples2, T * in,
 }
 // outplace local transpose multiple n_tuples for the last col
 template<typename T>
-void local_transpose_col(int r, int c, int n_tuples, int n_tuples2, T * in,
-		T *out) {
+void local_transpose_col(int r, int c, int n_tuples, int n_tuples2, T * __restrict in,
+		T * __restrict out) {
 
 	if (r == 0 || c == 0)
 		return;
@@ -732,7 +732,7 @@ void local_transpose_col(int r, int c, int n_tuples, int n_tuples2, T * in,
 
 // in place local transpose
 template<typename T>
-void local_transpose(int r, int c, int n_tuples, T* A) {
+void local_transpose(int r, int c, int n_tuples, T* __restrict A) {
 	{  // new CPU code
 		size_t i_, j_;
 		T* buff = (T*) malloc(n_tuples * sizeof(T));
@@ -769,7 +769,7 @@ void local_transpose(int r, int c, int n_tuples, T* A) {
 }
 
 template<typename T>
-void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
+void fast_transpose_v_hi(T_Plan<T>* __restrict T_plan, T * __restrict data, double* __restrict timings, int kway,
 		unsigned flags, int howmany, int tag, int method) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -1004,7 +1004,7 @@ void fast_transpose_v_hi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 } // end fast_transpose_v1
 
 template<typename T>
-void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
+void fast_transpose_vi(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
 		unsigned flags, int howmany, int tag, int method) {
 
 	if (howmany > 1) {
@@ -1216,7 +1216,7 @@ void fast_transpose_vi(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 } // end fast_transpose_v1
 
 template<typename T>
-void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway,
+void fast_transpose_v(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
 		unsigned flags, int howmany, int tag, int method, int comm_test) {
 
 	if (howmany > 1) {
@@ -1457,7 +1457,7 @@ void fast_transpose_v(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 } // end fast_transpose_v1
 
 template<typename T>
-void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
+void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
 		unsigned flags, int howmany, int tag, int method, int comm_test) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -1741,7 +1741,7 @@ void fast_transpose_v_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 }  // end fast_transpose_v_h
 
 template<typename T>
-void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
+void fast_transpose_v1(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings,
 		unsigned flags, int howmany, int tag) {
 
 	if (howmany > 1) {
@@ -1970,7 +1970,7 @@ void fast_transpose_v1(T_Plan<T>* T_plan, T * data, double *timings,
 	return;
 } // end fast_transpose_v1
 template<typename T>
-void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
+void fast_transpose_v2(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings,
 		unsigned flags, int howmany, int tag) {
 
 	if (howmany > 1) {
@@ -2173,7 +2173,7 @@ void fast_transpose_v2(T_Plan<T>* T_plan, T * data, double *timings,
 	return;
 }  // end fast_transpose_v2
 template<typename T>
-void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
+void fast_transpose_v3(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
 		unsigned flags, int howmany, int tag) {
 
 	if (howmany > 1) {
@@ -2394,7 +2394,7 @@ void fast_transpose_v3(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 }  // end fast_transpose_v3
 
 template<typename T>
-void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
+void fast_transpose_v1_h(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings,
 		unsigned flags, int howmany, int tag) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -2657,7 +2657,7 @@ void fast_transpose_v1_h(T_Plan<T>* T_plan, T * data, double *timings,
 }  // end fast_transpose_v1_h
 
 template<typename T>
-void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
+void fast_transpose_v2_h(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings,
 		unsigned flags, int howmany, int tag) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -2902,7 +2902,7 @@ void fast_transpose_v2_h(T_Plan<T>* T_plan, T * data, double *timings,
 }  // end fast_transpose_v2_h
 
 template<typename T>
-void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
+void fast_transpose_v3_h(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
 		unsigned flags, int howmany, int tag) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -3147,7 +3147,7 @@ void fast_transpose_v3_h(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 }  // end fast_transpose_v3_h
 
 template<typename T>
-void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
+void transpose_v5(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, unsigned flags,
 		int howmany, int tag) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -3403,7 +3403,7 @@ void transpose_v5(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 } // end fast_transpose_v5
 
 template<typename T>
-void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
+void transpose_v6(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, unsigned flags,
 		int howmany) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
@@ -3633,7 +3633,7 @@ void transpose_v6(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
 } // end fast_transpose_v6
 
 template<typename T>
-void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
+void transpose_v7(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
 		unsigned flags, int howmany) {
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
@@ -3819,7 +3819,7 @@ void transpose_v7(T_Plan<T>* T_plan, T * data, double *timings, int kway,
 	return;
 } // end fast_transpose_v7
 template<typename T>
-void transpose_v8(T_Plan<T>* T_plan, T * data, double *timings, unsigned flags,
+void transpose_v8(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, unsigned flags,
 		int howmany, int tag) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
