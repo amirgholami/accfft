@@ -578,43 +578,43 @@ void T_Plan<T>::which_fast_method(T_Plan* T_plan, T* data, unsigned flags,
 }
 template<typename T>
 void T_Plan<T>::execute(T_Plan* T_plan, T* data, double *timings,
-		unsigned flags, int howmany, int tag) {
+		unsigned flags, int howmany, int tag, T* data_out) {
 
 	if (howmany == 1) {
 		if (method == 1 || method == 2 || method == 3)
 			fast_transpose_v(T_plan, (T*) data, timings, kway, flags, howmany,
-					tag, method);
+					tag, method, 0, (T*) data_out);
 		//if(method==1)
-		//  fast_transpose_v1(T_plan,(T*)data,timings,flags,howmany,tag);
+		//  fast_transpose_v1(T_plan,(T*)data,timings,flags,howmany,tag, (T*) data_out);
 		//if(method==2)
-		//  fast_transpose_v2(T_plan,(T*)data,timings,flags,howmany,tag);
+		//  fast_transpose_v2(T_plan,(T*)data,timings,flags,howmany,tag, (T*) data_out);
 		//if(method==3)
-		//  fast_transpose_v3(T_plan,(T*)data,timings,kway,flags,howmany,tag);
+		//  fast_transpose_v3(T_plan,(T*)data,timings,kway,flags,howmany,tag, (T*) data_out);
 		if (method == -1 || method == -2 || method == -3)
 			fast_transpose_vi(T_plan, (T*) data, timings, kway, flags, howmany,
-					tag, method);
+					tag, method, (T*) data_out);
 	} else {
 		if (method == 1 || method == 2 || method == 3)    //snafu
 			fast_transpose_v_h(T_plan, (T*) data, timings, kway, flags, howmany,
-					tag, method);
+					tag, method, 0, (T*) data_out);
 		//if(method==1)
-		//  fast_transpose_v1_h(T_plan,(T*)data,timings,flags,howmany,tag);
+		//  fast_transpose_v1_h(T_plan,(T*)data,timings,flags,howmany,tag, (T*) data_out);
 		//if(method==2)
-		//  fast_transpose_v2_h(T_plan,(T*)data,timings,flags,howmany,tag);
+		//  fast_transpose_v2_h(T_plan,(T*)data,timings,flags,howmany,tag, (T*) data_out);
 		//if(method==3)
-		//  fast_transpose_v3_h(T_plan,(T*)data,timings,kway,flags,howmany,tag);
+		//  fast_transpose_v3_h(T_plan,(T*)data,timings,kway,flags,howmany,tag, (T*) data_out);
 		if (method == -1 || method == -2 || method == -3)
 			fast_transpose_v_hi(T_plan, (T*) data, timings, kway, flags,
-					howmany, tag, method);
+					howmany, tag, method, (T*) data_out);
 	}
 	if (method == 5)
-		transpose_v5(T_plan, (T*) data, timings, flags, howmany, tag);
+		transpose_v5(T_plan, (T*) data, timings, flags, howmany, tag, (T*) data_out);
 	if (method == 6)
-		transpose_v6(T_plan, (T*) data, timings, flags, howmany);
+		transpose_v6(T_plan, (T*) data, timings, flags, howmany, (T*) data_out);
 	if (method == 7)
-		transpose_v7(T_plan, (T*) data, timings, kway, flags, howmany);
+		transpose_v7(T_plan, (T*) data, timings, kway, flags, howmany, (T*) data_out);
 	if (method == 8)
-		transpose_v8(T_plan, (T*) data, timings, flags, howmany, tag);
+		transpose_v8(T_plan, (T*) data, timings, flags, howmany, tag, (T*) data_out);
 
 	return;
 }
@@ -770,12 +770,16 @@ void local_transpose(int r, int c, int n_tuples, T* __restrict A) {
 
 template<typename T>
 void fast_transpose_v_hi(T_Plan<T>* __restrict T_plan, T * __restrict data, double* __restrict timings, int kway,
-		unsigned flags, int howmany, int tag, int method) {
+		unsigned flags, int howmany, int tag, int method, T* __restrict data_out) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -1005,7 +1009,7 @@ void fast_transpose_v_hi(T_Plan<T>* __restrict T_plan, T * __restrict data, doub
 
 template<typename T>
 void fast_transpose_vi(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
-		unsigned flags, int howmany, int tag, int method) {
+		unsigned flags, int howmany, int tag, int method, T* __restrict data_out) {
 
 	if (howmany > 1) {
 		return fast_transpose_v_hi(T_plan, data, timings, kway, flags, howmany,
@@ -1015,6 +1019,10 @@ void fast_transpose_vi(T_Plan<T>* __restrict T_plan, T * __restrict data, double
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -1217,7 +1225,7 @@ void fast_transpose_vi(T_Plan<T>* __restrict T_plan, T * __restrict data, double
 
 template<typename T>
 void fast_transpose_v(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
-		unsigned flags, int howmany, int tag, int method, int comm_test) {
+		unsigned flags, int howmany, int tag, int method, int comm_test, T* __restrict data_out) {
 
 	if (howmany > 1) {
 		return fast_transpose_v1_h(T_plan, data, timings, flags, howmany, tag);
@@ -1277,7 +1285,10 @@ void fast_transpose_v(T_Plan<T>* __restrict T_plan, T * __restrict data, double 
 		local_transpose(local_n1, N[0], n_tuples, data);
 	}
 	if (nprocs == 1 && Flags[0] == 0 && Flags[1] == 0) {
-		local_transpose(N[0], N[1], n_tuples, data);
+    if(data_out == NULL)
+		  local_transpose(N[0], N[1], n_tuples, data);
+    else
+		  local_transpose(N[0], N[1], n_tuples, data, data_out);
 	}
 	if (nprocs == 1) { // Transpose is done!
 		shuffle_time += MPI_Wtime();
@@ -1422,9 +1433,10 @@ void fast_transpose_v(T_Plan<T>* __restrict T_plan, T * __restrict data, double 
 	reshuffle_time -= MPI_Wtime();
 	ptr = 0;
 	if (!comm_test)
-		if (Flags[1] == 0)
+		if (Flags[1] == 0 && data_out == NULL)
 			local_transpose(N[0], local_n1, n_tuples, send_recv, data);
-
+    else if (Flags[1] == 0 && data_out != NULL)
+			local_transpose(N[0], local_n1, n_tuples, send_recv, data_out);
 	reshuffle_time += MPI_Wtime();
 
 #ifdef VERBOSE2
@@ -1454,11 +1466,11 @@ void fast_transpose_v(T_Plan<T>* __restrict T_plan, T * __restrict data, double 
 	timings[2] += comm_time;
 	timings[3] += reshuffle_time;
 	return;
-} // end fast_transpose_v1
+} // end fast_transpose_v
 
 template<typename T>
 void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
-		unsigned flags, int howmany, int tag, int method, int comm_test) {
+		unsigned flags, int howmany, int tag, int method, int comm_test, T* __restrict data_out) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
@@ -1523,8 +1535,12 @@ void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doubl
 			local_transpose(local_n1, N[0], n_tuples, &data[h * idist]);
 	}
 	if (nprocs == 1 && Flags[0] == 0 && Flags[1] == 0) {
-		for (int h = 0; h < howmany; h++)
-			local_transpose(N[0], N[1], n_tuples, &data[h * idist]);
+    if(data_out == NULL)
+		  for (int h = 0; h < howmany; h++)
+        local_transpose(N[0], N[1], n_tuples, &data[h * idist]);
+    else if (data_out != NULL)
+		  for (int h = 0; h < howmany; h++)
+        local_transpose(N[0], N[1], n_tuples, &data[h * idist], &data_out[h * idist]);
 	}
 	if (nprocs == 1) { // Transpose is done!
 		shuffle_time += MPI_Wtime();
@@ -1676,6 +1692,9 @@ void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doubl
 	//PCOUT<<" ============================================= "<<std::endl;
 	reshuffle_time -= MPI_Wtime();
 	ptr = 0;
+  T* alias = data;
+  if(Flags[1] == 0 && data_out != NULL)
+    alias = buffer_2;
 	if (!comm_test)
 		for (int proc = 0; proc < nprocs_0; ++proc)
 			for (int h = 0; h < howmany; ++h) {
@@ -1690,7 +1709,7 @@ void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doubl
 				//  //}
 				//}
 				memcpy(
-						&data[h * odist
+						&alias[h * odist
 								+ local_0_start_proc[proc] * local_n1 * n_tuples],
 						&send_recv[ptr],
 						local_n1 * sizeof(T) * n_tuples * local_n0_proc[proc]);
@@ -1701,9 +1720,13 @@ void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doubl
 	// Right now the data is in transposed out format.
 	// If the user did not want this layout, transpose again.
 	if (!comm_test)
-		if (Flags[1] == 0) {
+		if (Flags[1] == 0 && data_out == NULL) {
 			for (int h = 0; h < howmany; h++)
 				local_transpose(N[0], local_n1, n_tuples, &data[h * odist]);
+		}
+    else if (Flags[1] == 0 && data_out != NULL) {
+			for (int h = 0; h < howmany; h++)
+				local_transpose(N[0], local_n1, n_tuples, &alias[h * odist], &data_out[h*odist]);
 		}
 
 	reshuffle_time += MPI_Wtime();
@@ -1742,7 +1765,7 @@ void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doubl
 
 template<typename T>
 void fast_transpose_v1(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings,
-		unsigned flags, int howmany, int tag) {
+		unsigned flags, int howmany, int tag, T* __restrict data_out) {
 
 	if (howmany > 1) {
 		return fast_transpose_v1_h(T_plan, data, timings, flags, howmany, tag);
@@ -1755,6 +1778,10 @@ void fast_transpose_v1(T_Plan<T>* __restrict T_plan, T * __restrict data, double
 		transpose_v5(T_plan, (T*) data, timings, flags, howmany, tag);
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -1971,7 +1998,7 @@ void fast_transpose_v1(T_Plan<T>* __restrict T_plan, T * __restrict data, double
 } // end fast_transpose_v1
 template<typename T>
 void fast_transpose_v2(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings,
-		unsigned flags, int howmany, int tag) {
+		unsigned flags, int howmany, int tag, T* __restrict data_out) {
 
 	if (howmany > 1) {
 		return fast_transpose_v2_h(T_plan, data, timings, flags, howmany, tag);
@@ -1984,6 +2011,10 @@ void fast_transpose_v2(T_Plan<T>* __restrict T_plan, T * __restrict data, double
 		transpose_v6(T_plan, (T*) data, timings, flags, howmany);
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -2174,7 +2205,7 @@ void fast_transpose_v2(T_Plan<T>* __restrict T_plan, T * __restrict data, double
 }  // end fast_transpose_v2
 template<typename T>
 void fast_transpose_v3(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
-		unsigned flags, int howmany, int tag) {
+		unsigned flags, int howmany, int tag, T* __restrict data_out) {
 
 	if (howmany > 1) {
 		return fast_transpose_v3_h(T_plan, data, timings, kway, flags, howmany,
@@ -2188,6 +2219,10 @@ void fast_transpose_v3(T_Plan<T>* __restrict T_plan, T * __restrict data, double
 		transpose_v7(T_plan, (T*) data, timings, kway, flags, howmany);
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -2395,7 +2430,7 @@ void fast_transpose_v3(T_Plan<T>* __restrict T_plan, T * __restrict data, double
 
 template<typename T>
 void fast_transpose_v1_h(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings,
-		unsigned flags, int howmany, int tag) {
+		unsigned flags, int howmany, int tag, T* __restrict data_out) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
@@ -2408,6 +2443,10 @@ void fast_transpose_v1_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doub
 		transpose_v5(T_plan, (T*) data, timings, flags, howmany, tag);
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -2658,7 +2697,7 @@ void fast_transpose_v1_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doub
 
 template<typename T>
 void fast_transpose_v2_h(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings,
-		unsigned flags, int howmany, int tag) {
+		unsigned flags, int howmany, int tag, T* __restrict data_out) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
@@ -2671,6 +2710,10 @@ void fast_transpose_v2_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doub
 		transpose_v6(T_plan, (T*) data, timings, flags, howmany);
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -2903,7 +2946,7 @@ void fast_transpose_v2_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doub
 
 template<typename T>
 void fast_transpose_v3_h(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
-		unsigned flags, int howmany, int tag) {
+		unsigned flags, int howmany, int tag, T* __restrict data_out) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
@@ -2917,6 +2960,10 @@ void fast_transpose_v3_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doub
 		transpose_v7(T_plan, (T*) data, timings, kway, flags, howmany);
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -3148,12 +3195,16 @@ void fast_transpose_v3_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doub
 
 template<typename T>
 void transpose_v5(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, unsigned flags,
-		int howmany, int tag) {
+		int howmany, int tag, T* __restrict data_out) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -3404,12 +3455,16 @@ void transpose_v5(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __
 
 template<typename T>
 void transpose_v6(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, unsigned flags,
-		int howmany) {
+		int howmany, T* __restrict data_out) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;
@@ -3634,11 +3689,15 @@ void transpose_v6(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __
 
 template<typename T>
 void transpose_v7(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, int kway,
-		unsigned flags, int howmany) {
+		unsigned flags, int howmany, T* __restrict data_out) {
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
@@ -3820,12 +3879,16 @@ void transpose_v7(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __
 } // end fast_transpose_v7
 template<typename T>
 void transpose_v8(T_Plan<T>* __restrict T_plan, T * __restrict data, double * __restrict timings, unsigned flags,
-		int howmany, int tag) {
+		int howmany, int tag, T* __restrict data_out) {
 
 	std::bitset < 8 > Flags(flags); // 1 Transposed in, 2 Transposed out
 	if (Flags[1] == 1 && Flags[0] == 0 && T_plan->nprocs == 1) { // If Flags==Transposed_Out return
 		return;
 	}
+  if(Flags[1] == 0 && data_out !=NULL) {
+    std::cout << "operation not supported\n";
+    return;
+  }
 	timings[0] -= MPI_Wtime();
 	int nprocs, procid;
 	int nprocs_0, nprocs_1;

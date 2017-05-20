@@ -1068,20 +1068,19 @@ void accfft_execute_yf(accfft_plantf* plan, int direction, float * data,
   int64_t N_local = plan->isize[0] * plan->isize[1] * plan->isize[2];
 
 	if (direction == -1) {
-    timings[0] += -MPI_Wtime();
-    memcpy(cwork, data, N_local * sizeof(float));
-    timings[0] += +MPI_Wtime();
+    // timings[0] += -MPI_Wtime();
+    // memcpy(cwork, data, N_local * sizeof(float));
+    // timings[0] += +MPI_Wtime();
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
 		// Perform N0/P0 transpose
-    if(0)
-		if (!plan->oneD) {
-			plan->T_plan_y->execute(plan->T_plan_y, cwork, timings, 2,
-					osize_0[0], coords[0]);
-		}
-		plan->T_plan_y->execute(plan->T_plan_y, cwork, timings, 0,
-				plan->osize_y[0], coords[0]);
+		// if (!plan->oneD) {
+		//   plan->T_plan_y->execute(plan->T_plan_y, cwork, timings, 2,
+		//       osize_0[0], coords[0]);
+		// }
+		plan->T_plan_y->execute(plan->T_plan_y, data, timings, 0,
+				plan->osize_y[0], coords[0], cwork);
 		/**************************************************************/
 		/*******************  N0/P0 x N1 x N2/P1 **********************/
 		/**************************************************************/
@@ -1099,18 +1098,17 @@ void accfft_execute_yf(accfft_plantf* plan, int direction, float * data,
 					(float*) cwork);
 		fft_time += MPI_Wtime();
 
-    if(0)
-		if (!plan->oneD) {
-			plan->T_plan_yi->execute(plan->T_plan_yi, cwork, timings, 1,
-					osize_1i[0], coords[0]);
-		}
+		// if (!plan->oneD) {
+		//   plan->T_plan_yi->execute(plan->T_plan_yi, cwork, timings, 1,
+		//       osize_1i[0], coords[0]);
+		// }
 
 		plan->T_plan_yi->execute(plan->T_plan_yi, cwork, timings, 0,
-				plan->osize_yi[0], coords[0]);
+				plan->osize_yi[0], coords[0], data_out);
 
-    timings[0] += -MPI_Wtime();
-    memcpy(data_out, cwork, N_local * sizeof(float));
-    timings[0] += +MPI_Wtime();
+    // timings[0] += -MPI_Wtime();
+    // memcpy(data_out, cwork, N_local * sizeof(float));
+    // timings[0] += +MPI_Wtime();
 		//MPI_Barrier(plan->c_comm);
 	}
 
@@ -1190,13 +1188,14 @@ void accfft_execute_xf(accfft_plantf* plan, int direction, float * data,
   float* cwork = plan->Mem_mgr->buffer_3;
   float alpha = 1;
 	if (direction == -1) {
-    timings[0] += -MPI_Wtime();
-    memcpy(cwork, data, N_local * sizeof(float));
-    timings[0] += +MPI_Wtime();
+    // timings[0] += -MPI_Wtime();
+    // memcpy(cwork, data, N_local * sizeof(float));
+    // timings[0] += +MPI_Wtime();
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
-    plan->T_plan_x->execute(plan->T_plan_x, cwork, timings);
+    // plan->T_plan_x->execute(plan->T_plan_x, cwork, timings);
+    plan->T_plan_x->execute(plan->T_plan_x, data, timings, 0, 1, 0, cwork);
 		/**************************************************************/
 		/****************  (N1/P1 x N2)/P0 x N0 x 1 *******************/
 		/**************************************************************/
@@ -1215,14 +1214,15 @@ void accfft_execute_xf(accfft_plantf* plan, int direction, float * data,
         (float*) data);
     fft_time += MPI_Wtime();
 
-    plan->T_plan_xi->execute(plan->T_plan_xi, data, timings);
+    // plan->T_plan_xi->execute(plan->T_plan_xi, data, timings);
+    plan->T_plan_xi->execute(plan->T_plan_xi, data, timings, 0, 1, 0, data_out);
 		/**************************************************************/
 		/*******************  N0/P0 x N1/P1 x N2 **********************/
 		/**************************************************************/
 
-    timings[0] += -MPI_Wtime();
-    memcpy(data_out, data, N_local * sizeof(float));
-    timings[0] += +MPI_Wtime();
+    // timings[0] += -MPI_Wtime();
+    // memcpy(data_out, data, N_local * sizeof(float));
+    // timings[0] += +MPI_Wtime();
 	}
 	timings[4] += fft_time;
 	if (timer == NULL) {

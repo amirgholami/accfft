@@ -61,15 +61,15 @@ public:
 	void which_fast_method(T_Plan<T>*, T*, unsigned flags = 2, int howmany = 1,
 			int tag = 0);
 	void execute(T_Plan<T>*, T*, double*, unsigned flags = 0, int howmany = 1,
-			int tag = 0);
+			int tag = 0, T* __restrict data_out = NULL);
 
 	ptrdiff_t N[2];
 	ptrdiff_t n_tuples;
 	// Other procs local distribution
-	ptrdiff_t *local_n0_proc;
-	ptrdiff_t *local_n1_proc;
-	ptrdiff_t *local_0_start_proc;
-	ptrdiff_t *local_1_start_proc;
+	ptrdiff_t *local_n0_proc; // N0/p portion owned before transpose
+	ptrdiff_t *local_n1_proc; // N1/p portion owned after transpose
+	ptrdiff_t *local_0_start_proc; // global starting index n0 before transpose
+	ptrdiff_t *local_1_start_proc; // global starting index in n1 before transpose
 
 	// My local distribution
 	ptrdiff_t local_n0;
@@ -130,40 +130,40 @@ public:
 
 void mytestfunctiondouble();
 template<typename T> void transpose_v5(T_Plan<T>* __restrict T_plan, T * __restrict inout,
-		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void transpose_v6(T_Plan<T>* __restrict T_plan, T * __restrict inout,
-		double * __restrict timings, unsigned flags = 0, int howmany = 1); // INPLACE local transpose + alltoallv+local transpose
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, T* __restrict data_out = NULL); // INPLACE local transpose + alltoallv+local transpose
 // note that tag is not needed here as the plan comm with mpialltoall is used
 template<typename T> void transpose_v7(T_Plan<T>* __restrict T_plan, T * __restrict inout,
-		double * __restrict timings, int kway, unsigned flags = 0, int howmany = 1); // INPLACE local transpose + paralltoallv+local transpose
+		double * __restrict timings, int kway, unsigned flags = 0, int howmany = 1, T* __restrict data_out = NULL); // INPLACE local transpose + paralltoallv+local transpose
 // note that tag is not needed here as the plan comm with mpialltoall is used
 template<typename T> void transpose_v8(T_Plan<T>* __restrict T_plan, T * __restrict inout,
-		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v1(T_Plan<T>* __restrict T_plan, T * __restrict inout,
-		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v2(T_Plan<T>* __restrict T_plan, T * __restrict inout,
-		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v3(T_Plan<T>* __restrict T_plan, T * __restrict inout,
 		double * __restrict timings, int kway, unsigned flags = 0, int howmany = 1,
-		int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		int tag = 0, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v1_h(T_Plan<T>* __restrict T_plan, T * __restrict inout,
-		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v2_h(T_Plan<T>* __restrict T_plan, T * __restrict inout,
-		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		double * __restrict timings, unsigned flags = 0, int howmany = 1, int tag = 0, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v3_h(T_Plan<T>* __restrict T_plan, T * __restrict inout,
 		double * __restrict timings, int kway, unsigned flags = 0, int howmany = 1,
-		int tag = 0); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		int tag = 0, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 
 template<typename T> void fast_transpose_v(T_Plan<T>* __restrict T_plan, T * __restrict inout,
 		double * __restrict timings, int kway = 2, unsigned flags = 0, int howmany = 1,
-		int tag = 0, int method = 1, int comm_test = 0);
+		int tag = 0, int method = 1, int comm_test = 0, T* __restrict data_out = NULL);
 template<typename T> void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict inout,
 		double * __restrict timings, int kway = 2, unsigned flags = 0, int howmany = 1,
-		int tag = 0, int method = 1, int comm_test = 0);
+		int tag = 0, int method = 1, int comm_test = 0, T* __restrict data_out = NULL);
 template<typename T> void fast_transpose_v_i(T_Plan<T>* __restrict T_plan, T * __restrict inout,
 		double * __restrict timings, int kway = 2, unsigned flags = 0, int howmany = 1,
-		int tag = 0, int method = -1); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		int tag = 0, int method = -1, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 template<typename T> void fast_transpose_v_hi(T_Plan<T>* __restrict T_plan, T * __restrict inout,
 		double * __restrict timings, int kway = 2, unsigned flags = 0, int howmany = 1,
-		int tag = 0, int method = -1); // INPLACE local transpose + mpiIsendIrecv+local transpose
+		int tag = 0, int method = -1, T* __restrict data_out = NULL); // INPLACE local transpose + mpiIsendIrecv+local transpose
 #endif
