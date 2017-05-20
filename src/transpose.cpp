@@ -1693,29 +1693,30 @@ void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doubl
 	reshuffle_time -= MPI_Wtime();
 	ptr = 0;
   T* alias = data;
-  if(Flags[1] == 0 && data_out != NULL)
-    alias = buffer_2;
-	if (!comm_test)
-		for (int proc = 0; proc < nprocs_0; ++proc)
-			for (int h = 0; h < howmany; ++h) {
-				//for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
-				//  memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
-				//  //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
-				//  ptr+=n_tuples*local_n1;
-				//  //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
-				//  //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
-				//  //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
-				//  //  ptr+=n_tuples;
-				//  //}
-				//}
-				memcpy(
-						&alias[h * odist
-								+ local_0_start_proc[proc] * local_n1 * n_tuples],
-						&send_recv[ptr],
-						local_n1 * sizeof(T) * n_tuples * local_n0_proc[proc]);
-				ptr += n_tuples * local_n1 * local_n0_proc[proc];
+  // if(Flags[1] == 0 && data_out != NULL)
+    // alias = buffer_2;
+	if (!comm_test && data_out==NULL)
+    local_transpose(nprocs_0, howmany, n_tuples*local_n0_proc[0]*local_n1, n_tuples*T_plan->last_local_n0*local_n1, send_recv, alias);
+		//for (int proc = 0; proc < nprocs_0; ++proc)
+		//	for (int h = 0; h < howmany; ++h) {
+		//		//for(int i=local_0_start_proc[proc];i<local_0_start_proc[proc]+local_n0_proc[proc];++i){
+		//		//  memcpy(&data[h*odist+(i*local_n1)*n_tuples],&send_recv[ptr],local_n1*sizeof(T)*n_tuples);
+		//		//  //std::cout<<"proc= "<<proc<<" h= "<<h<<" i=("<<i<<")  data_ptr= "<<h*odist+(i*local_n1)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*local_n1_proc[proc] <<std::endl;
+		//		//  ptr+=n_tuples*local_n1;
+		//		//  //for(int j=0*local_1_start_proc[proc];j<0*local_1_start_proc[proc]+local_n1;++j){
+		//		//  //  memcpy(&data[h*odist+(i*local_n1+j)*n_tuples],&send_recv[ptr],sizeof(T)*n_tuples);
+		//		//  //  //std::cout<<"proc= "<<proc<<" h= "<<h<<" (i,j)=("<<i<<","<<j<<")  data_ptr= "<<h*idist+(i*local_n1+j)*n_tuples<< " ptr= "<<ptr <<" cpy= "<<n_tuples*T_plan->local_n1_proc[0] <<std::endl;
+		//		//  //  ptr+=n_tuples;
+		//		//  //}
+		//		//}
+		//		memcpy(
+		//				&alias[h * odist
+		//						+ local_0_start_proc[proc] * local_n1 * n_tuples],
+		//				&send_recv[ptr],
+		//				local_n1 * sizeof(T) * n_tuples * local_n0_proc[proc]);
+		//		ptr += n_tuples * local_n1 * local_n0_proc[proc];
 
-			}
+		//	}
 
 	// Right now the data is in transposed out format.
 	// If the user did not want this layout, transpose again.
@@ -1725,8 +1726,19 @@ void fast_transpose_v_h(T_Plan<T>* __restrict T_plan, T * __restrict data, doubl
 				local_transpose(N[0], local_n1, n_tuples, &data[h * odist]);
 		}
     else if (Flags[1] == 0 && data_out != NULL) {
-			for (int h = 0; h < howmany; h++)
-				local_transpose(N[0], local_n1, n_tuples, &alias[h * odist], &data_out[h*odist]);
+      // for (int h = 0; h < howmany; h++)
+        // local_transpose(N[0], local_n1, n_tuples, &alias[h * odist], &data_out[h*odist]);
+      ptr = 0;
+	    for (int h = 0; h < howmany; ++h)
+        for(int j = 0; j < local_n1; ++j){
+		      for (int proc = 0; proc < nprocs_0; ++proc) {
+            for(int i = 0; i < local_n0_proc[proc]; ++i){
+              int off = (h)* local_n1 * local_n0_proc[proc]*n_tuples+roffset_proc[proc]*howmany;
+              memcpy(&data_out[ptr], &send_recv[off+(i*local_n1+j)*n_tuples], n_tuples* sizeof(T));
+              ptr += n_tuples;
+            }
+          }
+        }
 		}
 
 	reshuffle_time += MPI_Wtime();
