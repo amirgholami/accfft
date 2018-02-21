@@ -121,12 +121,15 @@ install(TARGETS accfft_utils DESTINATION lib)
 # ##########
 if(BUILD_GPU)
   find_package(CUDA REQUIRED)
-  include(FindCUDA)
+
+  if(NOT CUDA_NVCC_FLAGS)
+    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_20,code=sm_20)
+    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
+    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_35,code=sm_35)
+  endif()
+
   list(APPEND CUDA_NVCC_FLAGS --compiler-options -fno-strict-aliasing -lineinfo)
-  list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_20,code=sm_20)
-  list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
-  list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_35,code=sm_35)
-  
+
   # libaccfft_gpu source files list
   set(libaccfft_gpu_SRCS
     src/transpose_gpu.cpp
