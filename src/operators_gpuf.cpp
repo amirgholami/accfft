@@ -33,6 +33,32 @@
 #include "operators_gpu.txx"
 
 /* Single Precision Instantiation */
+template<> void grad_mult_wave_numberx_gpu<Complexf>(Complexf* wA, Complexf* A,
+                                                     int* N, int * osize, int * ostart, std::bitset<3> xyz) {
+    grad_mult_wave_numberx_gpu_cf(wA, A, N, osize, ostart, xyz);
+}
+template<> void grad_mult_wave_numbery_gpu<Complexf>(Complexf* wA, Complexf* A,
+                                                     int* N, int * osize, int * ostart, std::bitset<3> xyz) {
+    grad_mult_wave_numbery_gpu_cf(wA, A, N, osize, ostart, xyz);
+}
+template<> void grad_mult_wave_numberz_gpu<Complexf>(Complexf* wA, Complexf* A,
+                                                     int* N, int * osize, int * ostart, std::bitset<3> xyz) {
+    grad_mult_wave_numberz_gpu_cf(wA, A, N, osize, ostart, xyz);
+}
+template<> void laplace_mult_wave_number_gpu<Complexf>(Complexf* wA,
+                                                       Complexf* A, int* N, int * osize, int * ostart) {
+    laplace_mult_wave_number_gpu_cf(wA, A, N, osize, ostart);
+}
+template<> void biharmonic_mult_wave_number_gpu<Complexf>(Complexf* wA,
+                                                          Complexf* A, int* N, int * osize, int * ostart) {
+    biharmonic_mult_wave_number_gpu_cf(wA, A, N, osize, ostart);
+}
+template<> void daxpy_gpu<float>(const long long int n, const float alpha,
+                                 float* x, float* y) {
+    daxpy_gpu_cf(n, alpha, x, y);
+}
+
+/* Single Precision Instantiation */
 template void accfft_grad_gpu_t<float, accfft_plan_gpuf>(float* A_x, float* A_y,
 		float *A_z, float* A, accfft_plan_gpuf *plan, std::bitset<3> *pXYZ,
 		double* timer);
