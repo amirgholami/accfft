@@ -26,6 +26,7 @@
 #include "transpose.h"
 #include "accfftf.h"
 #include "accfft_common.h"
+#include "dtypes.h"
 #define VERBOSE 0
 #define PCOUT if(procid==0) std::cout
 #ifdef ACCFFT_MKL
@@ -397,7 +398,7 @@ accfft_planf* accfft_plan_dft_3d_r2cf(int * n, float * data, float * data_out,
 
 		MPI_Bcast(&plan->T_plan_1->method, 1, MPI_INT, 0, c_comm);
 		MPI_Bcast(&plan->T_plan_1->kway, 1, MPI_INT, 0, c_comm);
-		MPI_Bcast(&plan->T_plan_1->kway_async, 1, MPI::BOOL, 0, c_comm);
+		MPI_Bcast(&plan->T_plan_1->kway_async, 1, par::Mpi_datatype<bool>::value(), 0, c_comm);
 
 		plan->T_plan_1->method = plan->T_plan_1->method;
 		plan->T_plan_2->method = plan->T_plan_1->method;
@@ -682,7 +683,7 @@ accfft_planf* accfft_plan_dft_3d_c2cf(int * n, Complexf * data,
 
 		MPI_Bcast(&plan->T_plan_1->method, 1, MPI_INT, 0, c_comm);
 		MPI_Bcast(&plan->T_plan_1->kway, 1, MPI_INT, 0, c_comm);
-		MPI_Bcast(&plan->T_plan_1->kway_async, 1, MPI::BOOL, 0, c_comm);
+		MPI_Bcast(&plan->T_plan_1->kway_async, 1, par::Mpi_datatype<bool>::value(), 0, c_comm);
 
 		plan->T_plan_1->method = plan->T_plan_1->method;
 		plan->T_plan_2->method = plan->T_plan_1->method;
