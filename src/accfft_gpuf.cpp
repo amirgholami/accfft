@@ -34,6 +34,7 @@
 #include <cuda.h>
 #include <cufft.h>
 #include "accfft_common.h"
+#include "dtypes.h"
 #define VERBOSE 0
 
 /**
@@ -389,7 +390,7 @@ accfft_plan_gpuf* accfft_plan_dft_3d_r2c_gpuf(int * n, float * data_d,
 
 		MPI_Bcast(&plan->T_plan_1->method, 1, MPI_INT, 0, c_comm);
 		MPI_Bcast(&plan->T_plan_1->kway, 1, MPI_INT, 0, c_comm);
-		MPI_Bcast(&plan->T_plan_1->kway_async, 1, MPI::BOOL, 0, c_comm);
+		MPI_Bcast(&plan->T_plan_1->kway_async, 1, par::Mpi_datatype<bool>::value(), 0, c_comm);
 
 		checkCuda_accfft(cudaDeviceSynchronize());
 		plan->T_plan_1->method = plan->T_plan_1->method;
@@ -897,7 +898,7 @@ accfft_plan_gpuf* accfft_plan_dft_3d_c2c_gpuf(int * n, Complexf * data_d,
 
 		MPI_Bcast(&plan->T_plan_1->method, 1, MPI_INT, 0, c_comm);
 		MPI_Bcast(&plan->T_plan_1->kway, 1, MPI_INT, 0, c_comm);
-		MPI_Bcast(&plan->T_plan_1->kway_async, 1, MPI::BOOL, 0, c_comm);
+		MPI_Bcast(&plan->T_plan_1->kway_async, 1, par::Mpi_datatype<bool>::value(), 0, c_comm);
 		checkCuda_accfft(cudaDeviceSynchronize());
 
 		plan->T_plan_1->method = plan->T_plan_1->method;

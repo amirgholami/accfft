@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include "accfft.h"
 #include "accfft_common.h"
+#include "dtypes.h"
 #ifdef ACCFFT_MKL
 #include "mkl.h"
 #endif
@@ -444,7 +445,7 @@ accfft_plan* accfft_plan_dft_3d_r2c(int * n, double * data, double * data_out,
 
 		MPI_Bcast(&plan->T_plan_1->method, 1, MPI_INT, 0, c_comm);
 		MPI_Bcast(&plan->T_plan_1->kway, 1, MPI_INT, 0, c_comm);
-		MPI_Bcast(&plan->T_plan_1->kway_async, 1, MPI::BOOL, 0, c_comm);
+		MPI_Bcast(&plan->T_plan_1->kway_async, 1, par::Mpi_datatype<bool>::value(), 0, c_comm);
 
 		plan->T_plan_1->method = plan->T_plan_1->method;
 		plan->T_plan_2->method = plan->T_plan_1->method;
@@ -728,7 +729,7 @@ accfft_plan* accfft_plan_dft_3d_c2c(int * n, Complex * data, Complex * data_out,
 
 		MPI_Bcast(&plan->T_plan_1->method, 1, MPI_INT, 0, c_comm);
 		MPI_Bcast(&plan->T_plan_1->kway, 1, MPI_INT, 0, c_comm);
-		MPI_Bcast(&plan->T_plan_1->kway_async, 1, MPI::BOOL, 0, c_comm);
+		MPI_Bcast(&plan->T_plan_1->kway_async, 1, par::Mpi_datatype<bool>::value(), 0, c_comm);
 
 		plan->T_plan_1->method = plan->T_plan_1->method;
 		plan->T_plan_2->method = plan->T_plan_1->method;
