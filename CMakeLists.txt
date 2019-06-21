@@ -1,5 +1,7 @@
 # require cmake 2.8.0 for findCUDA.cmake
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12 FATAL_ERROR)
+set(CMAKE_MACOSX_RPATH 1)
+
 
 ##################
 project("accfft")
@@ -13,9 +15,19 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. ")
 endif()
 
-# Set default install path t o build
+# Set default install path to build
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "default install path" FORCE )
+endif()
+
+# Required for setting install_name on OSX
+set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+set(MACOSX_RPATH ON)
+if(POLICY CMP0068)
+  cmake_policy(SET CMP0068 NEW) # CMake 3.9+: `RPATH` settings on macOS do not affect `install_name`.
+endif()
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW) # find_package in CMake 3.12+ adds extra searches to <PackageName>_ROOT directories
 endif()
 
 # allow cmake to use custom modules (e.g. FindFFTW)
