@@ -73,7 +73,7 @@ if(BUILD_SHARED_LIBS)
 else(BUILD_SHARED_LIBS)
   add_library(accfft STATIC ${libaccfft_SRCS})
 endif(BUILD_SHARED_LIBS)
-target_link_libraries(accfft ${FFTW_LIB} ${FFTWF_LIB})
+target_link_libraries(accfft ${FFTW_LIBRARIES})
 
 # install
 install(TARGETS accfft DESTINATION lib)
@@ -112,7 +112,7 @@ else(BUILD_SHARED_LIBS)
   add_library(accfft_utils STATIC ${libaccfft_utils_SRCS})
 endif(BUILD_SHARED_LIBS)
 
-target_link_libraries(accfft_utils accfft)
+target_link_libraries(accfft_utils accfft ${PNETCDF_LIBRARIES})
 
 install(TARGETS accfft_utils DESTINATION lib)
 
