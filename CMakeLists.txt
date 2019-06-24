@@ -1,7 +1,5 @@
 # require cmake 2.8.0 for findCUDA.cmake
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12 FATAL_ERROR)
-set(CMAKE_MACOSX_RPATH 1)
-
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0 FATAL_ERROR)
 
 ##################
 project("accfft")
@@ -44,14 +42,6 @@ INCLUDE_DIRECTORIES (
   )
 
 
-
-# Add OpenMP and FFTW cxx flags to all targets
-# FOR PGI COMPILER
-#set(OpenMP_C_FLAGS "-lpthread")
-#set(OpenMP_CXX_FLAGS "-lpthread")
-set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3  ${OpenMP_C_FLAGS} -I${FFTW_INCLUDES}" )
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 ${OpenMP_CXX_FLAGS} -I${FFTW_INCLUDES}" )
-
 # some default behavior
 if(BUILD_SHARED)
   set(BUILD_SHARED_LIBS ON)
@@ -66,7 +56,13 @@ include(FindMPI)
 
 # set cmake compiler to mpi compiler wrapper found by FindMPI (usually mpicxx) 
 set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}" )
+
+# Add OpenMP and FFTW cxx flags to all targets
+# FOR PGI COMPILER
+#set(OpenMP_C_FLAGS "-lpthread")
+#set(OpenMP_CXX_FLAGS "-lpthread")
+set( CMAKE_C_FLAGS "-O3 ${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -I${FFTW_INCLUDES}" )
+set( CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -I${FFTW_INCLUDES}" )
 
 #include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
@@ -134,10 +130,40 @@ install(TARGETS accfft_utils DESTINATION lib)
 if(BUILD_GPU)
   find_package(CUDA REQUIRED)
 
-  if(NOT CUDA_NVCC_FLAGS)
-    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_20,code=sm_20)
+  # flags advice from https://ankitshah009.blogspot.com/2019/01/nvidia-graphic-card-and-cuda.html
+  if(NOT CUDA_NVCC_FLAGS AND NOT CUDA_VERSION VERSION_LESS "7.0")
+    if(CUDA_VERSION VERSION_LESS "9.0") # versions 7-8
+      list(APPEND CUDA_NVCC_FLAGS -arch=sm_30)
+      list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_20,code=sm_20) # ended support in version 9
+    else() # 9+
+      list(APPEND CUDA_NVCC_FLAGS -arch=sm_50) # new default arch
+    endif()
+
+    # supported architectures on 7+
     list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
-    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_35,code=sm_35)
+    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_50,code=sm_50)
+    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_52,code=sm_52)
+ 
+    if(NOT CUDA_VERSION VERSION_LESS "8.0") # cuda-8+
+      list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_60,code=sm_60)
+      list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_61,code=sm_61)
+    endif()
+    if(NOT CUDA_VERSION VERSION_LESS "9.0") # cuda-9+
+      list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_70,code=sm_70)
+    endif()
+    if(NOT CUDA_VERSION VERSION_LESS "10.0") # cuda 10+
+      list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_75,code=sm_75)
+    endif()
+ 
+    if(CUDA_VERSION VERSION_LESS "8.0") # cuda-7
+      list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_52,code=compute_52)
+    elseif(CUDA_VERSION VERSION_LESS "9.0") # cuda-8
+      list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_61,code=compute_61)
+    elseif(CUDA_VERSION VERSION_LESS "10.0") # cuda-9
+      list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_70,code=compute_70)
+    elseif(CUDA_VERSION VERSION_LESS "11.0") # cuda-10
+      list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_75,code=compute_75)
+    endif()
   endif()
 
   list(APPEND CUDA_NVCC_FLAGS --compiler-options -fno-strict-aliasing -lineinfo)
@@ -185,6 +211,7 @@ if(BUILD_GPU)
   else(BUILD_SHARED_LIBS)
     cuda_add_library(accfft_utils_gpu STATIC ${libaccfft_utils_gpu_SRCS} OPTIONS "-DENABLE_GPU")
   endif(BUILD_SHARED_LIBS)
+  target_link_libraries(accfft_utils_gpu accfft_gpu ${PNETCDF_LIBRARIES})
 
   # the following is necessary so that .cpp sources files passed to 
   # cuda_add_library get the right compile flags
@@ -194,11 +221,10 @@ if(BUILD_GPU)
 
 
 endif(BUILD_GPU)
+
 ####################
 # EXAMPLES / TESTS #
 ####################
-add_subdirectory(steps/step1 )
-add_subdirectory(steps/step2 EXCLUDE_FROM_ALL)
-add_subdirectory(steps/step3 EXCLUDE_FROM_ALL )
-add_subdirectory(steps/step4 EXCLUDE_FROM_ALL )
-add_subdirectory(steps/step5 EXCLUDE_FROM_ALL )
+if(BUILD_STEPS)
+  add_subdirectory(steps)
+endif(BUILD_STEPS)
