@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <mpi.h>
-#include <accfftf.h>
+#include <accfft.h>
 
 inline float testcase(float X, float Y, float Z) {
 	float sigma = 4;
@@ -37,7 +37,7 @@ void initialize(float *a, int*n, MPI_Comm c_comm) {
 
 	// Get the local pencil size and the allocation size
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
@@ -75,7 +75,7 @@ void check_err(float* a, int*n, MPI_Comm c_comm) {
 	int n2_ = (n[2] / 2 + 1) * 2;
 	// Get the local pencil size and the allocation size
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 	float err = 0, norm = 0;
 	{
@@ -128,7 +128,7 @@ void step2(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	data = (float*) accfft_alloc(alloc_max);
@@ -137,13 +137,13 @@ void step2(int *n, int nthreads) {
 
 	setup_time = -MPI_Wtime();
 	/* Create FFT plan */
-	accfft_planf * plan = accfft_plan_dft_3d_r2cf(n, data, data, c_comm,
-			ACCFFT_MEASURE); // note that in and out are both data -> inplace plan
+	AccFFTs plan = AccFFTs(n, data, (Complexf *)data, c_comm, ACCFFT_MEASURE);
+            // note that in and out are both data -> inplace plan
 	setup_time += MPI_Wtime();
 
 	/* Warm Up */
-	accfft_execute_r2cf(plan, data, (Complexf*) data);
-	accfft_execute_r2cf(plan, data, (Complexf*) data);
+	plan.execute_r2c(data, (Complexf *)data);
+	plan.execute_r2c(data, (Complexf *)data);
 
 	/*  Initialize data */
 	initialize(data, n, c_comm); // special initialize plan for inplace transform -> difference in padding
@@ -151,14 +151,14 @@ void step2(int *n, int nthreads) {
 
 	/* Perform forward FFT */
 	f_time -= MPI_Wtime();
-	accfft_execute_r2cf(plan, data, (Complexf*) data);
+	plan.execute_r2c(data, (Complexf*) data);
 	f_time += MPI_Wtime();
 
 	MPI_Barrier(c_comm);
 
 	/* Perform backward FFT */
 	i_time -= MPI_Wtime();
-	accfft_execute_c2rf(plan, (Complexf*) data, data);
+	plan.execute_c2r((Complexf*) data, data);
 	i_time += MPI_Wtime();
 
 	/* Check Error */
@@ -178,7 +178,6 @@ void step2(int *n, int nthreads) {
 	PCOUT << "IFFT \t" << g_i_time << std::endl;
 
 	accfft_free(data);
-	accfft_destroy_plan(plan);
 	accfft_cleanup();
 	MPI_Comm_free(&c_comm);
 	return;

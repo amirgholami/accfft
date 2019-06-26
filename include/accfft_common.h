@@ -41,21 +41,38 @@ typedef float Complexf[2];
 #define ACCFFT_MEASURE 2
 #define ACCFFT_PATIENT 4
 
-
-void accfft_create_comm(MPI_Comm in_comm, int * c_dims, MPI_Comm *c_comm);
+void accfft_create_comm(MPI_Comm in_comm, int *c_dims, MPI_Comm *c_comm);
 int accfft_init();
-void* accfft_alloc(ptrdiff_t size);
+void *accfft_alloc(ptrdiff_t size);
 void accfft_free(void * ptr);
 template <typename T>
-int dfft_get_local_size_t(int N0, int N1, int N2, int * isize, int * istart,
-		MPI_Comm c_comm);
+int dfft_get_local_size_t(int N0, int N1, int N2,
+                          int *isize, int *istart, MPI_Comm c_comm);
 
 template<typename T>
-int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
-		int *ostart, MPI_Comm c_comm);
+int accfft_local_size_dft_r2c_t(const int *n, int *isize, int *istart,
+        int *osize, int *ostart, MPI_Comm c_comm);
 template<typename T>
-int accfft_local_size_dft_c2c_t(int * n, int * isize, int * istart, int * osize,
-		int *ostart, MPI_Comm c_comm);
+int accfft_local_size_dft_c2c_t(const int *n, int *isize, int *istart,
+        int *osize, int *ostart, MPI_Comm c_comm);
+
+/**
+ * Higher-order macro instantiates templates for all possible types.
+ */
+#define TPL_DECL(proto) proto(float) proto(double)
+//proto(Complex); proto(Complexf);
+#define R2C_SIZE(real) \
+  template int accfft_local_size_dft_r2c_t<real>( \
+          const int *n, int *isize, int *istart, \
+          int *osize, int *ostart, MPI_Comm c_comm);
+#define C2C_SIZE(real) \
+  template int accfft_local_size_dft_c2c_t<real>( \
+          const int *n, int *isize, int *istart, \
+          int *osize, int *ostart, MPI_Comm c_comm);
+//TPL_DECL(R2C_SIZE)
+//TPL_DECL(C2C_SIZE)
+
+#define TPL(name) template <typename real, typename cplx, typename fftw_ptype> name
 
 #endif
 #ifndef _PNETCDF_IO_H_

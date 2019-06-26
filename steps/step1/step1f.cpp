@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <math.h> // M_PI
 #include <mpi.h>
-#include <accfftf.h> // single precision
+#include <accfft.h>
 
 void initialize(float *a, int* n, MPI_Comm c_comm);
 
@@ -44,7 +44,7 @@ void step1(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	data = (float*) accfft_alloc(alloc_max);
@@ -54,13 +54,12 @@ void step1(int *n, int nthreads) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_planf * plan = accfft_plan_dft_3d_r2cf(n, data, (float*) data_hat,
-			c_comm, ACCFFT_MEASURE);
+	AccFFTs plan = AccFFTs(n, data, data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/* Warm Up */
-	accfft_execute_r2cf(plan, data, data_hat);
-	accfft_execute_r2cf(plan, data, data_hat);
+	plan.execute_r2c(data, data_hat);
+	plan.execute_r2c(data, data_hat);
 
 	/*  Initialize data */
 	initialize(data, n, c_comm);
@@ -68,7 +67,7 @@ void step1(int *n, int nthreads) {
 
 	/* Perform forward FFT */
 	f_time -= MPI_Wtime();
-	accfft_execute_r2cf(plan, data, data_hat);
+	plan.execute_r2c(data, data_hat);
 	f_time += MPI_Wtime();
 
 	MPI_Barrier(c_comm);
@@ -78,7 +77,7 @@ void step1(int *n, int nthreads) {
 			isize[0] * isize[1] * isize[2] * sizeof(float));
 	/* Perform backward FFT */
 	i_time -= MPI_Wtime();
-	accfft_execute_c2rf(plan, data_hat, data2);
+	plan.execute_c2r(data_hat, data2);
 	i_time += MPI_Wtime();
 
 	/* Check Error */
@@ -100,7 +99,6 @@ void step1(int *n, int nthreads) {
 	accfft_free(data);
 	accfft_free(data_hat);
 	accfft_free(data2);
-	accfft_destroy_plan(plan);
 	accfft_cleanup();
 	MPI_Comm_free(&c_comm);
 	return;
@@ -138,7 +136,7 @@ int main(int argc, char **argv) {
 void initialize(float *a, int *n, MPI_Comm c_comm) {
 	float pi = M_PI;
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
@@ -170,7 +168,7 @@ void check_err(float* a, int*n, MPI_Comm c_comm) {
 	float pi = M_PI;
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 	float err = 0, norm = 0;
 

@@ -188,7 +188,7 @@ void grad(int *n) {
 	XYZ[1] = 1;
 	XYZ[2] = 1;
 	double exec_time = -MPI_Wtime();
-	accfft_grad_gpuf(gradx, grady, gradz, data, plan, &XYZ, timings);
+	accfft_grad_gpu(gradx, grady, gradz, data, plan, &XYZ, timings);
 	exec_time += MPI_Wtime();
 	/* Check err*/
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -232,7 +232,7 @@ void grad(int *n) {
 	cudaFree(grady);
 	cudaFree(gradz);
 	accfft_destroy_plan(plan);
-	accfft_cleanup_gpu();
+	accfft_cleanup_gpuf();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------";
 	PCOUT << "-------------------------------------------------------";
@@ -285,7 +285,7 @@ void laplace(int *n) {
 	double timings[5] = { 0 };
 
 	double exec_time = -MPI_Wtime();
-	accfft_laplace_gpuf(laplace, data, plan, timings);
+	accfft_laplace_gpu(laplace, data, plan, timings);
 	exec_time += MPI_Wtime();
 	/* Check err*/
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -313,7 +313,7 @@ void laplace(int *n) {
 	MPI_Barrier(c_comm);
 	cudaFree(laplace);
 	accfft_destroy_plan(plan);
-	accfft_cleanup_gpu();
+	accfft_cleanup_gpuf();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------"
 			<< std::endl;
@@ -376,8 +376,8 @@ void divergence(int *n) {
 	XYZ[1] = 1;
 	XYZ[2] = 1;
 	double exec_time = -MPI_Wtime();
-	accfft_grad_gpuf(gradx, grady, gradz, data, plan, &XYZ, timings);
-	accfft_divergence_gpuf(divergence, gradx, grady, gradz, plan, timings);
+	accfft_grad_gpu(gradx, grady, gradz, data, plan, &XYZ, timings);
+	accfft_divergence_gpu(divergence, gradx, grady, gradz, plan, timings);
 	exec_time += MPI_Wtime();
 
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -407,7 +407,7 @@ void divergence(int *n) {
 	cudaFree(grady);
 	cudaFree(gradz);
 	accfft_destroy_plan(plan);
-	accfft_cleanup_gpu();
+	accfft_cleanup_gpuf();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------";
 	PCOUT << "-------------------------------------------------------";
@@ -460,7 +460,7 @@ void biharmonic(int *n) {
 	double timings[5] = { 0 };
 
 	double exec_time = -MPI_Wtime();
-	accfft_biharmonic_gpuf(biharmonic, data, plan, timings);
+	accfft_biharmonic_gpu(biharmonic, data, plan, timings);
 	exec_time += MPI_Wtime();
 	/* Check err*/
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -488,7 +488,7 @@ void biharmonic(int *n) {
 	MPI_Barrier(c_comm);
 	cudaFree(biharmonic);
 	accfft_destroy_plan(plan);
-	accfft_cleanup_gpu();
+	accfft_cleanup_gpuf();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------";
 	PCOUT << "-------------------------------------------------------";

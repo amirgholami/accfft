@@ -70,7 +70,6 @@ set( CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -I${FFTW_INCLUD
 set(libaccfft_SRCS
   src/transpose.cpp 
   src/accfft.cpp 
-  src/accfftf.cpp 
   src/accfft_common.cpp
   )
 
@@ -102,14 +101,14 @@ find_package(PNETCDF QUIET)
 if (PNETCDF_FOUND)
   set (libaccfft_utils_SRCS ${libaccfft_SRCS} 
     src/operators.cpp
-    src/operatorsf.cpp
+    src/netcdf.cpp
     )
   include_directories(${PNETCDF_INCLUDE_DIRS})
   add_definitions(-DUSE_PNETCDF)
 else()
   set (libaccfft_utils_SRCS ${libaccfft_SRCS} 
     src/operators.cpp
-    src/operatorsf.cpp
+    src/netcdf.cpp
     )
 endif()
 
@@ -202,7 +201,6 @@ if(BUILD_GPU)
   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#
   set (libaccfft_utils_gpu_SRCS ${libaccfft_gpu_SRCS} 
     src/operators_gpu.cpp
-    src/operators_gpuf.cpp
     src/operators_cuda.cu
     )
   # build CPU libaccfft (shared or static ?)

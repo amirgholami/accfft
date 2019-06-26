@@ -83,7 +83,7 @@ function(build_step step)
       # GPU executable single precision
       #
       set(${step}_gpuf_SRCS
-        ${step}_gpuf.cpp kernelsf.cu
+        ${step}_gpuf.cpp kernels.cu
         )
 
       cuda_add_executable(${step}_gpuf ${${step}_gpuf_SRCS})

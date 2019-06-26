@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <math.h> // M_PI
 #include <mpi.h>
-#include <accfftf.h>
+#include <accfft.h>
 #include <accfft_operators.h>
 #define SIGMA 32
 #define C0 1
@@ -153,7 +153,7 @@ void grad(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	//data=(float*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(float));
@@ -164,8 +164,7 @@ void grad(int *n, int nthreads) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_planf * plan = accfft_plan_dft_3d_r2cf(n, data, (float*) data_hat,
-			c_comm, ACCFFT_MEASURE);
+	AccFFTs plan = AccFFTs(n, data, data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/*  Initialize data */
@@ -185,7 +184,7 @@ void grad(int *n, int nthreads) {
 	XYZ[1] = 1;
 	XYZ[2] = 1;
 	double exec_time = -MPI_Wtime();
-	accfft_gradf(gradx, grady, gradz, data, plan, &XYZ, timings);
+	accfft_grad(gradx, grady, gradz, data, &plan, &XYZ, timings);
 	exec_time += MPI_Wtime();
 	/* Check err*/
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -224,7 +223,6 @@ void grad(int *n, int nthreads) {
 	accfft_free(gradx);
 	accfft_free(grady);
 	accfft_free(gradz);
-	accfft_destroy_plan(plan);
 	accfft_cleanup();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------";
@@ -251,7 +249,7 @@ void laplace(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	//data=(float*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(float));
@@ -262,8 +260,7 @@ void laplace(int *n, int nthreads) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_planf * plan = accfft_plan_dft_3d_r2cf(n, data, (float*) data_hat,
-			c_comm, ACCFFT_MEASURE);
+	AccFFTs plan = AccFFTs(n, data, data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/*  Initialize data */
@@ -275,7 +272,7 @@ void laplace(int *n, int nthreads) {
 	double timings[5] = { 0 };
 
 	double exec_time = -MPI_Wtime();
-	accfft_laplacef(laplace, data, plan, timings);
+	accfft_laplace(laplace, data, &plan, timings);
 	exec_time += MPI_Wtime();
 	/* Check err*/
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -300,7 +297,6 @@ void laplace(int *n, int nthreads) {
 	accfft_free(data_hat);
 	MPI_Barrier(c_comm);
 	accfft_free(laplace);
-	accfft_destroy_plan(plan);
 	accfft_cleanup();
 	MPI_Comm_free(&c_comm);
 	return;
@@ -324,7 +320,7 @@ void divergence(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	//data=(float*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(float));
@@ -335,8 +331,7 @@ void divergence(int *n, int nthreads) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_planf * plan = accfft_plan_dft_3d_r2cf(n, data, (float*) data_hat,
-			c_comm, ACCFFT_MEASURE);
+	AccFFTs plan = AccFFTs(n, data, data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/*  Initialize data */
@@ -358,8 +353,8 @@ void divergence(int *n, int nthreads) {
 	XYZ[1] = 1;
 	XYZ[2] = 1;
 	double exec_time = -MPI_Wtime();
-	accfft_gradf(gradx, grady, gradz, data, plan, &XYZ, timings);
-	accfft_divergencef(divergence, gradx, grady, gradz, plan, timings);
+	accfft_grad(gradx, grady, gradz, data, &plan, &XYZ, timings);
+	accfft_divergence(divergence, gradx, grady, gradz, &plan, timings);
 	exec_time += MPI_Wtime();
 
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -386,7 +381,6 @@ void divergence(int *n, int nthreads) {
 	accfft_free(gradx);
 	accfft_free(grady);
 	accfft_free(gradz);
-	accfft_destroy_plan(plan);
 	accfft_cleanup();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------";
@@ -413,7 +407,7 @@ void biharmonic(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	//data=(float*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(float));
@@ -424,8 +418,7 @@ void biharmonic(int *n, int nthreads) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_planf * plan = accfft_plan_dft_3d_r2cf(n, data, (float*) data_hat,
-			c_comm, ACCFFT_MEASURE);
+	AccFFTs plan = AccFFTs(n, data, data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/*  Initialize data */
@@ -437,7 +430,7 @@ void biharmonic(int *n, int nthreads) {
 	double timings[5] = { 0 };
 
 	double exec_time = -MPI_Wtime();
-	accfft_biharmonicf(biharmonic, data, plan, timings);
+	accfft_biharmonic(biharmonic, data, &plan, timings);
 	exec_time += MPI_Wtime();
 	/* Check err*/
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -462,7 +455,6 @@ void biharmonic(int *n, int nthreads) {
 	accfft_free(data_hat);
 	MPI_Barrier(c_comm);
 	accfft_free(biharmonic);
-	accfft_destroy_plan(plan);
 	accfft_cleanup();
 	MPI_Comm_free(&c_comm);
 	return;
@@ -505,7 +497,7 @@ int main(int argc, char **argv) {
 void initialize(float *a, int *n, MPI_Comm c_comm) {
 	float pi = M_PI;
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
@@ -538,7 +530,7 @@ void check_err_grad(float* a, int*n, MPI_Comm c_comm, int direction) {
 	float pi = 4 * atan(1.0);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 	float err = 0, norm = 0;
 
@@ -586,7 +578,7 @@ void check_err_laplace(float* a, int*n, MPI_Comm c_comm) {
 	float pi = M_PI;
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 	float err = 0, norm = 0;
 
@@ -633,7 +625,7 @@ void check_err_biharmonic(float* a, int*n, MPI_Comm c_comm) {
 	float pi = M_PI;
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 	float err = 0, norm = 0;
 

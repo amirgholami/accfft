@@ -12,9 +12,9 @@
 //#include <accfft.h>
 #include <accfft_gpuf.h>
 
-void initialize_gpu(float *a, int*n, int* isize, int * istart);
-void check_err(float* a, int*n, MPI_Comm c_comm);
-float testcase(float X, float Y, float Z);
+template <typename real> void initialize_gpu(real *a, int *n, int *isize, int *istart);
+void check_err(float *a, int*n, MPI_Comm c_comm);
+template <typename real> real testcase(real X, real Y, real Z);
 
 void step2_gpu(int *n) {
 

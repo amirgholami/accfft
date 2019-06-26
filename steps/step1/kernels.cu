@@ -1,22 +1,24 @@
 /*
- * File: kernels.cu
+ * File: kernelsf.cu
  * License: Please see LICENSE file.
  * AccFFT: Massively Parallel FFT Library
- * Created by Amir Gholami on 06/04/2015
+ * Created by Amir Gholami on 11/23/2015
  * Email: contact@accfft.org
  */
 #include <stdio.h>
 
-__device__ inline double testcase_gpu(double X,double Y,double Z){
+template <typename real>
+__device__ inline real testcase_gpu(real X,real Y,real Z){
 
-  double sigma= 4;
-  double pi=M_PI;
-  double analytic;
+  real sigma= 4;
+  real pi=M_PI;
+  real analytic;
   analytic=std::exp( -sigma * ( (X-pi)*(X-pi) + (Y-pi)*(Y-pi) + (Z-pi)*(Z-pi) ));
   if(analytic!=analytic) analytic=0;
   return analytic;
 }
-__global__ void initialize_gpu_kernel(double * a, int *n, int n2_, int* isize, int* istart ){
+template <typename real>
+__global__ void initialize_gpu_kernel(real * a, int *n, int n2_, int* isize, int* istart ){
   unsigned int i = blockDim.x * blockIdx.x + threadIdx.x;
   unsigned int j = blockDim.y * blockIdx.y + threadIdx.y;
   unsigned int k = blockDim.z * blockIdx.z + threadIdx.z;
@@ -26,8 +28,8 @@ __global__ void initialize_gpu_kernel(double * a, int *n, int n2_, int* isize, i
   if(k>=isize[2]) return;
 
   {
-    double pi=M_PI;
-    double X,Y,Z;
+    real pi=M_PI;
+    real X,Y,Z;
     long int ptr;
 
     X=2*pi/n[0]*(i+istart[0]);
@@ -40,7 +42,8 @@ __global__ void initialize_gpu_kernel(double * a, int *n, int n2_, int* isize, i
   return;
 
 }// end initialize_gpu_kernel
-void initialize_gpu(double *a,int*n, int * isize, int * istart) {
+template <typename real>
+void initialize_gpu(real *a,int*n, int * isize, int * istart) {
 
   int n2_=n[2]; // Outplace Transform requires no padding
 

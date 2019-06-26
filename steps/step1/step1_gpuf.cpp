@@ -34,8 +34,8 @@ void step1_gpu(int *n) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpuf(n, isize, istart, osize, ostart,
-			c_comm);
+	alloc_max = accfft_local_size_dft_r2c_gpuf(
+                        n, isize, istart, osize, ostart, c_comm);
 
 	data_cpu = (float*) malloc(isize[0] * isize[1] * isize[2] * sizeof(float));
 	//data_hat=(Complexf*)accfft_alloc(alloc_max);

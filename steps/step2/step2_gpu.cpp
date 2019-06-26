@@ -12,12 +12,11 @@
 //#include <accfft.h>
 #include <accfft_gpu.h>
 
-void initialize_gpu(double *a, int*n, int* isize, int * istart);
+template <typename real> void initialize_gpu(real *a, int *n, int *isize, int *istart);
 void check_err(double* a, int*n, MPI_Comm c_comm);
-double testcase(double X, double Y, double Z);
+template <typename real> real testcase(real X, real Y, real Z);
 
 void step2_gpu(int *n) {
-
 	int nprocs, procid;
 	MPI_Comm_rank(MPI_COMM_WORLD, &procid);
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);

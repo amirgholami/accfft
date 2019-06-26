@@ -11,7 +11,7 @@
 #include <mpi.h>
 #include <cuda_runtime_api.h>
 
-#include <accfft_gpuf.h>
+#include <accfft_gpu.h>
 #include <accfft_operators_gpu.h>
 #define SIGMA 32
 #define C0 1

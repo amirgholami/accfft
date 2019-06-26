@@ -90,13 +90,13 @@ int dfft_get_local_size_t(int N0, int N1, int tuple, int * isize, int * istart,
 	return alloc_local;
 }
 
-template int dfft_get_local_size_t<double>(int N0, int N1, int N2, int * isize, int * istart,
-    MPI_Comm c_comm);
-template int dfft_get_local_size_t<float>(int N0, int N1, int N2, int * isize, int * istart,
-    MPI_Comm c_comm);
+template int dfft_get_local_size_t<double>(int N0, int N1, int N2,
+        int * isize, int * istart, MPI_Comm c_comm);
+template int dfft_get_local_size_t<float>(int N0, int N1, int N2,
+        int * isize, int * istart, MPI_Comm c_comm);
 
 template<typename T>
-int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
+int accfft_local_size_dft_r2c_t(const int *n, int * isize, int * istart, int * osize,
 		int *ostart, MPI_Comm c_comm) {
 
 	int procid;
@@ -191,17 +191,17 @@ int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
 
 } // end accfft_local_size_dft_r2c
 
-template int accfft_local_size_dft_r2c_t<double>(int * n, int * isize,
+template int accfft_local_size_dft_r2c_t<double>(const int *n, int * isize,
 		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
-template int accfft_local_size_dft_r2c_t<Complex>(int * n, int * isize,
+template int accfft_local_size_dft_r2c_t<Complex>(const int *n, int * isize,
 		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
-template int accfft_local_size_dft_r2c_t<float>(int * n, int * isize,
+template int accfft_local_size_dft_r2c_t<float>(const int *n, int * isize,
 		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
-template int accfft_local_size_dft_r2c_t<Complexf>(int * n, int * isize,
+template int accfft_local_size_dft_r2c_t<Complexf>(const int *n, int * isize,
 		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
 
 template<typename T>
-int accfft_local_size_dft_c2c_t(int * n, int * isize, int * istart, int * osize,
+int accfft_local_size_dft_c2c_t(const int *n, int * isize, int * istart, int * osize,
 		int *ostart, MPI_Comm c_comm) {
 
 	int osize_0[3] = { 0 }, ostart_0[3] = { 0 };
@@ -255,13 +255,13 @@ int accfft_local_size_dft_c2c_t(int * n, int * isize, int * istart, int * osize,
 
 }
 
-template int accfft_local_size_dft_c2c_t<double>(int * n, int * isize,
+template int accfft_local_size_dft_c2c_t<double>(const int *n, int * isize,
 		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
-template int accfft_local_size_dft_c2c_t<Complex>(int * n, int * isize,
+template int accfft_local_size_dft_c2c_t<Complex>(const int *n, int * isize,
 		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
-template int accfft_local_size_dft_c2c_t<float>(int * n, int * isize,
+template int accfft_local_size_dft_c2c_t<float>(const int *n, int * isize,
 		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
-template int accfft_local_size_dft_c2c_t<Complexf>(int * n, int * isize,
+template int accfft_local_size_dft_c2c_t<Complexf>(const int *n, int * isize,
 		int * istart, int * osize, int *ostart, MPI_Comm c_comm);
 /**
  * Creates a Cartesian communicator of size c_dims[0]xc_dims[1] from its input.
