@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <math.h> // M_PI
 #include <mpi.h>
-#include <accfftf.h>
+#include <accfft.h>
 #define INPLACE // comment this line for outplace transform
 
 void initialize(Complexf *a, int*n, MPI_Comm c_comm);
@@ -49,7 +49,7 @@ void step3(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_c2cf(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_c2c_t<float>(n, isize, istart, osize, ostart,
 			c_comm);
 
 #ifdef INPLACE
@@ -64,10 +64,9 @@ void step3(int *n, int nthreads) {
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
 #ifdef INPLACE
-	accfft_planf * plan = accfft_plan_dft_3d_c2cf(n, data, data, c_comm,
-			ACCFFT_MEASURE);
+	AccFFTs plan = AccFFTs(n, data, data, c_comm, ACCFFT_MEASURE);
 #else
-	accfft_planf * plan=accfft_plan_dft_3d_c2cf(n,data,data_hat,c_comm,ACCFFT_MEASURE);
+	AccFFTs plan= AccFFTs(n, data, data_hat, c_comm, ACCFFT_MEASURE);
 #endif
 	setup_time += MPI_Wtime();
 
@@ -78,9 +77,9 @@ void step3(int *n, int nthreads) {
 	/* Perform forward FFT */
 	f_time -= MPI_Wtime();
 #ifdef INPLACE
-	accfft_execute_c2cf(plan, ACCFFT_FORWARD, data, data);
+	plan.execute_c2c(ACCFFT_FORWARD, data, data);
 #else
-	accfft_execute_c2cf(plan,ACCFFT_FORWARD,data,data_hat);
+	plan.execute_c2c(ACCFFT_FORWARD,data,data_hat);
 #endif
 	f_time += MPI_Wtime();
 
@@ -89,12 +88,12 @@ void step3(int *n, int nthreads) {
 	/* Perform backward FFT */
 #ifdef INPLACE
 	i_time -= MPI_Wtime();
-	accfft_execute_c2cf(plan, ACCFFT_BACKWARD, data, data);
+	plan.execute_c2c(ACCFFT_BACKWARD, data, data);
 	i_time += MPI_Wtime();
 #else
 	Complexf * data2=(Complexf*)accfft_alloc(isize[0]*isize[1]*isize[2]*2*sizeof(float));
 	i_time-=MPI_Wtime();
-	accfft_execute_c2cf(plan,ACCFFT_BACKWARD,data_hat,data2);
+	plan.execute_c2c(ACCFFT_BACKWARD,data_hat,data2);
 	i_time+=MPI_Wtime();
 #endif
 
@@ -102,7 +101,7 @@ void step3(int *n, int nthreads) {
 #ifdef INPLACE
 	check_err(data, n, c_comm);
 #else
-	check_err(data2,n,c_comm);
+	check_err(data2, n, c_comm);
 #endif
 
 	/* Compute some timings statistics */
@@ -127,7 +126,6 @@ void step3(int *n, int nthreads) {
 	accfft_free(data_hat);
 	accfft_free(data2);
 #endif
-	accfft_destroy_plan(plan);
 	accfft_cleanup();
 	MPI_Comm_free(&c_comm);
 	return;
@@ -165,7 +163,7 @@ int main(int argc, char **argv) {
 void initialize(Complexf *a, int *n, MPI_Comm c_comm) {
 	float pi = M_PI;
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_c2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_c2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
@@ -198,7 +196,7 @@ void check_err(Complexf* a, int*n, MPI_Comm c_comm) {
 	float pi = M_PI;
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_c2cf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_c2c_t<float>(n, isize, istart, osize, ostart, c_comm);
 
 	float err = 0, norm = 0;
 

@@ -28,7 +28,7 @@ inline double testcase(double X, double Y, double Z) {
 	return analytic;
 } // end testcase
 
-void solution(double* u_true, double * u_0, double T, int *N, accfft_plan* plan,
+void solution(double* u_true, double * u_0, double T, int *N, AccFFTd *plan,
 		MPI_Comm c_comm) {
 
 	int nprocs, procid;
@@ -36,14 +36,14 @@ void solution(double* u_true, double * u_0, double T, int *N, accfft_plan* plan,
 	MPI_Comm_size(c_comm, &nprocs);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	int alloc_max = accfft_local_size_dft_r2c(N, isize, istart, osize, ostart,
+	int alloc_max = accfft_local_size_dft_r2c_t<double>(N, isize, istart, osize, ostart,
 			c_comm);
 
 	// Allocate a scratch buffer
 	Complex* u_hat = (Complex*) accfft_alloc(alloc_max);
 
 	// First compute a_hat
-	accfft_execute_r2c(plan, u_0, u_hat);
+	plan->execute_r2c(u_0, u_hat);
 
 	// Hadamard product with exp(-omega^2*t)
 	double scale = 1. / N[0] / N[1] / N[2];
@@ -92,7 +92,7 @@ void solution(double* u_true, double * u_0, double T, int *N, accfft_plan* plan,
 	}
 
 	// Inverse Fourier Transform
-	accfft_execute_c2r(plan, u_hat, u_true);
+	plan->execute_c2r(u_hat, u_true);
 
 	accfft_free(u_hat);
 	return;
@@ -121,7 +121,7 @@ void step6(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_t<double>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	/* Offsets for writing the output data */
@@ -139,15 +139,14 @@ void step6(int *n, int nthreads) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_plan * plan = accfft_plan_dft_3d_r2c(n, u, (double*) u_hat, c_comm,
-			ACCFFT_MEASURE);
+	AccFFTd plan = AccFFTd(n, u, u_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/*  Initialize data at t=0 */
 	initialize(u_0, n, c_comm);
 	MPI_Barrier(c_comm);
 
-	solution(u_true, u_0, T, n, plan, c_comm);
+	solution(u_true, u_0, T, n, &plan, c_comm);
 
 	double timings[5] = { 0 };
 	/* Perform Euler Time Stepping */
@@ -158,7 +157,7 @@ void step6(int *n, int nthreads) {
 
 	double exec_time = -MPI_Wtime();
 	for (int t = 0; t < Nt; ++t) {
-		accfft_laplace(laplace, u_n, plan, timings);
+		accfft_laplace(laplace, u_n, &plan, timings);
 		for (long long int i = 0; i < isize[0] * isize[1] * isize[2]; ++i) {
 			u_n[i] += dt * laplace[i];
 		}
@@ -208,7 +207,6 @@ void step6(int *n, int nthreads) {
 	accfft_free(u_hat);
 	MPI_Barrier(c_comm);
 	accfft_free(laplace);
-	accfft_destroy_plan(plan);
 	accfft_cleanup();
 	MPI_Comm_free(&c_comm);
 	return;
@@ -246,7 +244,7 @@ int main(int argc, char **argv) {
 void initialize(double *a, int *n, MPI_Comm c_comm) {
 	double pi = M_PI;
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_t<double>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
