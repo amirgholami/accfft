@@ -37,7 +37,7 @@ enum ComponentIndex3D {
  *
  * localData must have been allocated prior to calling this routine.
  */
-void read_pnetcdf(const std::string &filename,
+void read_pnetcdf_d(const std::string &filename,
 		MPI_Offset starts[3],
 		MPI_Offset counts[3],
 		MPI_Comm c_comm,
@@ -148,7 +148,7 @@ void read_pnetcdf(const std::string &filename,
  * \param[in]  localData : actual data buffer (size : nx*ny*nz*sizeof(double))
  *
  */
-void write_pnetcdf(const std::string &filename,
+void write_pnetcdf_d(const std::string &filename,
 		MPI_Offset starts[3],
 		MPI_Offset counts[3],
 		MPI_Comm c_comm,
@@ -294,12 +294,6 @@ void write_pnetcdf(const std::string &filename,
 	     ncmpi_strerror(err));			      \
 }
 
-enum ComponentIndex3D {
-	IX = 0,
-	IY = 1,
-	IZ = 2
-};
-
 /**
  * Read a single-precision parallel-nedcdf file.
  *
@@ -315,7 +309,7 @@ enum ComponentIndex3D {
  *
  * localData must have been allocated prior to calling this routine.
  */
-void read_pnetcdf(const std::string &filename,
+void read_pnetcdf_s(const std::string &filename,
 		MPI_Offset starts[3],
 		MPI_Offset counts[3],
 		int gsizes[3],
@@ -424,7 +418,7 @@ void read_pnetcdf(const std::string &filename,
  * \param[in]  localData : actual data buffer (size : nx*ny*nz*sizeof(float))
  *
  */
-void write_pnetcdf(const std::string &filename,
+void write_pnetcdf_s(const std::string &filename,
 		MPI_Offset starts[3],
 		MPI_Offset counts[3],
 		int gsizes[3],

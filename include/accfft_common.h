@@ -30,6 +30,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <cstddef>
+#include "accfft_utils.h"
+
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
 typedef float Complexf[2];
@@ -88,39 +90,3 @@ TPL_DECL(C2C_SIZE)
 #define GMETHOD1(name) GMETHOD(EMPTY_ARG, name)
 
 #endif
-#ifndef _PNETCDF_IO_H_
-#define _PNETCDF_IO_H_
-
-void read_pnetcdf(const std::string &filename,
-		  MPI_Offset         starts[3],
-		  MPI_Offset         counts[3],
-      MPI_Comm           c_comm,
-		  int                gsizes[3],
-		  double            *localData);
-
-void write_pnetcdf(const std::string &filename,
-		   MPI_Offset         starts[3],
-		   MPI_Offset         counts[3],
-       MPI_Comm           c_comm,
-		   int                gsizes[3],
-		   double            *localData);
-
-
-#endif // _PNETCDF_IO_H_
-#ifndef _PNETCDF_IO_F_H_
-#define _PNETCDF_IO_F_H_
-
-void read_pnetcdf(const std::string &filename,
-		  MPI_Offset         starts[3],
-		  MPI_Offset         counts[3],
-      MPI_Comm           c_comm,
-		  int                gsizes[3],
-		  float            *localData);
-
-void write_pnetcdf(const std::string &filename,
-		   MPI_Offset         starts[3],
-		   MPI_Offset         counts[3],
-       MPI_Comm           c_comm,
-		   int                gsizes[3],
-		   float            *localData);
-#endif // _PNETCDF_IO_F_H_
