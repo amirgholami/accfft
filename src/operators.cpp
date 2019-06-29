@@ -162,7 +162,7 @@ static void grad_mult_wave_numberz(Tc* wA, Tc* A, int* N, MPI_Comm c_comm,
 	scale = 1. / scale;
 
 	// int istart[3], isize[3], osize[3], ostart[3];
-	// accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	// accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 	//PCOUT<<osize[0]<<'\t'<<osize[1]<<'\t'<<osize[2]<<std::endl;
 
 //#pragma omp parallel
@@ -204,7 +204,7 @@ static void grad_mult_wave_number_laplace(Tc* wA, Tc* A, int* N,
 	const double scale = 1. / (N[0] * N[1] * N[2]);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 
 //#pragma omp parallel
 	{
@@ -259,7 +259,7 @@ static void biharmonic_mult_wave_number(Tc* wA, Tc* A, int* N,
 	const double scale = 1. / (N[0] * N[1] * N[2]);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 
 //#pragma omp parallel
 	{
@@ -315,7 +315,7 @@ static void mult_wave_number_inv_laplace(Tc* wA, Tc* A, int* N,
 	const double scale = 1. / (N[0] * N[1] * N[2]);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 
 //#pragma omp parallel
 	{
@@ -375,7 +375,7 @@ static void mult_wave_number_inv_biharmonic(Tc* wA, Tc* A, int* N,
 	const double scale = 1. / (N[0] * N[1] * N[2]);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 
 //#pragma omp parallel
 	{
@@ -558,7 +558,7 @@ static void grad_mult_wave_numberz_inplace(Tc* A, int* N, MPI_Comm c_comm,
 	scale = 1. / scale;
 
 	// int istart[3], isize[3], osize[3], ostart[3];
-	// accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	// accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 	//PCOUT<<osize[0]<<'\t'<<osize[1]<<'\t'<<osize[2]<<std::endl;
 
 #pragma omp parallel
@@ -603,7 +603,7 @@ static void grad_mult_wave_number_laplace_inplace(Tc* A, int* N,
 	const double scale = 1. / (N[0] * N[1] * N[2]);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 
 //#pragma omp parallel
 	{
@@ -658,7 +658,7 @@ static void biharmonic_mult_wave_number_inplace(Tc* A, int* N,
 	const double scale = 1. / (N[0] * N[1] * N[2]);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 
 //#pragma omp parallel
 	{
@@ -714,7 +714,7 @@ static void mult_wave_number_inv_laplace_inplace(Tc* A, int* N,
 	const double scale = 1. / (N[0] * N[1] * N[2]);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 
 //#pragma omp parallel
 	{
@@ -775,7 +775,7 @@ static void mult_wave_number_inv_biharmonic_inplace(Tc* A, int* N,
 	const double scale = 1. / (N[0] * N[1] * N[2]);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<Tc>(N, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<Tc>(N, isize, istart, osize, ostart, c_comm);
 
 //#pragma omp parallel
 	{
@@ -853,7 +853,7 @@ void accfft_grad_slow(T* A_x, T* A_y, T*A_z, T* A, Tp* plan, std::bitset<3>* pXY
 	int isize[3], osize[3], istart[3], ostart[3];
 	long long int alloc_max;
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize, ostart,
 			c_comm);
 	//PCOUT<<"istart[0]= "<<istart[0]<<" istart[1]= "<<istart[1]<<" istart[2]="<<istart[2]<<std::endl;
 	//PCOUT<<"ostart[0]= "<<ostart[0]<<" ostart[1]= "<<ostart[1]<<" ostart[2]="<<ostart[2]<<std::endl;
@@ -1094,7 +1094,7 @@ void accfft_divergence_slow(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
+  alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize, ostart,
       c_comm);
 
   Tc* A_hat = (Tc*) accfft_alloc(alloc_max);
@@ -1309,7 +1309,7 @@ void accfft_biharmonic(T* LA, T* A, Tp* plan, double* timer) {
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
+  alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize, ostart,
       c_comm);
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
@@ -1371,7 +1371,7 @@ void accfft_inv_laplace(T* invLA, T* A, Tp* plan, double* timer) {
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
+  alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize, ostart,
       c_comm);
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;
@@ -1433,7 +1433,7 @@ void accfft_inv_biharmonic(T* invBA, T* A, Tp* plan, double* timer) {
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize, ostart,
+  alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize, ostart,
       c_comm);
 
   Tc* A_hat = (Tc*)plan->Mem_mgr->operator_buffer_1;

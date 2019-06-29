@@ -108,7 +108,7 @@ fftw_plan plan_guru_dft(int rank, const fftw_iodim *n, int dims,
  * @return
  */
 
-TPL(AccFFT)<real, cplx, fftw_ptype>::AccFFT(
+CMETHOD1(AccFFT)(
        const int *n, real *data, cplx *data_out,
        MPI_Comm comm, unsigned flags) {
   r2c_plan_baked = false;
@@ -164,12 +164,12 @@ TPL(AccFFT)<real, cplx, fftw_ptype>::AccFFT(
   int n_tuples_o = (n[2] / 2 + 1) * 2;
 
   //int isize[3],osize[3],istart[3],ostart[3];
-  alloc_max = accfft_local_size_dft_r2c_t<real>(n, isize, istart,
+  alloc_max = accfft_local_size_dft_r2c<real>(n, isize, istart,
       osize, ostart, c_comm);
 
-  dfft_get_local_size_t<real>(n[0], n[1], n_tuples_o / 2, osize_0, ostart_0, c_comm);
-  dfft_get_local_size_t<real>(n[0], n_tuples_o / 2, n[1], osize_1, ostart_1, c_comm);
-  dfft_get_local_size_t<real>(n[1], n_tuples_o / 2, n[0], osize_2, ostart_2, c_comm);
+  dfft_get_local_size<real>(n[0], n[1], n_tuples_o / 2, osize_0, ostart_0, c_comm);
+  dfft_get_local_size<real>(n[0], n_tuples_o / 2, n[1], osize_1, ostart_1, c_comm);
+  dfft_get_local_size<real>(n[1], n_tuples_o / 2, n[0], osize_2, ostart_2, c_comm);
 
   std::swap(osize_1[1], osize_1[2]);
   std::swap(ostart_1[1], ostart_1[2]);
@@ -180,7 +180,7 @@ TPL(AccFFT)<real, cplx, fftw_ptype>::AccFFT(
   std::swap(osize_2[0], osize_2[1]);
 
   // osize_y is the configuration after y transpose
-  dfft_get_local_size_t<real>(n[0], n[2], n[1], osize_y, ostart_y, c_comm);
+  dfft_get_local_size<real>(n[0], n[2], n[1], osize_y, ostart_y, c_comm);
   std::swap(osize_y[1], osize_y[2]);
   std::swap(ostart_y[1], ostart_y[2]);
   osize_yi[0] = osize_y[0];
@@ -191,13 +191,13 @@ TPL(AccFFT)<real, cplx, fftw_ptype>::AccFFT(
   std::swap(osize_yi[1], osize_yi[2]);
   // for x only fft. The strategy is to divide (N1/P1 x N2) by P0 completely.
   // So we treat the last size to be just 1.
-  dfft_get_local_size_t<real>(isize[1] * n[2], n[2], n[0], osize_x, ostart_x, c_comm);
+  dfft_get_local_size<real>(isize[1] * n[2], n[2], n[0], osize_x, ostart_x, c_comm);
   osize_x[1] = osize_x[0];
   osize_x[0] = osize_x[2];
   osize_x[2] = 1;
   std::swap(osize_x[0], osize_x[1]); // switch to (N1/P1xN2 )/P0 x N0 x 1
 
-  dfft_get_local_size_t<real>(isize[1] * n[2], n[2], n[0] / 2 + 1, osize_xi, ostart_x, c_comm);
+  dfft_get_local_size<real>(isize[1] * n[2], n[2], n[0] / 2 + 1, osize_xi, ostart_x, c_comm);
   osize_xi[1] = osize_xi[0];
   osize_xi[0] = osize_xi[2];
   osize_xi[2] = 1;
@@ -510,7 +510,7 @@ TPL(AccFFT)<real, cplx, fftw_ptype>::AccFFT(
  * @return
  */
 
-TPL(AccFFT)<real, cplx, fftw_ptype>::AccFFT(
+CMETHOD1(AccFFT)(
        const int *n, cplx *data, cplx *data_out,
        MPI_Comm ic_comm, unsigned flags) {
   r2c_plan_baked = false;
@@ -562,12 +562,12 @@ TPL(AccFFT)<real, cplx, fftw_ptype>::AccFFT(
   int alloc_max = 0, n_tuples = (n[2] / 2 + 1) * 2;
 
   //int isize[3],osize[3],istart[3],ostart[3];
-  alloc_max = accfft_local_size_dft_c2c_t<real>(n, isize, istart,
+  alloc_max = accfft_local_size_dft_c2c<real>(n, isize, istart,
       osize, ostart, c_comm);
 
-  dfft_get_local_size_t<real>(n[0], n[1], n[2], osize_0, ostart_0, c_comm);
-  dfft_get_local_size_t<real>(n[0], n[2], n[1], osize_1, ostart_1, c_comm);
-  dfft_get_local_size_t<real>(n[1], n[2], n[0], osize_2, ostart_2, c_comm);
+  dfft_get_local_size<real>(n[0], n[1], n[2], osize_0, ostart_0, c_comm);
+  dfft_get_local_size<real>(n[0], n[2], n[1], osize_1, ostart_1, c_comm);
+  dfft_get_local_size<real>(n[1], n[2], n[0], osize_2, ostart_2, c_comm);
 
   std::swap(osize_1[1], osize_1[2]);
   std::swap(ostart_1[1], ostart_1[2]);
@@ -738,7 +738,7 @@ TPL(AccFFT)<real, cplx, fftw_ptype>::AccFFT(
  * @param timer See \ref timer for more details.
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_r2c(
+CMETHOD(void, execute_r2c)(
         real *data, cplx *data_out, double *timer, std::bitset<3> XYZ) {
   if (!r2c_plan_baked) {
     if (procid == 0)
@@ -762,7 +762,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_r2c(
  * @param timer See \ref timer for more details.
  * @param XYZ a bit set field that determines which directions FFT should be executed
  */
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_c2r(cplx *data,
+CMETHOD(void, execute_c2r)(cplx *data,
         real *data_out, double *timer, std::bitset<3> XYZ) {
   if (!r2c_plan_baked) {
     if (procid == 0)
@@ -816,7 +816,7 @@ static void execute_fftw_c2r(fftw_plan p, Complex *data, double *out) {
 #define C2C_RET(real, cplx, fftw_tplan, accfft_plan) void
 INST_TPL(accfft_execute_c2c, C2C_RET, C2C_ARGS, plan, direction, data, data_out, timer, XYZ) */
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_c2c(int direction,
+CMETHOD(void, execute_c2c)(int direction,
         cplx *data, cplx *data_out, double *timer, std::bitset<3> XYZ) {
   if (!c2c_plan_baked) {
     if (procid == 0)
@@ -942,7 +942,7 @@ static void destroy_fftw(fftw_plan p) {
  * Destroy AccFFT CPU plan.
  * @param plan Input plan to be destroyed.
  */
-TPL(AccFFT)<real, cplx, fftw_ptype>::~AccFFT() {
+CMETHOD1(~AccFFT)() {
     if (T_plan_1 != NULL)
       delete (T_plan_1);
     if (T_plan_1i != NULL)
@@ -986,7 +986,7 @@ TPL(AccFFT)<real, cplx, fftw_ptype>::~AccFFT() {
     MPI_Comm_free(&col_comm);
 }
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_z(int direction,
+CMETHOD(void, execute_z)(int direction,
         real *data, real *data_out, double *timer) {
 
   if (data == NULL)
@@ -1031,7 +1031,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_z(int direction,
   return;
 }
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_r2c_z(
+CMETHOD(void, execute_r2c_z)(
         real *data, cplx *data_out, double *timer) {
   if (r2c_plan_baked) {
     this->execute_z(-1, data, (real *)data_out, timer);
@@ -1043,7 +1043,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_r2c_z(
   }
 }
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_c2r_z(
+CMETHOD(void, execute_c2r_z)(
         cplx *data, real *data_out, double *timer) {
   if (r2c_plan_baked) {
     this->execute_z(1, (real *)data, data_out, timer);
@@ -1056,7 +1056,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_c2r_z(
 }
 
 // templates for execution only in y direction
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_y(int direction,
+CMETHOD(void, execute_y)(int direction,
         real *data, real *data_out, double *timer) {
 
   if (data == NULL)
@@ -1128,7 +1128,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_y(int direction,
   return;
 }
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_r2c_y(
+CMETHOD(void, execute_r2c_y)(
         real *data, cplx *data_out, double *timer) {
   if (r2c_plan_baked) { 
     this->execute_y(-1, data, (real *)data_out, timer);
@@ -1140,7 +1140,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_r2c_y(
   }
 }
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_c2r_y(
+CMETHOD(void, execute_c2r_y)(
         cplx *data, real *data_out, double *timer) {
   if (r2c_plan_baked) {
     this->execute_y(1, (real *)data, data_out, timer);
@@ -1153,7 +1153,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_c2r_y(
 }
 
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_x(int direction,
+CMETHOD(void, execute_x)(int direction,
         real *data, real *data_out, double *timer) {
 
   if (data == NULL)
@@ -1217,7 +1217,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_x(int direction,
   return;
 }
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_r2c_x(
+CMETHOD(void, execute_r2c_x)(
         real *data, cplx *data_out, double *timer) {
   if (r2c_plan_baked) { 
     this->execute_x(-1, data, (real *)data_out, timer);
@@ -1229,7 +1229,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_r2c_x(
   }
 }
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_c2r_x(
+CMETHOD(void, execute_c2r_x)(
         cplx *data, real *data_out, double *timer) {
   if (r2c_plan_baked) {
     this->execute_x(1, (real *)data, data_out, timer);
@@ -1241,7 +1241,7 @@ TPL(void AccFFT)<real, cplx, fftw_ptype>::execute_c2r_x(
   }
 }
 
-TPL(void AccFFT)<real, cplx, fftw_ptype>::execute(int direction,
+CMETHOD(void, execute)(int direction,
         real *data, real *data_out, double *timer, std::bitset<3> XYZ) {
   if (data == NULL)
     data = data_r;

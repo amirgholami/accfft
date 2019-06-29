@@ -172,7 +172,6 @@ if(BUILD_GPU)
     src/transpose_gpu.cpp
     src/transpose_cuda.cu
     src/accfft_gpu.cpp 
-    src/accfft_gpuf.cpp 
     src/accfft_common.cpp
     )
   

@@ -174,7 +174,7 @@ void initialize(double *rho, double *sol, int *n, MPI_Comm c_comm, PoissonParams
   double pi=M_PI;
   int n_tuples=n[2];
   int istart[3], isize[3], osize[3],ostart[3];
-  accfft_local_size_dft_r2c_t<double>(n,isize,istart,osize,ostart,c_comm);
+  accfft_local_size_dft_r2c<double>(n,isize,istart,osize,ostart,c_comm);
 
   /*
    * testcase gaussian parameters
@@ -542,7 +542,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
 
   int isize[3],osize[3],istart[3],ostart[3];
   /* Get the local pencil size and the allocation size */
-  alloc_max=accfft_local_size_dft_r2c_t<double>(n,isize,istart,osize,ostart,c_comm);
+  alloc_max=accfft_local_size_dft_r2c<double>(n,isize,istart,osize,ostart,c_comm);
 
   printf("[mpi rank %d] isize  %3d %3d %3d osize  %3d %3d %3d\n", procid,
       isize[0],isize[1],isize[2],

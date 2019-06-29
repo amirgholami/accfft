@@ -46,14 +46,14 @@ int accfft_init();
 void *accfft_alloc(ptrdiff_t size);
 void accfft_free(void * ptr);
 template <typename T>
-int dfft_get_local_size_t(int N0, int N1, int N2,
+int dfft_get_local_size(int N0, int N1, int N2,
                           int *isize, int *istart, MPI_Comm c_comm);
 
 template<typename T>
-int accfft_local_size_dft_r2c_t(const int *n, int *isize, int *istart,
+int accfft_local_size_dft_r2c(const int *n, int *isize, int *istart,
         int *osize, int *ostart, MPI_Comm c_comm);
 template<typename T>
-int accfft_local_size_dft_c2c_t(const int *n, int *isize, int *istart,
+int accfft_local_size_dft_c2c(const int *n, int *isize, int *istart,
         int *osize, int *ostart, MPI_Comm c_comm);
 
 /**
@@ -61,6 +61,8 @@ int accfft_local_size_dft_c2c_t(const int *n, int *isize, int *istart,
  */
 #define TPL_DECL(proto) proto(float) proto(double)
 //proto(Complex); proto(Complexf);
+/* Used for batched template instantiations:
+
 #define R2C_SIZE(real) \
   template int accfft_local_size_dft_r2c_t<real>( \
           const int *n, int *isize, int *istart, \
@@ -69,10 +71,21 @@ int accfft_local_size_dft_c2c_t(const int *n, int *isize, int *istart,
   template int accfft_local_size_dft_c2c_t<real>( \
           const int *n, int *isize, int *istart, \
           int *osize, int *ostart, MPI_Comm c_comm);
-//TPL_DECL(R2C_SIZE)
-//TPL_DECL(C2C_SIZE)
+TPL_DECL(R2C_SIZE)
+TPL_DECL(C2C_SIZE)
+*/
 
-#define TPL(name) template <typename real, typename cplx, typename fftw_ptype> name
+/* Helper macros for defining class methods. */
+#define EMPTY_ARG
+#define CMETHOD(ret, name) template <typename real, typename cplx, \
+                             typename fftw_ptype> \
+            ret AccFFT<real, cplx, fftw_ptype> :: name
+#define GMETHOD(ret, name) template <typename real, typename cplx, \
+                             typename cu_real, typename cu_cplx> \
+            ret AccFFT_gpu<real, cplx, cu_real, cu_cplx> :: name
+
+#define CMETHOD1(name) CMETHOD(EMPTY_ARG, name)
+#define GMETHOD1(name) GMETHOD(EMPTY_ARG, name)
 
 #endif
 #ifndef _PNETCDF_IO_H_

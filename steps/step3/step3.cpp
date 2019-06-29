@@ -49,7 +49,7 @@ void step3(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_c2c_t<double>(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_c2c<double>(n, isize, istart, osize, ostart,
 			c_comm);
 
 #ifdef INPLACE
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 void initialize(Complex *a, int *n, MPI_Comm c_comm) {
 	double pi = M_PI;
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_c2c_t<double>(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_c2c<double>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
@@ -198,7 +198,7 @@ void check_err(Complex* a, int*n, MPI_Comm c_comm) {
 	double pi = 4 * atan(1.0);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_c2c_t<double>(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_c2c<double>(n, isize, istart, osize, ostart, c_comm);
 
 	double err = 0, norm = 0;
 

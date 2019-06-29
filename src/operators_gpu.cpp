@@ -23,13 +23,12 @@
  */
 
 #include <accfft_gpu.h>
-#include <accfft_gpuf.h>
 #include <cuda_runtime_api.h>
 
 #define TPL_DECL2(name, ARGS) template <typename real, typename acc_plan> \
         void name( ARGS(real, acc_plan) ); \
-  template void name<float, accfft_plan_gpuf>( ARGS(float, accfft_plan_gpuf) );\
-  template void name<double, accfft_plan_gpu>( ARGS(double, accfft_plan_gpu) );
+  template void name<float, AccFFTs_gpu>( ARGS(float, AccFFTs_gpu) );\
+  template void name<double, AccFFTd_gpu>( ARGS(double, AccFFTd_gpu) );
 
 #define GRAD_SLOW(T, Tp) T* A_x, T* A_y, T*A_z, T* A, Tp* plan, \
                         std::bitset<3>* pXYZ, double* timer
@@ -142,7 +141,7 @@ void accfft_grad_gpu_slow(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 	int isize[3], osize[3], istart[3], ostart[3];
 	long long int alloc_max;
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
+	alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize,
 			ostart, c_comm);
 	//PCOUT<<"istart[0]= "<<istart[0]<<" istart[1]= "<<istart[1]<<" istart[2]="<<istart[2]<<std::endl;
 	//PCOUT<<"ostart[0]= "<<ostart[0]<<" ostart[1]= "<<ostart[1]<<" ostart[2]="<<ostart[2]<<std::endl;
@@ -158,7 +157,7 @@ void accfft_grad_gpu_slow(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 
 
 	/* Forward transform */
-	accfft_execute_r2c_gpu_t<T, Tc>(plan, A, A_hat, timings);
+	plan->execute_r2c(A, A_hat, timings);
 
 	/* Multiply x Wave Numbers */
 	if (XYZ[0]) {
@@ -175,8 +174,8 @@ void accfft_grad_gpu_slow(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
     timings[6] += +MPI_Wtime();
 
 		/* Backward transform */
-		accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, A_x, timings);
-		// accfft_execute_c2r_gpu_t<Tc, T>(plan, A_hat, A_x, timings);
+		plan->execute_c2r(tmp, A_x, timings);
+		// plan->execute_c2r(A_hat, A_x, timings);
 	}
 	/* Multiply y Wave Numbers */
 	if (XYZ[1]) {
@@ -184,7 +183,7 @@ void accfft_grad_gpu_slow(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 		grad_mult_wave_numbery_gpu<Tc>(tmp, A_hat, N, osize, ostart, scale_xyz);
     timings[6] += +MPI_Wtime();
 		/* Backward transform */
-		accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, A_y, timings);
+		plan->execute_c2r(tmp, A_y, timings);
 	}
 	/* Multiply z Wave Numbers */
 	if (XYZ[2]) {
@@ -192,7 +191,7 @@ void accfft_grad_gpu_slow(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 		grad_mult_wave_numberz_gpu<Tc>(tmp, A_hat, N, osize, ostart, scale_xyz);
     timings[6] += +MPI_Wtime();
 		/* Backward transform */
-		accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, A_z, timings);
+		plan->execute_c2r(tmp, A_z, timings);
 	}
 
 	cudaFree(A_hat);
@@ -256,7 +255,7 @@ void accfft_grad_gpu(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 	int isize[3], osize[3], istart[3], ostart[3];
 	long long int alloc_max;
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
+	alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize,
 			ostart, c_comm);
 	Tc* A_hat;  //=(Tc*) accfft_alloc(alloc_max);
 	Tc* tmp;  //=(Tc*) accfft_alloc(alloc_max);
@@ -280,7 +279,7 @@ void accfft_grad_gpu(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
                 << " ostart_xi[1] = " << ostart_xi[1]
                 << " ostart_xi[2] = " << ostart_xi[2] << std::endl;
     }
-    accfft_execute_r2c_x_gpu_t<T, Tc>(plan, A, A_hat, timings);
+    plan->execute_r2c_x(A, A_hat, timings);
     scale_xyz[0] = 1;
     scale_xyz[1] = 0;
     scale_xyz[2] = 0;
@@ -289,12 +288,12 @@ void accfft_grad_gpu(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
     timings[6] += +MPI_Wtime();
 
 		/* Backward transform */
-		accfft_execute_c2r_x_gpu_t<Tc, T>(plan, tmp, A_x, timings);
+		plan->execute_c2r_x(tmp, A_x, timings);
 	}
 	/* Multiply y Wave Numbers */
 	if (XYZ[1]) {
     int* osize_y = plan->osize_y;
-    accfft_execute_r2c_y_gpu_t<T, Tc>(plan, A, A_hat, timings);
+    plan->execute_r2c_y(A, A_hat, timings);
     scale_xyz[0] = 0;
     scale_xyz[1] = 1;
     scale_xyz[2] = 0;
@@ -302,11 +301,11 @@ void accfft_grad_gpu(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
 		grad_mult_wave_numbery_gpu<Tc>(tmp, A_hat, N, plan->osize_yi, plan->ostart_y, scale_xyz);
     timings[6] += +MPI_Wtime();
 		/* Backward transform */
-		accfft_execute_c2r_y_gpu_t<Tc, T>(plan, tmp, A_y, timings);
+		plan->execute_c2r_y(tmp, A_y, timings);
 	}
 	/* Multiply z Wave Numbers */
 	if (XYZ[2]) {
-    accfft_execute_r2c_z_gpu_t<T, Tc>(plan, A, A_hat, timings);
+    plan->execute_r2c_z(A, A_hat, timings);
     scale_xyz[0] = 0;
     scale_xyz[1] = 0;
     scale_xyz[2] = 1;
@@ -314,7 +313,7 @@ void accfft_grad_gpu(T* A_x, T* A_y, T*A_z, T* A, Tp* plan,
     grad_mult_wave_numberz_gpu<Tc>(tmp, A_hat, N, plan->osize_0, plan->ostart_0, scale_xyz);
     timings[6] += +MPI_Wtime();
     /* Backward transform */
-    accfft_execute_c2r_z_gpu_t<Tc, T>(plan, tmp, A_z, timings);
+    plan->execute_c2r_z(tmp, A_z, timings);
   }
 
   cudaFree(A_hat);
@@ -363,7 +362,7 @@ void accfft_laplace_gpu(T* LA, T* A, Tp* plan, double* timer) {
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
+  alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize,
       ostart, c_comm);
 
   Tc* A_hat;  //=(Tc*) accfft_alloc(alloc_max);
@@ -372,7 +371,7 @@ void accfft_laplace_gpu(T* LA, T* A, Tp* plan, double* timer) {
   cudaMalloc((void**) &tmp, alloc_max);
 
   /* Forward transform */
-  accfft_execute_r2c_gpu_t<T, Tc>(plan, A, A_hat, timings);
+  plan->execute_r2c(A, A_hat, timings);
 
   /* Multiply x Wave Numbers */
   timings[6] += -MPI_Wtime();
@@ -380,7 +379,7 @@ void accfft_laplace_gpu(T* LA, T* A, Tp* plan, double* timer) {
   timings[6] += +MPI_Wtime();
 
   /* Backward transform */
-  accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, LA, timings);
+  plan->execute_c2r(tmp, LA, timings);
 
   cudaFree(A_hat);
   cudaFree(tmp);
@@ -432,7 +431,7 @@ void accfft_divergence_gpu_slow(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
+  alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize,
       ostart, c_comm);
   //PCOUT<<"istart[0]= "<<istart[0]<<" istart[1]= "<<istart[1]<<" istart[2]="<<istart[2]<<std::endl;
   //PCOUT<<"ostart[0]= "<<ostart[0]<<" ostart[1]= "<<ostart[1]<<" ostart[2]="<<ostart[2]<<std::endl;
@@ -454,13 +453,13 @@ void accfft_divergence_gpu_slow(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   xyz[0] = 1;
   xyz[1] = 0;
   xyz[2] = 1;
-  accfft_execute_r2c_gpu_t<T, Tc>(plan, A_x, A_hat, timings, xyz);
+  plan->execute_r2c(A_x, A_hat, timings, xyz);
   /* Multiply x Wave Numbers */
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numberx_gpu<Tc>(tmp, A_hat, N, osize, ostart, xyz);
   timings[6] += +MPI_Wtime();
   /* Backward transform */
-  accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, tmp2, timings, xyz);
+  plan->execute_c2r(tmp, tmp2, timings, xyz);
 
   timings[6] += -MPI_Wtime();
   cudaMemcpy(div_A, tmp2, isize[0] * isize[1] * isize[2] * sizeof(T),
@@ -471,13 +470,13 @@ void accfft_divergence_gpu_slow(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   xyz[0] = 0;
   xyz[1] = 1;
   xyz[2] = 1;
-  accfft_execute_r2c_gpu_t<T, Tc>(plan, A_y, A_hat, timings, xyz);
+  plan->execute_r2c(A_y, A_hat, timings, xyz);
   /* Multiply y Wave Numbers */
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numbery_gpu<Tc>(tmp, A_hat, N, osize, ostart, xyz);
   timings[6] += +MPI_Wtime();
   /* Backward transform */
-  accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, tmp2, timings, xyz);
+  plan->execute_c2r(tmp, tmp2, timings, xyz);
 
   //for (int i=0;i<isize[0]*isize[1]*isize[2];++i)
   //  div_A[i]+=tmp2[i];
@@ -491,13 +490,13 @@ void accfft_divergence_gpu_slow(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   xyz[0] = 0;
   xyz[1] = 0;
   xyz[2] = 1;
-  accfft_execute_r2c_gpu_t<T, Tc>(plan, A_z, A_hat, timings, xyz);
+  plan->execute_r2c(A_z, A_hat, timings, xyz);
   /* Multiply z Wave Numbers */
   timings[6] += -MPI_Wtime();
   grad_mult_wave_numberz_gpu<Tc>(tmp, A_hat, N, osize, ostart, xyz);
   timings[6] += +MPI_Wtime();
   /* Backward transform */
-  accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, tmp2, timings, xyz);
+  plan->execute_c2r(tmp, tmp2, timings, xyz);
 
   //for (int i=0;i<isize[0]*isize[1]*isize[2];++i)
   //  div_A[i]+=tmp2[i];
@@ -544,7 +543,7 @@ void accfft_divergence_gpu(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
+  alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize,
       ostart, c_comm);
 
   Tc* A_hat;  //=(Tc*) accfft_alloc(alloc_max);
@@ -560,7 +559,7 @@ void accfft_divergence_gpu(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
 
 
   /* Forward transform in x direction*/
-  accfft_execute_r2c_x_gpu_t<T, Tc>(plan, A_x, A_hat, timings);
+  plan->execute_r2c_x(A_x, A_hat, timings);
   /* Multiply x Wave Numbers */
   scale_xyz[0] = 1;
   scale_xyz[1] = 0;
@@ -569,13 +568,13 @@ void accfft_divergence_gpu(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   grad_mult_wave_numberx_gpu<Tc>(tmp, A_hat, N, plan->osize_xi, plan->ostart_2, scale_xyz);
   timings[6] += +MPI_Wtime();
   /* Backward transform */
-  accfft_execute_c2r_x_gpu_t<Tc, T>(plan, tmp, div_A, timings);
+  plan->execute_c2r_x(tmp, div_A, timings);
 
   // cudaMemcpy(div_A, tmp2, isize[0] * isize[1] * isize[2] * sizeof(T),
   //    cudaMemcpyDeviceToDevice);
 
   /* Forward transform in y direction*/
-  accfft_execute_r2c_y_gpu_t<T, Tc>(plan, A_y, A_hat, timings);
+  plan->execute_r2c_y(A_y, A_hat, timings);
   /* Multiply y Wave Numbers */
   scale_xyz[0] = 0;
   scale_xyz[1] = 1;
@@ -584,7 +583,7 @@ void accfft_divergence_gpu(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   grad_mult_wave_numbery_gpu<Tc>(tmp, A_hat, N, plan->osize_yi, plan->ostart_y, scale_xyz);
   timings[6] += +MPI_Wtime();
   /* Backward transform */
-  accfft_execute_c2r_y_gpu_t<Tc, T>(plan, tmp, tmp2, timings);
+  plan->execute_c2r_y(tmp, tmp2, timings);
 
   //for (int i=0;i<isize[0]*isize[1]*isize[2];++i)
   //  div_A[i]+=tmp2[i];
@@ -595,7 +594,7 @@ void accfft_divergence_gpu(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   timings[6] += +MPI_Wtime();
 
   /* Forward transform in z direction*/
-  accfft_execute_r2c_z_gpu_t<T, Tc>(plan, A_z, A_hat, timings);
+  plan->execute_r2c_z(A_z, A_hat, timings);
   /* Multiply z Wave Numbers */
   scale_xyz[0] = 0;
   scale_xyz[1] = 0;
@@ -604,7 +603,7 @@ void accfft_divergence_gpu(T* div_A, T* A_x, T* A_y, T* A_z, Tp* plan,
   grad_mult_wave_numberz_gpu<Tc>(tmp, A_hat, N, plan->osize_0, plan->ostart_0, scale_xyz);
   timings[6] += +MPI_Wtime();
   /* Backward transform */
-  accfft_execute_c2r_z_gpu_t<Tc, T>(plan, tmp, tmp2, timings);
+  plan->execute_c2r_z(tmp, tmp2, timings);
 
   //for (int i=0;i<isize[0]*isize[1]*isize[2];++i)
   //  div_A[i]+=tmp2[i];
@@ -659,7 +658,7 @@ void accfft_biharmonic_gpu(T* LA, T* A, Tp* plan, double* timer) {
   int isize[3], osize[3], istart[3], ostart[3];
   long long int alloc_max;
   /* Get the local pencil size and the allocation size */
-  alloc_max = accfft_local_size_dft_r2c_t<T>(N, isize, istart, osize,
+  alloc_max = accfft_local_size_dft_r2c<T>(N, isize, istart, osize,
       ostart, c_comm);
 
   Tc* A_hat;  //=(Tc*) accfft_alloc(alloc_max);
@@ -668,7 +667,7 @@ void accfft_biharmonic_gpu(T* LA, T* A, Tp* plan, double* timer) {
   cudaMalloc((void**) &tmp, alloc_max);
 
   /* Forward transform */
-  accfft_execute_r2c_gpu_t<T, Tc>(plan, A, A_hat, timings);
+  plan->execute_r2c(A, A_hat, timings);
 
   /* Multiply x Wave Numbers */
   timings[6] += -MPI_Wtime();
@@ -676,7 +675,7 @@ void accfft_biharmonic_gpu(T* LA, T* A, Tp* plan, double* timer) {
   timings[6] += +MPI_Wtime();
 
   /* Backward transform */
-  accfft_execute_c2r_gpu_t<Tc, T>(plan, tmp, LA, timings);
+  plan->execute_c2r(tmp, LA, timings);
 
   cudaFree(A_hat);
   cudaFree(tmp);

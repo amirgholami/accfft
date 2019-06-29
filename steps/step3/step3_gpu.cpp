@@ -33,8 +33,8 @@ void step3_gpu(int *n) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_c2c_gpu(n, isize, istart, osize, ostart,
-			c_comm);
+	alloc_max = accfft_local_size_dft_c2c_gpu<double>(
+                        n, isize, istart, osize, ostart, c_comm);
 
 #ifdef INPLACE
 	data_cpu = (Complex*) malloc(alloc_max);
@@ -50,20 +50,20 @@ void step3_gpu(int *n) {
 
 	/* Create FFT plan */
 #ifdef INPLACE
-	accfft_plan_gpu * plan = accfft_plan_dft_3d_c2c_gpu(n, data, data, c_comm,
+	AccFFTd_gpu plan = AccFFTd_gpu(n, data, data, c_comm,
 			ACCFFT_MEASURE);
 #else
-	accfft_plan_gpu * plan=accfft_plan_dft_3d_c2c_gpu(n,data,data_hat,c_comm,ACCFFT_MEASURE);
+	AccFFTd_gpu plan = AccFFTd_gpu(n,data,data_hat,c_comm,ACCFFT_MEASURE);
 #endif
 	setup_time += MPI_Wtime();
 
 	/* Warmup Runs */
 #ifdef INPLACE
-	accfft_execute_c2c_gpu(plan, ACCFFT_FORWARD, data, data);
-	accfft_execute_c2c_gpu(plan, ACCFFT_FORWARD, data, data);
+	plan.execute_c2c(ACCFFT_FORWARD, data, data);
+	plan.execute_c2c(ACCFFT_FORWARD, data, data);
 #else
-	accfft_execute_c2c_gpu(plan,ACCFFT_FORWARD,data,data_hat);
-	accfft_execute_c2c_gpu(plan,ACCFFT_FORWARD,data,data_hat);
+	plan.execute_c2c(ACCFFT_FORWARD,data,data_hat);
+	plan.execute_c2c(ACCFFT_FORWARD,data,data_hat);
 #endif
 
 	/*  Initialize data */
@@ -79,9 +79,9 @@ void step3_gpu(int *n) {
 	/* Perform forward FFT */
 	f_time -= MPI_Wtime();
 #ifdef INPLACE
-	accfft_execute_c2c_gpu(plan, ACCFFT_FORWARD, data, data);
+	plan.execute_c2c(ACCFFT_FORWARD, data, data);
 #else
-	accfft_execute_c2c_gpu(plan,ACCFFT_FORWARD,data,data_hat);
+	plan.execute_c2c(ACCFFT_FORWARD,data,data_hat);
 #endif
 	f_time += MPI_Wtime();
 
@@ -96,9 +96,9 @@ void step3_gpu(int *n) {
 	/* Perform backward FFT */
 	i_time -= MPI_Wtime();
 #ifdef INPLACE
-	accfft_execute_c2c_gpu(plan, ACCFFT_BACKWARD, data, data);
+	plan.execute_c2c(ACCFFT_BACKWARD, data, data);
 #else
-	accfft_execute_c2c_gpu(plan,ACCFFT_BACKWARD,data_hat,data2);
+	plan.execute_c2c(ACCFFT_BACKWARD,data_hat,data2);
 #endif
 	i_time += MPI_Wtime();
 
@@ -137,7 +137,6 @@ void step3_gpu(int *n) {
 	free(data2_cpu);
 	cudaFree(data2);
 #endif
-	accfft_destroy_plan_gpu(plan);
 	accfft_cleanup_gpu();
 	MPI_Comm_free(&c_comm);
 	return;
@@ -161,7 +160,8 @@ void initialize(Complex *a, int*n, MPI_Comm c_comm) {
 	int n_tuples = (n[2]);
 	int istart[3], isize[3];
 	int ostart[3], osize[3];
-	accfft_local_size_dft_c2c_gpu(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_c2c_gpu<double>(
+                        n, isize, istart, osize, ostart, c_comm);
 #pragma omp parallel num_threads(16)
 	{
 		double X, Y, Z;
@@ -194,7 +194,8 @@ void check_err(Complex* a, int*n, MPI_Comm c_comm) {
 	double pi = 4 * atan(1.0);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_c2c_gpu(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_c2c_gpu<double>(
+                        n, isize, istart, osize, ostart, c_comm);
 
 	double err = 0, norm = 0;
 
