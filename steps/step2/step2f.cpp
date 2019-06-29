@@ -37,7 +37,7 @@ void initialize(float *a, int*n, MPI_Comm c_comm) {
 
 	// Get the local pencil size and the allocation size
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<float>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
@@ -75,7 +75,7 @@ void check_err(float* a, int*n, MPI_Comm c_comm) {
 	int n2_ = (n[2] / 2 + 1) * 2;
 	// Get the local pencil size and the allocation size
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<float>(n, isize, istart, osize, ostart, c_comm);
 
 	float err = 0, norm = 0;
 	{
@@ -128,7 +128,7 @@ void step2(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_t<float>(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c<float>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	data = (float*) accfft_alloc(alloc_max);

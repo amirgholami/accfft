@@ -33,7 +33,7 @@ void step2_gpu(int *n) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	/* Note that both need to be allocated by alloc_max because of inplace transform*/
@@ -44,13 +44,13 @@ void step2_gpu(int *n) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_plan_gpu * plan = accfft_plan_dft_3d_r2c_gpu(n, data, data, c_comm,
-			ACCFFT_MEASURE);
+	AccFFTd_gpu plan = AccFFTd_gpu(n, data, (Complex *)data,
+                        c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/* Warm Up */
-	accfft_execute_r2c_gpu(plan, data, (Complex*) data);
-	accfft_execute_r2c_gpu(plan, data, (Complex*) data);
+	plan.execute_r2c(data, (Complex*) data);
+	plan.execute_r2c(data, (Complex*) data);
 
 	/* Initialize data */
 	initialize_gpu(data, n, isize, istart);
@@ -58,13 +58,13 @@ void step2_gpu(int *n) {
 
 	/* Perform forward FFT */
 	f_time -= MPI_Wtime();
-	accfft_execute_r2c_gpu(plan, data, (Complex*) data);
+	plan.execute_r2c(data, (Complex*) data);
 	f_time += MPI_Wtime();
 	MPI_Barrier(c_comm);
 
 	/* Perform backward FFT */
 	i_time -= MPI_Wtime();
-	accfft_execute_c2r_gpu(plan, (Complex*) data, data);
+	plan.execute_c2r((Complex*) data, data);
 	i_time += MPI_Wtime();
 
 	/* copy back results on CPU */
@@ -88,7 +88,6 @@ void step2_gpu(int *n) {
 
 	free(data_cpu);
 	cudaFree(data);
-	accfft_destroy_plan_gpu(plan);
 	accfft_cleanup_gpu();
 	MPI_Comm_free(&c_comm);
 	return;
@@ -111,7 +110,7 @@ void check_err(double* a, int*n, MPI_Comm c_comm) {
 	int n2_ = (n[2] / 2 + 1) * 2;
 	// Get the local pencil size and the allocation size
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart, c_comm);
 
 	double err = 0, norm = 0;
 	{

@@ -153,7 +153,7 @@ void grad(int *n) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	//data=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
@@ -167,8 +167,8 @@ void grad(int *n) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_plan_gpu * plan = accfft_plan_dft_3d_r2c_gpu(n, data,
-			(double*) data_hat, c_comm, ACCFFT_MEASURE);
+	AccFFTd_gpu plan = AccFFTd_gpu(n, data,
+			data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/*  Initialize data */
@@ -188,7 +188,7 @@ void grad(int *n) {
 	XYZ[1] = 1;
 	XYZ[2] = 1;
 	double exec_time = -MPI_Wtime();
-	accfft_grad_gpu(gradx, grady, gradz, data, plan, &XYZ, timings);
+	accfft_grad_gpu(gradx, grady, gradz, data, &plan, &XYZ, timings);
 	exec_time += MPI_Wtime();
 	/* Check err*/
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -231,7 +231,6 @@ void grad(int *n) {
 	cudaFree(gradx);
 	cudaFree(grady);
 	cudaFree(gradz);
-	accfft_destroy_plan(plan);
 	accfft_cleanup_gpu();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------";
@@ -256,7 +255,7 @@ void laplace(int *n) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	//data=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
@@ -270,8 +269,8 @@ void laplace(int *n) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_plan_gpu * plan = accfft_plan_dft_3d_r2c_gpu(n, data,
-			(double*) data_hat, c_comm, ACCFFT_MEASURE);
+	AccFFTd_gpu plan = AccFFTd_gpu(n, data,
+			data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/*  Initialize data */
@@ -285,7 +284,7 @@ void laplace(int *n) {
 	double timings[5] = { 0 };
 
 	double exec_time = -MPI_Wtime();
-	accfft_laplace_gpu(laplace, data, plan, timings);
+	accfft_laplace_gpu(laplace, data, &plan, timings);
 	exec_time += MPI_Wtime();
 	/* Check err*/
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -312,7 +311,6 @@ void laplace(int *n) {
 	cudaFree(data_hat);
 	MPI_Barrier(c_comm);
 	cudaFree(laplace);
-	accfft_destroy_plan(plan);
 	accfft_cleanup_gpu();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------";
@@ -337,7 +335,7 @@ void biharmonic(int *n) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	//data=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
@@ -351,8 +349,8 @@ void biharmonic(int *n) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_plan_gpu * plan = accfft_plan_dft_3d_r2c_gpu(n, data,
-			(double*) data_hat, c_comm, ACCFFT_MEASURE);
+	AccFFTd_gpu plan = AccFFTd_gpu(n, data,
+			data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/*  Initialize data */
@@ -366,7 +364,7 @@ void biharmonic(int *n) {
 	double timings[5] = { 0 };
 
 	double exec_time = -MPI_Wtime();
-	accfft_biharmonic_gpu(biharmonic, data, plan, timings);
+	accfft_biharmonic_gpu(biharmonic, data, &plan, timings);
 	exec_time += MPI_Wtime();
 	/* Check err*/
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -393,7 +391,6 @@ void biharmonic(int *n) {
 	cudaFree(data_hat);
 	MPI_Barrier(c_comm);
 	cudaFree(biharmonic);
-	accfft_destroy_plan(plan);
 	accfft_cleanup_gpu();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------"
@@ -421,7 +418,7 @@ void divergence(int *n) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	//data=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
@@ -435,8 +432,8 @@ void divergence(int *n) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_plan_gpu * plan = accfft_plan_dft_3d_r2c_gpu(n, data,
-			(double*) data_hat, c_comm, ACCFFT_MEASURE);
+	AccFFTd_gpu plan = AccFFTd_gpu(n, data,
+			data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/*  Initialize data */
@@ -457,8 +454,8 @@ void divergence(int *n) {
 	XYZ[1] = 1;
 	XYZ[2] = 1;
 	double exec_time = -MPI_Wtime();
-	accfft_grad_gpu(gradx, grady, gradz, data, plan, &XYZ, timings);
-	accfft_divergence_gpu(divergence, gradx, grady, gradz, plan, timings);
+	accfft_grad_gpu(gradx, grady, gradz, data, &plan, &XYZ, timings);
+	accfft_divergence_gpu(divergence, gradx, grady, gradz, &plan, timings);
 	exec_time += MPI_Wtime();
 
 	PCOUT << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
@@ -487,7 +484,6 @@ void divergence(int *n) {
 	cudaFree(gradx);
 	cudaFree(grady);
 	cudaFree(gradz);
-	accfft_destroy_plan(plan);
 	accfft_cleanup_gpu();
 	MPI_Comm_free(&c_comm);
 	PCOUT << "-------------------------------------------------------"
@@ -534,7 +530,7 @@ int main(int argc, char **argv) {
 void initialize(double *a, int *n, MPI_Comm c_comm) {
 	double pi = M_PI;
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
@@ -567,7 +563,7 @@ void check_err_grad(double* a, int*n, MPI_Comm c_comm, int direction) {
 	double pi = 4 * atan(1.0);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart, c_comm);
 
 	double err = 0, norm = 0;
 
@@ -615,7 +611,7 @@ void check_err_laplace(double* a, int*n, MPI_Comm c_comm) {
 	double pi = M_PI;
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart, c_comm);
 
 	double err = 0, norm = 0;
 
@@ -662,7 +658,7 @@ void check_err_biharmonic(double* a, int*n, MPI_Comm c_comm) {
 	double pi = M_PI;
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_gpu(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_gpu<double>(n, isize, istart, osize, ostart, c_comm);
 
 	double err = 0, norm = 0;
 

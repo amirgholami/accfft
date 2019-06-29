@@ -36,7 +36,7 @@ void solution(double* u_true, double * u_0, double T, int *N, AccFFTd *plan,
 	MPI_Comm_size(c_comm, &nprocs);
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	int alloc_max = accfft_local_size_dft_r2c_t<double>(N, isize, istart, osize, ostart,
+	int alloc_max = accfft_local_size_dft_r2c<double>(N, isize, istart, osize, ostart,
 			c_comm);
 
 	// Allocate a scratch buffer
@@ -121,7 +121,7 @@ void step6(int *n, int nthreads) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_t<double>(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c<double>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	/* Offsets for writing the output data */
@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
 void initialize(double *a, int *n, MPI_Comm c_comm) {
 	double pi = M_PI;
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_t<double>(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c<double>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
