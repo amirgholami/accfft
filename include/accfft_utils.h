@@ -21,6 +21,9 @@
 #ifndef _ACCFFT_UTILS_H
 #define _ACCFFT_UTILS_H
 
+#include "accfft_operators.h"
+#include "accfft_operators_gpu.h"
+
 #ifdef USE_PNETCDF
 void read_pnetcdf_d(const std::string &filename,
 		MPI_Offset starts[3],

@@ -18,6 +18,10 @@
  *
  */
 
+/* Note: This file is #include-d by accfft_utils.h
+ * and requires linking with -laccfft_utils
+ */
+
 #ifndef ACCFFT_OPERATORS_GPU_H
 #define ACCFFT_OPERATORS_GPU_H
 

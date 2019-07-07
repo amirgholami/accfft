@@ -1,9 +1,3 @@
-#include <cmath>
-#include <string.h>
-#include <accfft.h>
-
-#ifdef USE_PNETCDF
-
 #include <pnetcdf.h>
 #include <cstdlib>
 #include <string>
@@ -281,12 +275,6 @@ void write_pnetcdf_d(const std::string &filename,
 	PNETCDF_HANDLE_ERROR;
 
 } // write_pnetcdf
-#endif
-#ifdef USE_PNETCDF
-#include <pnetcdf.h>
-#include <cstdlib>
-#include <string>
-#include <iostream>
 
 #define PNETCDF_HANDLE_ERROR {				      \
     if (err != NC_NOERR)				      \
@@ -550,4 +538,3 @@ void write_pnetcdf_s(const std::string &filename,
 	PNETCDF_HANDLE_ERROR;
 
 } // write_pnetcdf
-#endif

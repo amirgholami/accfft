@@ -18,6 +18,8 @@
  *
 */
 
+/* Note: This file is #include-d by both accfft.h and accfft_gpu.h
+ */
 #ifndef ACCFFT_COMMON_H
 #define ACCFFT_COMMON_H
 #include <mpi.h>
@@ -30,7 +32,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <cstddef>
-#include "accfft_utils.h"
 
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];

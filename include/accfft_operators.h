@@ -18,9 +18,12 @@
  *
  */
 
+/* Note: This file is #include-d by accfft_utils.h
+ * and requires linking with -laccfft_utils
+ */
+
 #ifndef ACCFFT_OPERATORS_H
 #define ACCFFT_OPERATORS_H
-#include <accfft.h>
 
 template<typename T, typename Tp> void accfft_grad_slow(T* A_x, T* A_y, T* A_z,
 		T* A, Tp *plan, std::bitset<3>* pXYZ = NULL, double* timer = NULL);
