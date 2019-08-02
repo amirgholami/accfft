@@ -22,7 +22,10 @@
 #define _ACCFFT_UTILS_H
 
 #include "accfft_operators.h"
+
+#ifdef ENABLE_GPU
 #include "accfft_operators_gpu.h"
+#endif
 
 #ifdef USE_PNETCDF
 template void read_pnetcdf(const std::string &, MPI_Offset starts[3],
