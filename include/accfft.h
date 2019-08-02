@@ -20,16 +20,10 @@
 
 #ifndef ACCFFT_H
 #define ACCFFT_H
-#include <mpi.h>
-#include <fftw3.h>
-#include <omp.h>
-#include <iostream>
-#include <cmath>
-#include <math.h>
-#include "transpose.h"
 #include <string.h>
 #include <string>
 #include <bitset>
+#include "transpose.h"
 #include "accfft_common.h"
 
 /**

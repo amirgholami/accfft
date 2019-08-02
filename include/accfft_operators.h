@@ -22,6 +22,8 @@
  * and requires linking with -laccfft_utils
  */
 
+#include "accfft.h"
+
 #ifndef ACCFFT_OPERATORS_H
 #define ACCFFT_OPERATORS_H
 

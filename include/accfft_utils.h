@@ -25,34 +25,14 @@
 #include "accfft_operators_gpu.h"
 
 #ifdef USE_PNETCDF
-void read_pnetcdf_d(const std::string &filename,
-		MPI_Offset starts[3],
-		MPI_Offset counts[3],
-		MPI_Comm c_comm,
-		int gsizes[3],
-		double *localData);
-
-void write_pnetcdf_d(const std::string &filename,
-		MPI_Offset starts[3],
-		MPI_Offset counts[3],
-		MPI_Comm c_comm,
-		int gsizes[3],
-		double *localData);
-
-void read_pnetcdf_s(const std::string &filename,
-		MPI_Offset starts[3],
-		MPI_Offset counts[3],
-		MPI_Comm c_comm,
-		int gsizes[3],
-		float *localData);
-
-void write_pnetcdf_s(const std::string &filename,
-		MPI_Offset starts[3],
-		MPI_Offset counts[3],
-		MPI_Comm c_comm,
-		int gsizes[3],
-		float *localData);
-
+template void read_pnetcdf(const std::string &, MPI_Offset starts[3],
+        MPI_Offset counts[3], MPI_Comm, int gsizes[3], float *);
+template void write_pnetcdf(const std::string &, MPI_Offset starts[3],
+        MPI_Offset counts[3], MPI_Comm, int gsizes[3], double *);
+template void read_pnetcdf(const std::string &, MPI_Offset starts[3],
+        MPI_Offset counts[3], MPI_Comm, int gsizes[3], float *);
+template void write_pnetcdf(const std::string &, MPI_Offset starts[3],
+        MPI_Offset counts[3], MPI_Comm, int gsizes[3], double *);
 #endif
 
 #endif // _ACCFFT_UTILS_H

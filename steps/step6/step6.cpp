@@ -181,11 +181,11 @@ void step6(int *n, int nthreads) {
 #ifdef USE_PNETCDF
 	/* Write the output */
 	filename = "u_0.nc";
-	write_pnetcdf_d(filename,istart_mpi,isize_mpi,c_comm,n,u_0);
+	write_pnetcdf(filename,istart_mpi,isize_mpi,c_comm,n,u_0);
 	filename = "u_true.nc";
-	write_pnetcdf_d(filename,istart_mpi,isize_mpi,c_comm,n,u_true);
+	write_pnetcdf(filename,istart_mpi,isize_mpi,c_comm,n,u_true);
 	filename = "u_num.nc";
-	write_pnetcdf_d(filename,istart_mpi,isize_mpi,c_comm,n,u_n);
+	write_pnetcdf(filename,istart_mpi,isize_mpi,c_comm,n,u_n);
 #endif
 
 	/* Compute some timings statistics */
