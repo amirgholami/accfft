@@ -599,7 +599,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
     std::string filename = "rho.nc";
     MPI_Offset istart_mpi[3] = { istart[0], istart[1], istart[2] }; 
     MPI_Offset isize_mpi[3]  = { isize[0],  isize[1],  isize[2] }; 
-    write_pnetcdf_d(filename, istart_mpi, isize_mpi, c_comm, n, rho_cpu);
+    write_pnetcdf(filename, istart_mpi, isize_mpi, c_comm, n, rho_cpu);
   }
 #else
   {
