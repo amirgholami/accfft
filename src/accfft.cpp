@@ -1241,6 +1241,19 @@ CMETHOD(void, execute_c2r_x)(
   }
 }
 
+/* Use this template code to determine the appropriate MKL_cplx */
+#ifdef ACCFFT_MKL
+template <typename real> class get_MKL_cplx;
+template<> class get_MKL_cplx<float> {
+    public:
+        typedef MKL_Complex8 result;
+};
+template<> class get_MKL_cplx<double> {
+    public:
+        typedef MKL_Complex16 result;
+};
+#endif
+
 CMETHOD(void, execute)(int direction,
         real *data, real *data_out, double *timer, std::bitset<3> XYZ) {
   if (data == NULL)
@@ -1249,6 +1262,9 @@ CMETHOD(void, execute)(int direction,
     data_out = (real *)data_out_c;
   double fft_time = 0;
   double timings[5] = { 0 };
+#ifdef ACCFFT_MKL
+  typedef typename get_MKL_cplx<real>::result MKL_cplx;
+#endif
 
   // 1D Decomposition
   if (direction == -1) {

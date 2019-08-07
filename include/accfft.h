@@ -32,10 +32,21 @@
  *    cplx = Tc = Complex / Complexf
  *    fftw_ptype = P = fftw_plan / fftwf_plan
  */
-#ifndef ACCFFT_PLAN_T
-#define ACCFFT_PLAN_T
-template <typename real, typename cplx, typename fftw_ptype>
+template <typename real> class get_fftw_plan_type;
+
+template<> class get_fftw_plan_type<float> {
+  public:
+    typedef fftwf_plan result;
+};
+template<> class get_fftw_plan_type<double> {
+  public:
+    typedef fftw_plan result;
+};
+
+template <typename real>
 class AccFFT {
+  typedef typename get_fftw_plan_type<real>::result fftw_ptype;
+  typedef real cplx[2];
   int alloc_max;
   T_Plan<real> *T_plan_1;
   T_Plan<real> *T_plan_2;
@@ -105,12 +116,11 @@ class AccFFT {
     void execute_c2r_x(cplx *data, real *out, double *timer = NULL);
 };
 
-typedef class AccFFT<float, Complexf, fftwf_plan> AccFFTs;
-typedef class AccFFT<double, Complex, fftw_plan> AccFFTd;
+typedef class AccFFT<float> AccFFTs;
+typedef class AccFFT<double> AccFFTd;
 
-template class AccFFT<float, Complexf, fftwf_plan>;
-template class AccFFT<double, Complex, fftw_plan>;
-#endif
+template class AccFFT<float>;
+template class AccFFT<double>;
 
 int accfft_init(int nthreads);
 

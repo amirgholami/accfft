@@ -80,12 +80,10 @@ TPL_DECL(C2C_SIZE)
 
 /* Helper macros for defining class methods. */
 #define EMPTY_ARG
-#define CMETHOD(ret, name) template <typename real, typename cplx, \
-                             typename fftw_ptype> \
-            ret AccFFT<real, cplx, fftw_ptype> :: name
-#define GMETHOD(ret, name) template <typename real, typename cplx, \
-                             typename cu_real, typename cu_cplx> \
-            ret AccFFT_gpu<real, cplx, cu_real, cu_cplx> :: name
+#define CMETHOD(ret, name) template <typename real> \
+            ret AccFFT<real> :: name
+#define GMETHOD(ret, name) template <typename real> \
+            ret AccFFT_gpu<real> :: name
 
 #define CMETHOD1(name) CMETHOD(EMPTY_ARG, name)
 #define GMETHOD1(name) GMETHOD(EMPTY_ARG, name)

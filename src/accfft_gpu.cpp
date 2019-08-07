@@ -529,8 +529,9 @@ GMETHOD(void, execute)(int direction, real *data_d,
 		if (xyz[2]) {
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
 			checkCuda_accfft(
-					exec_r2c(fplan_0, (cu_real*) data_d,
-							(cu_cplx*) data_out_d));
+					exec_r2c(fplan_0,
+					  reinterpret_cast<typename cu_type<real>::real *>(data_d),
+					  reinterpret_cast<typename cu_type<real>::cplx *>(data_out_d)));
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
 			checkCuda_accfft(
@@ -554,10 +555,11 @@ GMETHOD(void, execute)(int direction, real *data_d,
 			for (int i = 0; i < osize_1[0]; ++i) {
 				checkCuda_accfft(
             exec_c2c(fplan_1,
-								(cu_cplx*) &data_out_d[2 * i * osize_1[1]
-										* osize_1[2]],
-								(cu_cplx*) &data_out_d[2 * i * osize_1[1]
-										* osize_1[2]], CUFFT_FORWARD));
+								reinterpret_cast<typename cu_type<real>::cplx *>(
+                        &data_out_d[2 * i * osize_1[1] * osize_1[2]]),
+								reinterpret_cast<typename cu_type<real>::cplx *>(
+                        &data_out_d[2 * i * osize_1[1] * osize_1[2]]),
+                CUFFT_FORWARD));
 			}
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
@@ -579,8 +581,8 @@ GMETHOD(void, execute)(int direction, real *data_d,
 		if (xyz[0]) {
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
 			checkCuda_accfft(
-					exec_c2c(fplan_2, (cu_cplx*) data_out_d,
-							(cu_cplx*) data_out_d, CUFFT_FORWARD));
+					exec_c2c(fplan_2, reinterpret_cast<typename cu_type<real>::cplx *>(data_out_d),
+							reinterpret_cast<typename cu_type<real>::cplx *>(data_out_d), CUFFT_FORWARD));
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
 			checkCuda_accfft(
@@ -592,8 +594,8 @@ GMETHOD(void, execute)(int direction, real *data_d,
 		if (xyz[0]) {
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
 			checkCuda_accfft(
-					exec_c2c(fplan_2, (cu_cplx*) data_d,
-							(cu_cplx*) data_d, CUFFT_INVERSE));
+					exec_c2c(fplan_2, reinterpret_cast<typename cu_type<real>::cplx *>(data_d),
+							reinterpret_cast<typename cu_type<real>::cplx *>(data_d), CUFFT_INVERSE));
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
 			checkCuda_accfft(
@@ -617,8 +619,8 @@ GMETHOD(void, execute)(int direction, real *data_d,
 			for (int i = 0; i < osize_1i[0]; ++i) {
 				checkCuda_accfft(
 						exec_c2c(fplan_1,
-								(cu_cplx*) &data_d[2 * i * NY * osize_1i[2]],
-								(cu_cplx*) &data_d[2 * i * NY * osize_1i[2]],
+								reinterpret_cast<typename cu_type<real>::cplx *>(&data_d[2 * i * NY * osize_1i[2]]),
+								reinterpret_cast<typename cu_type<real>::cplx *>(&data_d[2 * i * NY * osize_1i[2]]),
 								CUFFT_INVERSE));
 			}
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
@@ -641,8 +643,8 @@ GMETHOD(void, execute)(int direction, real *data_d,
 		if (xyz[2]) {
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
 			checkCuda_accfft(
-					exec_c2r(iplan_0, (cu_cplx*) data_d,
-							(cu_real*) data_out_d));
+					exec_c2r(iplan_0, reinterpret_cast<typename cu_type<real>::cplx *>(data_d),
+							reinterpret_cast<typename cu_type<real>::real *>(data_out_d)));
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
 			checkCuda_accfft(
@@ -1030,8 +1032,8 @@ GMETHOD(void, execute_c2c)(int direction,
 		if (xyz[2]) {
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
 			checkCuda_accfft(
-					exec_c2c(fplan_0, (cu_cplx*) data_d,
-							(cu_cplx*) data_out_d, CUFFT_FORWARD));
+					exec_c2c(fplan_0, reinterpret_cast<typename cu_type<real>::cplx *>(data_d),
+							reinterpret_cast<typename cu_type<real>::cplx *>(data_out_d), CUFFT_FORWARD));
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
 			checkCuda_accfft(
@@ -1054,10 +1056,11 @@ GMETHOD(void, execute_c2c)(int direction,
 			for (int i = 0; i < osize_1[0]; ++i) {
 				checkCuda_accfft(
 						exec_c2c(fplan_1,
-								(cu_cplx*) &data_out_d[i * osize_1[1]
-										* osize_1[2]],
-								(cu_cplx*) &data_out_d[i * osize_1[1]
-										* osize_1[2]], CUFFT_FORWARD));
+								reinterpret_cast<typename cu_type<real>::cplx *>(
+                    &data_out_d[i * osize_1[1] * osize_1[2]],
+								reinterpret_cast<typename cu_type<real>::cplx *>(
+                    &data_out_d[i * osize_1[1] * osize_1[2]],
+                CUFFT_FORWARD));
 			}
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
@@ -1082,8 +1085,8 @@ GMETHOD(void, execute_c2c)(int direction,
 		if (xyz[0]) {
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
 			checkCuda_accfft(
-					exec_c2c(fplan_2, (cu_cplx*) data_out_d,
-							(cu_cplx*) data_out_d, CUFFT_FORWARD));
+					exec_c2c(fplan_2, reinterpret_cast<typename cu_type<real>::cplx *>(data_out_d),
+							reinterpret_cast<typename cu_type<real>::cplx *>(data_out_d), CUFFT_FORWARD));
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
 			checkCuda_accfft(
@@ -1096,8 +1099,8 @@ GMETHOD(void, execute_c2c)(int direction,
 		if (xyz[0]) {
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
 			checkCuda_accfft(
-					exec_c2c(fplan_2, (cu_cplx*) data_d,
-							(cu_cplx*) data_d, CUFFT_INVERSE));
+					exec_c2c(fplan_2, reinterpret_cast<typename cu_type<real>::cplx *>(data_d),
+							reinterpret_cast<typename cu_type<real>::cplx *>(data_d), CUFFT_INVERSE));
 			checkCuda_accfft(cudaDeviceSynchronize());
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
@@ -1123,8 +1126,8 @@ GMETHOD(void, execute_c2c)(int direction,
 			for (int i = 0; i < osize_1i[0]; ++i) {
 				checkCuda_accfft(
 						exec_c2c(fplan_1,
-								(cu_cplx*) &data_d[i * NY * osize_1i[2]],
-								(cu_cplx*) &data_d[i * NY * osize_1i[2]],
+								reinterpret_cast<typename cu_type<real>::cplx *>(&data_d[i * NY * osize_1i[2]]),
+								reinterpret_cast<typename cu_type<real>::cplx *>(&data_d[i * NY * osize_1i[2]]),
 								CUFFT_INVERSE));
 			}
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
@@ -1146,8 +1149,8 @@ GMETHOD(void, execute_c2c)(int direction,
 		if (xyz[2]) {
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
 			checkCuda_accfft(
-					exec_c2c(fplan_0, (cu_cplx*) data_d,
-							(cu_cplx*) data_out_d, CUFFT_INVERSE));
+					exec_c2c(fplan_0, reinterpret_cast<typename cu_type<real>::cplx *>(data_d),
+							reinterpret_cast<typename cu_type<real>::cplx *>(data_out_d), CUFFT_INVERSE));
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
 			checkCuda_accfft(
@@ -1248,8 +1251,8 @@ GMETHOD(void, execute_z)(int direction,
     // FFT in Z direction
     checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
     checkCuda_accfft(
-        exec_r2c(fplan_0, (cu_real*) data_d,
-          (cu_cplx*) data_out_d));
+        exec_r2c(fplan_0, reinterpret_cast<typename cu_type<real>::real *>(data_d),
+          reinterpret_cast<typename cu_type<real>::cplx *>(data_out_d)));
     checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
     checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
     checkCuda_accfft(
@@ -1264,8 +1267,8 @@ GMETHOD(void, execute_z)(int direction,
     // IFFT in Z direction
     checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
     checkCuda_accfft(
-        exec_c2r(iplan_0, (cu_cplx*) data_d,
-          (cu_real*) data_out_d));
+        exec_c2r(iplan_0, reinterpret_cast<typename cu_type<real>::cplx *>(data_d),
+          reinterpret_cast<typename cu_type<real>::real *>(data_out_d)));
     checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
     checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
     checkCuda_accfft(
@@ -1361,10 +1364,11 @@ GMETHOD(void, execute_y)(int direction,
     for (int i = 0; i < osize_y[0]; ++i) {
       checkCuda_accfft(
           exec_r2c(fplan_y,
-            (cu_real*) &cwork_d[i
-            * osize_y[1] * osize_y[2]],
-            (cu_cplx*) &data_out_d[2 * i
-            * osize_yi[1] * osize_y[2]]));
+            reinterpret_cast<typename cu_type<real>::real *>(
+                &cwork_d[i * osize_y[1] * osize_y[2]]),
+            reinterpret_cast<typename cu_type<real>::cplx *>(
+                &data_out_d[2 * i * osize_yi[1] * osize_y[2]]))
+          );
     }
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
@@ -1380,10 +1384,11 @@ GMETHOD(void, execute_y)(int direction,
     for (int i = 0; i < osize_yi[0]; ++i) {
       checkCuda_accfft(
           exec_c2r(iplan_y,
-            (cu_cplx*) &data_d[2 * i * osize_yi[1]
-            * osize_yi[2]],
-            (cu_real*) &cwork_d[i * osize_y[1]
-            * osize_yi[2]]));
+            reinterpret_cast<typename cu_type<real>::cplx *>(
+                &data_d[2 * i * osize_yi[1] * osize_yi[2]]),
+            reinterpret_cast<typename cu_type<real>::real *>(
+                &cwork_d[i * osize_y[1] * osize_yi[2]]))
+            );
     }
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
@@ -1486,8 +1491,8 @@ GMETHOD(void, execute_x)(int direction,
 		/**************************************************************/
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
     checkCuda_accfft(
-        exec_r2c(fplan_x, (cu_real*) cwork_d,
-          (cu_cplx*) data_out_d));
+        exec_r2c(fplan_x, reinterpret_cast<typename cu_type<real>::real *>(cwork_d),
+          reinterpret_cast<typename cu_type<real>::cplx *>(data_out_d)));
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
 			checkCuda_accfft(
@@ -1501,8 +1506,8 @@ GMETHOD(void, execute_x)(int direction,
 		/**************************************************************/
 			checkCuda_accfft(cudaEventRecord(fft_startEvent, 0));
     checkCuda_accfft(
-        exec_c2r(iplan_x, (cu_cplx*) data_d,
-          (cu_real*) data_d));
+        exec_c2r(iplan_x, reinterpret_cast<typename cu_type<real>::cplx *>(data_d),
+          reinterpret_cast<typename cu_type<real>::real *>(data_d)));
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
 			checkCuda_accfft(cudaEventSynchronize(fft_stopEvent)); // wait until fft is executed
 			checkCuda_accfft(
