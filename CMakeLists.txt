@@ -108,7 +108,6 @@ if (PNETCDF_FOUND)
 else()
   set (libaccfft_utils_SRCS ${libaccfft_SRCS} 
     src/operators.cpp
-    src/netcdf.cpp
     )
 endif()
 

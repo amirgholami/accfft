@@ -20,6 +20,7 @@
 
 #ifndef _TRANSPOSE_
 #define _TRANSPOSE_
+#include <mpi.h>
 #include <vector>
 template<typename T>
 class Mem_Mgr {

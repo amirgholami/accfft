@@ -576,8 +576,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   //accfft_init(nthreads);
   setup_time=-MPI_Wtime();
   /* Create FFT plan */
-  AccFFTd_gpu plan = AccFFTd_gpu(n, rho, phi_hat,
-						      c_comm, ACCFFT_MEASURE);
+  AccFFTd_gpu plan = AccFFTd_gpu(n, rho, phi_hat, c_comm, ACCFFT_MEASURE);
   setup_time+=MPI_Wtime();
 
   /*  Initialize rho (force) */
@@ -600,12 +599,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
     std::string filename = "rho.nc";
     MPI_Offset istart_mpi[3] = { istart[0], istart[1], istart[2] }; 
     MPI_Offset isize_mpi[3]  = { isize[0],  isize[1],  isize[2] }; 
-    write_pnetcdf(filename,
-		  istart_mpi,
-		  isize_mpi,
-      c_comm,
-		  n,
-		  rho_cpu);
+    write_pnetcdf_d(filename, istart_mpi, isize_mpi, c_comm, n, rho_cpu);
   }
 #else
   {
@@ -809,11 +803,9 @@ void getPoissonParams(const int argc, char *argv[],
 /******************************************************/
 /******************************************************/
 /******************************************************/
-int main(int argc, char *argv[])
-{
-
-  MPI_Init (&argc, &argv);
+int main(int argc, char *argv[]) {
   int nprocs, procid;
+  MPI_Init (&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &procid);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
@@ -827,6 +819,7 @@ int main(int argc, char *argv[])
     if (procid == 0) {
       std::cerr << "---> Wrong test case. Must be integer < 2 !!!\n";
     }
+    goto err;
   } else {
     if (procid == 0) {
       std::cout << "---> Using test case number : " << testCaseNb << std::endl;
@@ -837,6 +830,7 @@ int main(int argc, char *argv[])
   int nthreads=1;
   poisson_solve(params, nthreads);
 
+err:
   MPI_Finalize();
   return 0;
 } // end main

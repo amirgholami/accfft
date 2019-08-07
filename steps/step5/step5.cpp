@@ -10,7 +10,7 @@
 #include <math.h> // M_PI
 #include <mpi.h>
 #include <accfft.h>
-#include <accfft_operators.h>
+#include <accfft_utils.h>
 #define SIGMA 32
 #define C0 1
 #define C1 1

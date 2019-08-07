@@ -18,6 +18,8 @@
  *
 */
 
+/* Note: This file is #include-d by both accfft.h and accfft_gpu.h
+ */
 #ifndef ACCFFT_COMMON_H
 #define ACCFFT_COMMON_H
 #include <mpi.h>
@@ -30,6 +32,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <cstddef>
+
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
 typedef float Complexf[2];
@@ -77,50 +80,12 @@ TPL_DECL(C2C_SIZE)
 
 /* Helper macros for defining class methods. */
 #define EMPTY_ARG
-#define CMETHOD(ret, name) template <typename real, typename cplx, \
-                             typename fftw_ptype> \
-            ret AccFFT<real, cplx, fftw_ptype> :: name
-#define GMETHOD(ret, name) template <typename real, typename cplx, \
-                             typename cu_real, typename cu_cplx> \
-            ret AccFFT_gpu<real, cplx, cu_real, cu_cplx> :: name
+#define CMETHOD(ret, name) template <typename real> \
+            ret AccFFT<real> :: name
+#define GMETHOD(ret, name) template <typename real> \
+            ret AccFFT_gpu<real> :: name
 
 #define CMETHOD1(name) CMETHOD(EMPTY_ARG, name)
 #define GMETHOD1(name) GMETHOD(EMPTY_ARG, name)
 
 #endif
-#ifndef _PNETCDF_IO_H_
-#define _PNETCDF_IO_H_
-
-void read_pnetcdf(const std::string &filename,
-		  MPI_Offset         starts[3],
-		  MPI_Offset         counts[3],
-      MPI_Comm           c_comm,
-		  int                gsizes[3],
-		  double            *localData);
-
-void write_pnetcdf(const std::string &filename,
-		   MPI_Offset         starts[3],
-		   MPI_Offset         counts[3],
-       MPI_Comm           c_comm,
-		   int                gsizes[3],
-		   double            *localData);
-
-
-#endif // _PNETCDF_IO_H_
-#ifndef _PNETCDF_IO_F_H_
-#define _PNETCDF_IO_F_H_
-
-void read_pnetcdf(const std::string &filename,
-		  MPI_Offset         starts[3],
-		  MPI_Offset         counts[3],
-      MPI_Comm           c_comm,
-		  int                gsizes[3],
-		  float            *localData);
-
-void write_pnetcdf(const std::string &filename,
-		   MPI_Offset         starts[3],
-		   MPI_Offset         counts[3],
-       MPI_Comm           c_comm,
-		   int                gsizes[3],
-		   float            *localData);
-#endif // _PNETCDF_IO_F_H_

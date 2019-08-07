@@ -33,8 +33,10 @@
 #include <cufft.h>
 #include "accfft_common.h"
 
-template <typename real, typename cplx, typename cu_real, typename cu_cplx>
+template <typename real>
 class AccFFT_gpu {
+        typedef real cplx[2];
+
 	int alloc_max;
 	T_Plan_gpu<real> * T_plan_1;
 	T_Plan_gpu<real> * T_plan_2;
@@ -117,13 +119,11 @@ class AccFFT_gpu {
 
 void accfft_cleanup_gpu();
 
-typedef class AccFFT_gpu<float, Complexf, cufftReal, cufftComplex> AccFFTs_gpu;
-typedef class AccFFT_gpu<double, Complex,
-                cufftDoubleReal, cufftDoubleComplex> AccFFTd_gpu;
+typedef class AccFFT_gpu<float> AccFFTs_gpu;
+typedef class AccFFT_gpu<double> AccFFTd_gpu;
 
-template class AccFFT_gpu<float, Complexf, cufftReal, cufftComplex>;
-template class AccFFT_gpu<double, Complex,
-                cufftDoubleReal, cufftDoubleComplex>;
+template class AccFFT_gpu<float>;
+template class AccFFT_gpu<double>;
 
 /*template <typename T>
     int dfft_get_local_size_gpu(int N0, int N1, int N2,
@@ -134,6 +134,18 @@ template <typename T>
 template <typename T>
     int accfft_local_size_dft_r2c_gpu(const int *n, int *isize, int *istart,
         int *osize, int *ostart, MPI_Comm c_comm);
+
+template <typename real> class cu_type;
+template<> class cu_type<float> {
+  public:
+    typedef cufftReal real;
+    typedef cufftComplex cplx;
+}
+template<> class get_cu_real_type<double> {
+  public:
+    typedef cufftDoubleReal real;
+    typedef cufftDoubleComplex cplx;
+}
 #endif
 
 #ifndef ACCFFT_CHECKCUDA_H
