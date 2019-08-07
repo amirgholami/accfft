@@ -805,6 +805,7 @@ void getPoissonParams(const int argc, char *argv[],
 /******************************************************/
 int main(int argc, char *argv[]) {
   int nprocs, procid;
+  int nthreads = 1;
   MPI_Init (&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &procid);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -827,7 +828,6 @@ int main(int argc, char *argv[]) {
   }
 
 
-  int nthreads=1;
   poisson_solve(params, nthreads);
 
 err:

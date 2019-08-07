@@ -140,12 +140,12 @@ template<> class cu_type<float> {
   public:
     typedef cufftReal real;
     typedef cufftComplex cplx;
-}
-template<> class get_cu_real_type<double> {
+};
+template<> class cu_type<double> {
   public:
     typedef cufftDoubleReal real;
     typedef cufftDoubleComplex cplx;
-}
+};
 #endif
 
 #ifndef ACCFFT_CHECKCUDA_H

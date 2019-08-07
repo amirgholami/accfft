@@ -79,7 +79,7 @@ TPL_DECL(R2C_SIZE)
  */
 
 template<>
-AccFFT_gpu<float, Complexf, cufftReal, cufftComplex> :: AccFFT_gpu
+AccFFT_gpu<float> :: AccFFT_gpu
 (int *n, float *data_d, Complexf *data_out_d,
 		MPI_Comm c_comm, unsigned flags) {
   cu_r2c = CUFFT_R2C;
@@ -88,7 +88,7 @@ AccFFT_gpu<float, Complexf, cufftReal, cufftComplex> :: AccFFT_gpu
   init_r2c(n, data_d, data_out_d, c_comm, flags);
 }
 template<>
-AccFFT_gpu<float, Complexf, cufftReal, cufftComplex> :: AccFFT_gpu
+AccFFT_gpu<float> :: AccFFT_gpu
 (int *n, Complexf *data_d, Complexf *data_out_d,
 		MPI_Comm c_comm, unsigned flags) {
   cu_r2c = CUFFT_R2C;
@@ -97,7 +97,7 @@ AccFFT_gpu<float, Complexf, cufftReal, cufftComplex> :: AccFFT_gpu
   init_c2c(n, data_d, data_out_d, c_comm, flags);
 }
 template<>
-AccFFT_gpu<double, Complex, cufftDoubleReal, cufftDoubleComplex> :: AccFFT_gpu
+AccFFT_gpu<double> :: AccFFT_gpu
 (int *n, double *data_d, Complex *data_out_d,
 		MPI_Comm c_comm, unsigned flags) {
   cu_r2c = CUFFT_D2Z;
@@ -106,7 +106,7 @@ AccFFT_gpu<double, Complex, cufftDoubleReal, cufftDoubleComplex> :: AccFFT_gpu
   init_r2c(n, data_d, data_out_d, c_comm, flags);
 }
 template<>
-AccFFT_gpu<double, Complex, cufftDoubleReal, cufftDoubleComplex> :: AccFFT_gpu
+AccFFT_gpu<double> :: AccFFT_gpu
 (int *n, Complex *data_d, Complex *data_out_d,
 		MPI_Comm c_comm, unsigned flags) {
   cu_r2c = CUFFT_D2Z;
@@ -1057,9 +1057,9 @@ GMETHOD(void, execute_c2c)(int direction,
 				checkCuda_accfft(
 						exec_c2c(fplan_1,
 								reinterpret_cast<typename cu_type<real>::cplx *>(
-                    &data_out_d[i * osize_1[1] * osize_1[2]],
+                    &data_out_d[i * osize_1[1] * osize_1[2]]),
 								reinterpret_cast<typename cu_type<real>::cplx *>(
-                    &data_out_d[i * osize_1[1] * osize_1[2]],
+                    &data_out_d[i * osize_1[1] * osize_1[2]]),
                 CUFFT_FORWARD));
 			}
 			checkCuda_accfft(cudaEventRecord(fft_stopEvent, 0));
