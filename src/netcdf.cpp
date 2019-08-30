@@ -43,10 +43,10 @@ template<> inline nc_type real_nctype<double>() { return NC_DOUBLE; }
  */
 template <typename T>
 void read_pnetcdf(const std::string &filename,
-    MPI_Offset starts[3],
-    MPI_Offset counts[3],
-    MPI_Comm c_comm,
-    int gsizes[3],
+    const MPI_Offset starts[3],
+    const MPI_Offset counts[3],
+    const MPI_Comm c_comm,
+    const int gsizes[3],
     T *localData) {
 
   int myRank;
@@ -155,11 +155,11 @@ void read_pnetcdf(const std::string &filename,
  */
 template <typename T>
 void write_pnetcdf(const std::string &filename,
-    MPI_Offset starts[3],
-    MPI_Offset counts[3],
-    MPI_Comm c_comm,
-    int gsizes[3],
-    T *localData) {
+    const MPI_Offset starts[3],
+    const MPI_Offset counts[3],
+    const MPI_Comm c_comm,
+    const int gsizes[3],
+    const T *localData) {
   int myRank;
   MPI_Comm_rank(c_comm, &myRank);
 
@@ -263,15 +263,16 @@ void write_pnetcdf(const std::string &filename,
      * offset have to be inside global domain.
      * So there is no harm, setting starts to origin.
      */
+    MPI_Offset start2[3] = {starts[0], starts[1], starts[2]};
     if (nItems == 0) {
-      starts[0]=0;
-      starts[1]=0;
-      starts[2]=0;
+      start2[0]=0;
+      start2[1]=0;
+      start2[2]=0;
     }
 
     err = ncmpi_put_vara_all(ncFileId,
         varIds[0],
-        starts,
+        start2,
         counts,
         localData,
         nItems,
@@ -288,12 +289,12 @@ void write_pnetcdf(const std::string &filename,
 } // write_pnetcdf
 
 /* template instantiations */
-template void read_pnetcdf(const std::string &, MPI_Offset starts[3],
-        MPI_Offset counts[3], MPI_Comm, int gsizes[3], float *);
-template void write_pnetcdf(const std::string &, MPI_Offset starts[3],
-        MPI_Offset counts[3], MPI_Comm, int gsizes[3], float *);
-template void read_pnetcdf(const std::string &, MPI_Offset starts[3],
-        MPI_Offset counts[3], MPI_Comm, int gsizes[3], double *);
-template void write_pnetcdf(const std::string &, MPI_Offset starts[3],
-        MPI_Offset counts[3], MPI_Comm, int gsizes[3], double *);
+template void read_pnetcdf(const std::string &, const MPI_Offset starts[3],
+  const MPI_Offset counts[3], const MPI_Comm, const int gsizes[3], float *);
+template void write_pnetcdf(const std::string &, const MPI_Offset starts[3],
+  const MPI_Offset counts[3], const MPI_Comm, const int gsizes[3], const float *);
+template void read_pnetcdf(const std::string &, const MPI_Offset starts[3],
+  const MPI_Offset counts[3], const MPI_Comm, const int gsizes[3], double *);
+template void write_pnetcdf(const std::string &, const MPI_Offset starts[3],
+  const MPI_Offset counts[3], const MPI_Comm, const int gsizes[3], const double *);
 

@@ -30,11 +30,11 @@
 #ifdef USE_PNETCDF
 // real = float / double
 template <typename real>
-void read_pnetcdf(const std::string &, MPI_Offset starts[3],
-        MPI_Offset counts[3], MPI_Comm, int gsizes[3], real *);
+void read_pnetcdf(const std::string &, const MPI_Offset starts[3],
+ const MPI_Offset counts[3], const MPI_Comm, const int gsizes[3], real *);
 template <typename real>
-void write_pnetcdf(const std::string &, MPI_Offset starts[3],
-        MPI_Offset counts[3], MPI_Comm, int gsizes[3], real *);
+void write_pnetcdf(const std::string &, const MPI_Offset starts[3],
+ const MPI_Offset counts[3], const MPI_Comm, const int gsizes[3], const real *);
 #endif
 
 #endif // _ACCFFT_UTILS_H
