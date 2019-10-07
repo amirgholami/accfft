@@ -183,7 +183,7 @@ void initialize(double *rho, double *sol, int *n, MPI_Comm c_comm, PoissonParams
   double pi=M_PI;
   int n_tuples=n[2];
   int istart[3], isize[3], osize[3],ostart[3];
-  accfft_local_size_dft_r2c_gpu(n,isize,istart,osize,ostart,c_comm);
+  accfft_local_size_dft_r2c_gpu<double>(n,isize,istart,osize,ostart,c_comm);
 
   /*
    * testcase gaussian parameters
@@ -554,7 +554,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
 
   int isize[3],osize[3],istart[3],ostart[3];
   /* Get the local pencil size and the allocation size */
-  alloc_max=accfft_local_size_dft_r2c_gpu(n,isize,istart,osize,ostart,c_comm);
+  alloc_max=accfft_local_size_dft_r2c_gpu<double>(n,isize,istart,osize,ostart,c_comm);
 
   printf("[mpi rank %d] isize  %3d %3d %3d osize  %3d %3d %3d\n", procid,
 	 isize[0],isize[1],isize[2],
@@ -576,9 +576,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   //accfft_init(nthreads);
   setup_time=-MPI_Wtime();
   /* Create FFT plan */
-  accfft_plan_gpu * plan = accfft_plan_dft_3d_r2c_gpu(n,
-						      rho, (double*)phi_hat,
-						      c_comm, ACCFFT_MEASURE);
+  AccFFTd_gpu plan = AccFFTd_gpu(n, rho, phi_hat, c_comm, ACCFFT_MEASURE);
   setup_time+=MPI_Wtime();
 
   /*  Initialize rho (force) */
@@ -601,12 +599,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
     std::string filename = "rho.nc";
     MPI_Offset istart_mpi[3] = { istart[0], istart[1], istart[2] }; 
     MPI_Offset isize_mpi[3]  = { isize[0],  isize[1],  isize[2] }; 
-    write_pnetcdf(filename,
-		  istart_mpi,
-		  isize_mpi,
-      c_comm,
-		  n,
-		  rho_cpu);
+    write_pnetcdf(filename, istart_mpi, isize_mpi, c_comm, n, rho_cpu);
   }
 #else
   {
@@ -624,7 +617,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
    * Perform forward FFT 
    */
   f_time-=MPI_Wtime();
-  accfft_execute_r2c_gpu(plan,rho,phi_hat);
+  plan.execute_r2c(rho,phi_hat);
   f_time+=MPI_Wtime();
 
   MPI_Barrier(c_comm);
@@ -642,7 +635,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   phi_cpu=(double*)malloc(isize[0]*isize[1]*isize[2]*sizeof(double));
 
   i_time-=MPI_Wtime();
-  accfft_execute_c2r_gpu(plan,phi_hat,phi);
+  plan.execute_c2r(phi_hat,phi);
   i_time+=MPI_Wtime();
 
   // download data to CPU
@@ -706,7 +699,6 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   accfft_free(exact_solution);
   cudaFree(phi_hat);
   cudaFree(phi);
-  accfft_destroy_plan_gpu(plan);
   accfft_cleanup_gpu();
   MPI_Comm_free(&c_comm);
 
@@ -811,11 +803,10 @@ void getPoissonParams(const int argc, char *argv[],
 /******************************************************/
 /******************************************************/
 /******************************************************/
-int main(int argc, char *argv[])
-{
-
-  MPI_Init (&argc, &argv);
+int main(int argc, char *argv[]) {
   int nprocs, procid;
+  int nthreads = 1;
+  MPI_Init (&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &procid);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
@@ -829,6 +820,7 @@ int main(int argc, char *argv[])
     if (procid == 0) {
       std::cerr << "---> Wrong test case. Must be integer < 2 !!!\n";
     }
+    goto err;
   } else {
     if (procid == 0) {
       std::cout << "---> Using test case number : " << testCaseNb << std::endl;
@@ -836,9 +828,9 @@ int main(int argc, char *argv[])
   }
 
 
-  int nthreads=1;
   poisson_solve(params, nthreads);
 
+err:
   MPI_Finalize();
   return 0;
 } // end main

@@ -10,11 +10,11 @@
 #include <mpi.h>
 #include <cuda_runtime_api.h>
 //#include <accfft.h>
-#include <accfft_gpuf.h>
+#include <accfft_gpu.h>
 
-void initialize_gpu(float *a, int*n, int* isize, int * istart);
-void check_err(float* a, int*n, MPI_Comm c_comm);
-float testcase(float X, float Y, float Z);
+template <typename real> void initialize_gpu(real *a, int *n, int *isize, int *istart);
+void check_err(float *a, int*n, MPI_Comm c_comm);
+template <typename real> real testcase(real X, real Y, real Z);
 
 void step2_gpu(int *n) {
 
@@ -34,7 +34,7 @@ void step2_gpu(int *n) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpuf(n, isize, istart, osize, ostart,
+	alloc_max = accfft_local_size_dft_r2c_gpu<float>(n, isize, istart, osize, ostart,
 			c_comm);
 
 	/* Note that both need to be allocated by alloc_max because of inplace transform*/
@@ -45,13 +45,13 @@ void step2_gpu(int *n) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_plan_gpuf * plan = accfft_plan_dft_3d_r2c_gpuf(n, data, data, c_comm,
-			ACCFFT_MEASURE);
+	AccFFTs_gpu plan = AccFFTs_gpu(n, data, (Complexf *)data,
+                        c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/* Warm Up */
-	accfft_execute_r2c_gpuf(plan, data, (Complexf*) data);
-	accfft_execute_r2c_gpuf(plan, data, (Complexf*) data);
+	plan.execute_r2c(data, (Complexf*) data);
+	plan.execute_r2c(data, (Complexf*) data);
 
 	/* Initialize data */
 	initialize_gpu(data, n, isize, istart);
@@ -59,13 +59,13 @@ void step2_gpu(int *n) {
 
 	/* Perform forward FFT */
 	f_time -= MPI_Wtime();
-	accfft_execute_r2c_gpuf(plan, data, (Complexf*) data);
+	plan.execute_r2c(data, (Complexf*) data);
 	f_time += MPI_Wtime();
 	MPI_Barrier(c_comm);
 
 	/* Perform backward FFT */
 	i_time -= MPI_Wtime();
-	accfft_execute_c2r_gpuf(plan, (Complexf*) data, data);
+	plan.execute_c2r((Complexf*) data, data);
 	i_time += MPI_Wtime();
 
 	/* copy back results on CPU */
@@ -89,8 +89,7 @@ void step2_gpu(int *n) {
 
 	free(data_cpu);
 	cudaFree(data);
-	accfft_destroy_plan_gpu(plan);
-	accfft_cleanup_gpuf();
+	accfft_cleanup_gpu();
 	MPI_Comm_free(&c_comm);
 	return;
 
@@ -112,7 +111,7 @@ void check_err(float* a, int*n, MPI_Comm c_comm) {
 	int n2_ = (n[2] / 2 + 1) * 2;
 	// Get the local pencil size and the allocation size
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_gpuf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_gpu<float>(n, isize, istart, osize, ostart, c_comm);
 
 	float err = 0, norm = 0;
 	{

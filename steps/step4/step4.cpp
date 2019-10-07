@@ -174,7 +174,7 @@ void initialize(double *rho, double *sol, int *n, MPI_Comm c_comm, PoissonParams
   double pi=M_PI;
   int n_tuples=n[2];
   int istart[3], isize[3], osize[3],ostart[3];
-  accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
+  accfft_local_size_dft_r2c<double>(n,isize,istart,osize,ostart,c_comm);
 
   /*
    * testcase gaussian parameters
@@ -542,7 +542,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
 
   int isize[3],osize[3],istart[3],ostart[3];
   /* Get the local pencil size and the allocation size */
-  alloc_max=accfft_local_size_dft_r2c(n,isize,istart,osize,ostart,c_comm);
+  alloc_max=accfft_local_size_dft_r2c<double>(n,isize,istart,osize,ostart,c_comm);
 
   printf("[mpi rank %d] isize  %3d %3d %3d osize  %3d %3d %3d\n", procid,
       isize[0],isize[1],isize[2],
@@ -562,9 +562,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   accfft_init(nthreads);
   setup_time=-MPI_Wtime();
   /* Create FFT plan */
-  accfft_plan * plan = accfft_plan_dft_3d_r2c(n,
-      rho, (double*)phi_hat,
-      c_comm, ACCFFT_MEASURE);
+  AccFFTd plan = AccFFTd(n, rho, phi_hat, c_comm, ACCFFT_MEASURE);
   setup_time+=MPI_Wtime();
 
   /*  Initialize rho (force) */
@@ -605,7 +603,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
    * Perform forward FFT
    */
   f_time-=MPI_Wtime();
-  accfft_execute_r2c(plan,rho,phi_hat);
+  plan.execute_r2c(rho, phi_hat);
   f_time+=MPI_Wtime();
 
   MPI_Barrier(c_comm);
@@ -620,7 +618,7 @@ void poisson_solve(PoissonParams &params, int nthreads) {
    */
   double * phi=(double*)accfft_alloc(isize[0]*isize[1]*isize[2]*sizeof(double));
   i_time-=MPI_Wtime();
-  accfft_execute_c2r(plan,phi_hat,phi);
+  plan.execute_c2r(phi_hat, phi);
   i_time+=MPI_Wtime();
 
   /* rescale numerical solution before computing L2 */
@@ -677,7 +675,6 @@ void poisson_solve(PoissonParams &params, int nthreads) {
   accfft_free(exact_solution);
   accfft_free(phi_hat);
   accfft_free(phi);
-  accfft_destroy_plan(plan);
   accfft_cleanup();
   MPI_Comm_free(&c_comm);
 

@@ -21,20 +21,20 @@
 #ifndef _ACCFFT_UTILS_H
 #define _ACCFFT_UTILS_H
 
-#ifdef USE_PNETCDF
-void read_pnetcdf(const std::string &filename,
-		MPI_Offset starts[3],
-		MPI_Offset counts[3],
-		MPI_Comm c_comm,
-		int gsizes[3],
-		double *localData);
+#include "accfft_operators.h"
 
-void write_pnetcdf(const std::string &filename,
-		MPI_Offset starts[3],
-		MPI_Offset counts[3],
-		MPI_Comm c_comm,
-		int gsizes[3],
-		double *localData);
+#ifdef ENABLE_GPU
+#include "accfft_operators_gpu.h"
+#endif
+
+#ifdef USE_PNETCDF
+// real = float / double
+template <typename real>
+void read_pnetcdf(const std::string &, const MPI_Offset starts[3],
+ const MPI_Offset counts[3], const MPI_Comm, const int gsizes[3], real *);
+template <typename real>
+void write_pnetcdf(const std::string &, const MPI_Offset starts[3],
+ const MPI_Offset counts[3], const MPI_Comm, const int gsizes[3], const real *);
 #endif
 
 #endif // _ACCFFT_UTILS_H

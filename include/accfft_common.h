@@ -18,6 +18,8 @@
  *
 */
 
+/* Note: This file is #include-d by both accfft.h and accfft_gpu.h
+ */
 #ifndef ACCFFT_COMMON_H
 #define ACCFFT_COMMON_H
 #include <mpi.h>
@@ -30,6 +32,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <cstddef>
+
 #define PCOUT if(procid==0) std::cout
 typedef double Complex[2];
 typedef float Complexf[2];
@@ -41,56 +44,48 @@ typedef float Complexf[2];
 #define ACCFFT_MEASURE 2
 #define ACCFFT_PATIENT 4
 
-
-void accfft_create_comm(MPI_Comm in_comm, int * c_dims, MPI_Comm *c_comm);
+void accfft_create_comm(MPI_Comm in_comm, int *c_dims, MPI_Comm *c_comm);
 int accfft_init();
-void* accfft_alloc(ptrdiff_t size);
+void *accfft_alloc(ptrdiff_t size);
 void accfft_free(void * ptr);
 template <typename T>
-int dfft_get_local_size_t(int N0, int N1, int N2, int * isize, int * istart,
-		MPI_Comm c_comm);
+int dfft_get_local_size(int N0, int N1, int N2,
+                          int *isize, int *istart, MPI_Comm c_comm);
 
 template<typename T>
-int accfft_local_size_dft_r2c_t(int * n, int * isize, int * istart, int * osize,
-		int *ostart, MPI_Comm c_comm);
+int accfft_local_size_dft_r2c(const int *n, int *isize, int *istart,
+        int *osize, int *ostart, MPI_Comm c_comm);
 template<typename T>
-int accfft_local_size_dft_c2c_t(int * n, int * isize, int * istart, int * osize,
-		int *ostart, MPI_Comm c_comm);
+int accfft_local_size_dft_c2c(const int *n, int *isize, int *istart,
+        int *osize, int *ostart, MPI_Comm c_comm);
+
+/**
+ * Higher-order macro instantiates templates for all possible types.
+ */
+#define TPL_DECL(proto) proto(float) proto(double)
+//proto(Complex); proto(Complexf);
+/* Used for batched template instantiations:
+
+#define R2C_SIZE(real) \
+  template int accfft_local_size_dft_r2c_t<real>( \
+          const int *n, int *isize, int *istart, \
+          int *osize, int *ostart, MPI_Comm c_comm);
+#define C2C_SIZE(real) \
+  template int accfft_local_size_dft_c2c_t<real>( \
+          const int *n, int *isize, int *istart, \
+          int *osize, int *ostart, MPI_Comm c_comm);
+TPL_DECL(R2C_SIZE)
+TPL_DECL(C2C_SIZE)
+*/
+
+/* Helper macros for defining class methods. */
+#define EMPTY_ARG
+#define CMETHOD(ret, name) template <typename real> \
+            ret AccFFT<real> :: name
+#define GMETHOD(ret, name) template <typename real> \
+            ret AccFFT_gpu<real> :: name
+
+#define CMETHOD1(name) CMETHOD(EMPTY_ARG, name)
+#define GMETHOD1(name) GMETHOD(EMPTY_ARG, name)
 
 #endif
-#ifndef _PNETCDF_IO_H_
-#define _PNETCDF_IO_H_
-
-void read_pnetcdf(const std::string &filename,
-		  MPI_Offset         starts[3],
-		  MPI_Offset         counts[3],
-      MPI_Comm           c_comm,
-		  int                gsizes[3],
-		  double            *localData);
-
-void write_pnetcdf(const std::string &filename,
-		   MPI_Offset         starts[3],
-		   MPI_Offset         counts[3],
-       MPI_Comm           c_comm,
-		   int                gsizes[3],
-		   double            *localData);
-
-
-#endif // _PNETCDF_IO_H_
-#ifndef _PNETCDF_IO_F_H_
-#define _PNETCDF_IO_F_H_
-
-void read_pnetcdf(const std::string &filename,
-		  MPI_Offset         starts[3],
-		  MPI_Offset         counts[3],
-      MPI_Comm           c_comm,
-		  int                gsizes[3],
-		  float            *localData);
-
-void write_pnetcdf(const std::string &filename,
-		   MPI_Offset         starts[3],
-		   MPI_Offset         counts[3],
-       MPI_Comm           c_comm,
-		   int                gsizes[3],
-		   float            *localData);
-#endif // _PNETCDF_IO_F_H_

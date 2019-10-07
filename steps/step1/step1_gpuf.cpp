@@ -10,7 +10,7 @@
 #include <math.h> // M_PI
 #include <mpi.h>
 #include <cuda_runtime_api.h>
-#include <accfft_gpuf.h> // single precision
+#include <accfft_gpu.h> // single precision
 
 void initialize(float *a, int*n, MPI_Comm c_comm);
 void initialize_gpu(float *a, int*n, int* isize, int * istart);
@@ -34,8 +34,8 @@ void step1_gpu(int *n) {
 
 	int isize[3], osize[3], istart[3], ostart[3];
 	/* Get the local pencil size and the allocation size */
-	alloc_max = accfft_local_size_dft_r2c_gpuf(n, isize, istart, osize, ostart,
-			c_comm);
+	alloc_max = accfft_local_size_dft_r2c_gpu<float>(
+                        n, isize, istart, osize, ostart, c_comm);
 
 	data_cpu = (float*) malloc(isize[0] * isize[1] * isize[2] * sizeof(float));
 	//data_hat=(Complexf*)accfft_alloc(alloc_max);
@@ -46,16 +46,16 @@ void step1_gpu(int *n) {
 
 	/* Create FFT plan */
 	setup_time = -MPI_Wtime();
-	accfft_plan_gpuf * plan = accfft_plan_dft_3d_r2c_gpuf(n, data,
-			(float*) data_hat, c_comm, ACCFFT_MEASURE);
+	AccFFTs_gpu plan = AccFFTs_gpu(n, data,
+			data_hat, c_comm, ACCFFT_MEASURE);
 	setup_time += MPI_Wtime();
 
 	/* Warm Up */
-	accfft_execute_r2c_gpuf(plan, data, data_hat);
-	accfft_execute_r2c_gpuf(plan, data, data_hat);
-	accfft_execute_r2c_gpuf(plan, data, data_hat);
-	accfft_execute_r2c_gpuf(plan, data, data_hat);
-	accfft_execute_r2c_gpuf(plan, data, data_hat);
+	plan.execute_r2c(data, data_hat);
+	plan.execute_r2c(data, data_hat);
+	plan.execute_r2c(data, data_hat);
+	plan.execute_r2c(data, data_hat);
+	plan.execute_r2c(data, data_hat);
 
 	/*  Initialize data */
 	initialize(data_cpu, n, c_comm);
@@ -67,7 +67,7 @@ void step1_gpu(int *n) {
 
 	/* Perform forward FFT */
 	f_time -= MPI_Wtime();
-	accfft_execute_r2c_gpuf(plan, data, data_hat);
+	plan.execute_r2c(data, data_hat);
 	f_time += MPI_Wtime();
 
 	MPI_Barrier(c_comm);
@@ -78,7 +78,7 @@ void step1_gpu(int *n) {
 
 	/* Perform backward FFT */
 	i_time -= MPI_Wtime();
-	accfft_execute_c2r_gpuf(plan, data_hat, data2);
+	plan.execute_c2r(data_hat, data2);
 	i_time += MPI_Wtime();
 
 	/* copy back results on CPU */
@@ -106,8 +106,7 @@ void step1_gpu(int *n) {
 	cudaFree(data);
 	cudaFree(data_hat);
 	cudaFree(data2);
-	accfft_destroy_plan_gpu(plan);
-	accfft_cleanup_gpuf();
+	accfft_cleanup_gpu();
 	MPI_Comm_free(&c_comm);
 	return;
 
@@ -127,7 +126,7 @@ inline float testcase(float X, float Y, float Z) {
 void initialize(float *a, int *n, MPI_Comm c_comm) {
 	float pi = M_PI;
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_gpuf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_gpu<float>(n, isize, istart, osize, ostart, c_comm);
 
 #pragma omp parallel
 	{
@@ -159,7 +158,7 @@ void check_err(float* a, int*n, MPI_Comm c_comm) {
 	float pi = M_PI;
 
 	int istart[3], isize[3], osize[3], ostart[3];
-	accfft_local_size_dft_r2c_gpuf(n, isize, istart, osize, ostart, c_comm);
+	accfft_local_size_dft_r2c_gpu<float>(n, isize, istart, osize, ostart, c_comm);
 
 	float err = 0, norm = 0;
 
