@@ -123,8 +123,9 @@ if(BUILD_GPU)
   find_package(CUDA REQUIRED)
 
   if(NOT CUDA_NVCC_FLAGS)
-    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_20,code=sm_20)
-    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
+    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_60,code=sm_60)
+    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_70,code=sm_70)
+    list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_75,code=sm_75)
     list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_35,code=sm_35)
   endif()
 
